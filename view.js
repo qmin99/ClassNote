@@ -103,10 +103,31 @@
         }
     }
 
+    // --- Scale pages to fit viewport ---
+    function scalePages() {
+        var pages = container.querySelectorAll('.page');
+        if (!pages.length) return;
+        var viewWidth = document.querySelector('.view-body').clientWidth - 40; // 20px padding each side
+        pages.forEach(function (pg) {
+            var pageWidth = pg.offsetWidth || 794;
+            if (viewWidth < pageWidth) {
+                var scale = viewWidth / pageWidth;
+                pg.style.transform = 'scale(' + scale + ')';
+                pg.style.marginBottom = '-' + Math.round(pg.offsetHeight * (1 - scale)) + 'px';
+            } else {
+                pg.style.transform = '';
+                pg.style.marginBottom = '';
+            }
+        });
+    }
+
     // --- Init ---
     loadNote(function (noteData) {
         renderNote(noteData);
+        requestAnimationFrame(scalePages);
     });
+
+    window.addEventListener('resize', scalePages);
 
     // Print button
     if (printBtn) {

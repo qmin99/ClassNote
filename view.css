@@ -54,17 +54,18 @@ body{
 /* --- Pages container --- */
 .view-pages{
     display:flex;flex-direction:column;align-items:center;gap:24px;
-    width:100%;max-width:794px;
+    width:100%;
 }
 
+/* Page: scale down to fit viewport, display as A4 card */
 .view-pages .page{
     max-height:none;overflow:visible;
-    zoom:1;
     box-shadow:0 2px 20px rgba(0,0,0,.08);
     border-radius:2px;
+    transform-origin:top center;
 }
 
-/* Hide interactive elements from editor */
+/* Hide interactive/editor elements */
 .view-pages .p-nav{display:none}
 .view-pages .p-header__nav{display:none}
 .view-pages [contenteditable]{
@@ -72,6 +73,14 @@ body{
     -webkit-user-modify:read-only;
 }
 .view-pages [contenteditable]:focus{outline:none}
+
+/* Hide CRUD buttons that may have leaked through */
+.view-pages .crud-x,
+.view-pages .crud-add,
+.view-pages .crud-lines{display:none!important}
+
+/* Hide data-crud attributes visual artifacts */
+.view-pages [data-crud-type]{position:static}
 
 /* --- Empty state --- */
 .view-empty{
@@ -90,7 +99,7 @@ body{
 .view-footer a{color:#888;text-decoration:none}
 .view-footer a:hover{color:#555;text-decoration:underline}
 
-/* --- Mobile responsive --- */
+/* --- Responsive: scale page to fit viewport --- */
 @media(max-width:840px){
     .view-pages .page{
         width:100%!important;

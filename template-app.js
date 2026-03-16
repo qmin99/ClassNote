@@ -3377,8 +3377,12 @@
         var type = btn.getAttribute('data-crud-type')
                  || (btn.closest('[data-crud-type]') ? btn.closest('[data-crud-type]').getAttribute('data-crud-type') : null);
         if (!type) return;
-        var secIdx = btn.getAttribute('data-crud-sec');
-        secIdx = secIdx !== null ? parseInt(secIdx, 10) : undefined;
+        var secAttr = btn.getAttribute('data-crud-sec');
+        if (secAttr === null) {
+            var parentItem = btn.closest('[data-crud-sec]');
+            if (parentItem) secAttr = parentItem.getAttribute('data-crud-sec');
+        }
+        var secIdx = secAttr !== null ? parseInt(secAttr, 10) : undefined;
 
         if (action === 'add' || action === 'add-line') {
             addItem(type, secIdx);
@@ -3439,6 +3443,16 @@
             // Remove CRUD buttons from published output
             clone.querySelectorAll('.crud-x, .crud-add, .crud-lines').forEach(function (el) {
                 el.remove();
+            });
+            // Strip CRUD data attributes
+            clone.querySelectorAll('[data-crud-type]').forEach(function (el) {
+                el.removeAttribute('data-crud-type');
+                el.removeAttribute('data-crud-idx');
+                el.removeAttribute('data-crud-sec');
+            });
+            // Remove crud-solo class
+            clone.querySelectorAll('.crud-solo').forEach(function (el) {
+                el.classList.remove('crud-solo');
             });
             pagesHtml += clone.outerHTML;
         });
