@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>클래스노트</title>
+    <link rel="icon" href="https://fav.farm/📑">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="template-styles.css">
+    <link rel="stylesheet" href="view.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="view-header">
+        <div class="view-header__inner">
+            <div class="view-header__brand">
+                <span class="view-header__icon">📑</span>
+                <span class="view-header__name">클래스노트</span>
+            </div>
+            <div class="view-header__meta" id="viewMeta"></div>
+            <button class="view-header__print" id="viewPrint" title="인쇄">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Note Container -->
+    <main class="view-body">
+        <div class="view-pages" id="noteContainer">
+            <!-- Pages injected here by view.js -->
+        </div>
+
+        <!-- Empty state -->
+        <div class="view-empty" id="viewEmpty" style="display:none">
+            <div class="view-empty__icon">📄</div>
+            <div class="view-empty__title">노트를 찾을 수 없습니다</div>
+            <div class="view-empty__desc">링크가 올바른지 확인해주세요.</div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="view-footer">
+        <span>Made with <a href="index.html" target="_blank">클래스노트</a></span>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="view.js"></script>
+</body>
+</html>

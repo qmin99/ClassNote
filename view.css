@@ -1,0 +1,124 @@
+/* ============================================
+   클래스노트 — Student View Styles
+   ============================================ */
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+    background:#f0f0f0;
+    font-family:'Noto Sans KR','Inter',system-ui,sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+}
+
+/* --- Header --- */
+.view-header{
+    position:sticky;top:0;z-index:100;
+    background:rgba(255,255,255,.92);
+    backdrop-filter:blur(12px);
+    border-bottom:1px solid #e5e5e5;
+}
+.view-header__inner{
+    max-width:900px;margin:0 auto;
+    padding:12px 24px;
+    display:flex;align-items:center;gap:12px;
+}
+.view-header__brand{
+    display:flex;align-items:center;gap:8px;
+    font-size:14px;font-weight:700;color:#1a1a1a;
+}
+.view-header__icon{font-size:18px}
+.view-header__name{letter-spacing:-.02em}
+.view-header__meta{
+    flex:1;
+    font-size:12px;color:#888;
+    text-align:right;
+}
+.view-header__print{
+    width:36px;height:36px;border-radius:8px;
+    border:1px solid #e0e0e0;background:#fff;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    color:#666;transition:all .15s;
+}
+.view-header__print:hover{border-color:#aaa;color:#333}
+
+/* --- Body --- */
+.view-body{
+    flex:1;
+    padding:32px 20px 48px;
+    display:flex;flex-direction:column;align-items:center;
+}
+
+/* --- Pages container --- */
+.view-pages{
+    display:flex;flex-direction:column;align-items:center;gap:24px;
+    width:100%;max-width:794px;
+}
+
+.view-pages .page{
+    max-height:none;overflow:visible;
+    zoom:1;
+    box-shadow:0 2px 20px rgba(0,0,0,.08);
+    border-radius:2px;
+}
+
+/* Hide interactive elements from editor */
+.view-pages .p-nav{display:none}
+.view-pages .p-header__nav{display:none}
+.view-pages [contenteditable]{
+    cursor:default;
+    -webkit-user-modify:read-only;
+}
+.view-pages [contenteditable]:focus{outline:none}
+
+/* --- Empty state --- */
+.view-empty{
+    text-align:center;padding:80px 20px;
+}
+.view-empty__icon{font-size:48px;margin-bottom:16px}
+.view-empty__title{font-size:18px;font-weight:700;color:#333;margin-bottom:8px}
+.view-empty__desc{font-size:14px;color:#888}
+
+/* --- Footer --- */
+.view-footer{
+    text-align:center;
+    padding:20px;
+    font-size:12px;color:#aaa;
+}
+.view-footer a{color:#888;text-decoration:none}
+.view-footer a:hover{color:#555;text-decoration:underline}
+
+/* --- Mobile responsive --- */
+@media(max-width:840px){
+    .view-pages .page{
+        width:100%!important;
+        min-height:auto!important;
+        padding:32px 24px!important;
+    }
+    .view-body{padding:16px 8px 32px}
+    .view-header__inner{padding:10px 16px}
+}
+
+@media(max-width:480px){
+    .view-pages .page{
+        padding:24px 16px!important;
+    }
+    .view-header__brand .view-header__name{display:none}
+}
+
+/* --- Print --- */
+@media print{
+    .view-header,.view-footer{display:none!important}
+    body{background:#fff}
+    .view-body{padding:0}
+    .view-pages{gap:0}
+    .view-pages .page{
+        box-shadow:none;
+        page-break-after:always;
+        border-radius:0;
+    }
+    .view-pages .page:last-child{page-break-after:auto}
+}
+@page{margin:0;size:A4}

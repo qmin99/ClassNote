@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(open \"/Users/qmin99/Documents/CODING Matter/Class_Material/templates.html\")",
+      "WebSearch",
+      "Bash(node -c template-app.js)",
+      "Bash(node -e \":*)"
+    ]
+  }
+}
