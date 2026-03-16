@@ -3520,8 +3520,7 @@
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true }).then(function () {
             currentPublishedSlug = slug;
-            var baseUrl = location.origin + location.pathname.replace(/\/[^\/]*$/, '/');
-            var shareUrl = baseUrl + 'view.html?id=' + slug;
+            var shareUrl = 'https://class-note-material.netlify.app/view.html?id=' + slug;
             showDeployModal('success', { url: shareUrl });
         }).catch(function (err) {
             console.error('Deploy failed:', err);
