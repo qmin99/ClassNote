@@ -3513,12 +3513,16 @@
 
         var slug = currentPublishedSlug || generateSlug();
 
-        db.collection('published_notes').doc(slug).set({
+        var docData = {
             html: noteData.html,
             settings: noteData.settings,
-            createdAt: currentPublishedSlug ? undefined : firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true }).then(function () {
+        };
+        if (!currentPublishedSlug) {
+            docData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        }
+
+        db.collection('published_notes').doc(slug).set(docData, { merge: true }).then(function () {
             currentPublishedSlug = slug;
             var shareUrl = 'https://class-note-material.netlify.app/view.html?id=' + slug;
             showDeployModal('success', { url: shareUrl });
