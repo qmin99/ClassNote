@@ -286,6 +286,7 @@
     var noteFont = 'sans';
 
     var sessionsBar = document.getElementById('viewSessions');
+    var footerNameEl = document.getElementById('viewFooterName');
 
     // --- Render note into container ---
     function renderNote(data, errorReason) {
@@ -319,9 +320,15 @@
         noteLayout = validLayouts.indexOf(settings.layout) !== -1 ? settings.layout : 'classic';
         noteFont = settings.font || 'sans';
 
-        // Show student name in header
-        if (metaEl && settings.studentName) {
-            metaEl.textContent = settings.studentName;
+        // Show student name in footer
+        if (footerNameEl) {
+            if (settings.studentName) {
+                footerNameEl.textContent = settings.studentName;
+            } else {
+                footerNameEl.style.display = 'none';
+                var sep = document.querySelector('.view-footer__sep');
+                if (sep) sep.style.display = 'none';
+            }
         }
 
         // Build session stepper (only if multiple sessions)
