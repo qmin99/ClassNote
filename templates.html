@@ -7,7 +7,7 @@
     <link rel="icon" href="https://fav.farm/📑">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&family=Lora:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="template-styles.css">
 </head>
 <body>
@@ -41,32 +41,37 @@
             <!-- ===== STEP 0: 기본 정보 ===== -->
             <div class="ob__panel ob__panel--active" data-panel="0">
                 <div class="ob__panel-inner">
-                    <div class="ob__hero">
-                        <span class="ob__greeting">👋</span>
+                    <div class="ob__hero ob__stagger">
+                        <span class="ob__hero-icon">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        </span>
                         <h2 class="ob__title">수업 자료, 함께 만들어볼까요?</h2>
-                        <p class="ob__desc">먼저 기본 정보를 알려주세요.</p>
+                        <p class="ob__desc">먼저 기본 정보를 알려주세요. <span class="ob__desc-time">약 2분이면 완성됩니다</span></p>
                     </div>
                     <div class="ob__fields">
-                        <div class="ob__field ob__field--center">
-                            <label class="ob__label">선생님 이름 <span class="ob__req">*</span></label>
-                            <input class="ob__input" id="obTeacher" placeholder="이름을 입력해주세요" autocomplete="off">
+                        <div class="ob__field ob__field--center ob__stagger">
+                            <label class="ob__label">자료에 표시될 이름 <span class="ob__req">*</span></label>
+                            <input class="ob__input ob__input--name" id="obTeacher" placeholder="이름을 입력해주세요" autocomplete="off">
+                            <div class="ob__name-preview" id="obNamePreview">
+                                <span class="ob__name-preview-text"><span id="obNameValue"></span> 선생님의 수업자료</span>
+                            </div>
                         </div>
 
-                        <div class="ob__divider"></div>
+                        <div class="ob__divider ob__stagger"></div>
 
-                        <div class="ob__field">
+                        <div class="ob__field ob__stagger">
                             <div class="ob__brand-ask">
                                 <div class="ob__brand-ask-text">
-                                    <span class="ob__label">소속 학원이나 브랜드가 있으신가요?</span>
-                                    <span class="ob__brand-sub">자료에 이름과 로고가 표시됩니다</span>
+                                    <span class="ob__label">학원 로고를 자료에 넣을까요?</span>
+                                    <span class="ob__brand-sub">나중에 설정에서 언제든 변경할 수 있어요</span>
                                 </div>
-                                <div class="ob__brand-toggle" id="obBrandToggle">
-                                    <button class="ob__brand-opt ob__brand-opt--active" data-val="no">아니요</button>
-                                    <button class="ob__brand-opt" data-val="yes">네, 있어요</button>
-                                </div>
+                                <label class="ob__brand-switch" id="obBrandToggle">
+                                    <input type="checkbox" id="obBrandCheck">
+                                    <span class="ob__switch"></span>
+                                </label>
                             </div>
 
-                            <div class="ob__brand-reveal" id="obBrandReveal">
+                            <div class="ob__brand-reveal" id="obBrandReveal" aria-hidden="true">
                                 <div class="ob__field">
                                     <label class="ob__label">학원 / 브랜드 이름</label>
                                     <input class="ob__input" id="obBrand" placeholder="예: 스마트 영어학원" autocomplete="off">
@@ -94,69 +99,71 @@
             <!-- ===== STEP 1: 과목 · 유형 ===== -->
             <div class="ob__panel" data-panel="1">
                 <div class="ob__panel-inner">
-                    <div class="ob__hero">
-                        <span class="ob__greeting">📚</span>
-                        <h2 class="ob__title">어떤 수업인가요?</h2>
+                    <div class="ob__hero ob__stagger">
+                        <span class="ob__hero-icon">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+                        </span>
+                        <h2 class="ob__title" id="obStep2Title">어떤 수업을 맡고 계세요?</h2>
                     </div>
 
-                    <div class="ob__flow">
-                        <div class="ob__flow-step" id="obFlowSubject">
-                            <span class="ob__flow-q">과목을 골라주세요</span>
-                            <div class="ob__pills" id="obSubject">
-                                <button class="ob__pill" data-val="english">
-                                    <span class="ob__pill-dot" style="background:#1a6fb5"></span>영어
-                                </button>
-                                <button class="ob__pill" data-val="math">
-                                    <span class="ob__pill-dot" style="background:#e85d2c"></span>수학
-                                </button>
-                                <button class="ob__pill" data-val="korean">
-                                    <span class="ob__pill-dot" style="background:#8b3a8b"></span>국어
-                                </button>
+                    <!-- Subject cards (Hybrid D) -->
+                    <div class="ob__subjects ob__stagger" id="obSubjectCards">
+                        <button class="ob__subject-card" data-val="english" data-color="blue">
+                            <span class="ob__subject-bar" style="background:#1a6fb5"></span>
+                            <span class="ob__subject-name">영어</span>
+                            <span class="ob__subject-check" style="background:#1a6fb5">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                            </span>
+                        </button>
+                        <button class="ob__subject-card" data-val="math" data-color="orange">
+                            <span class="ob__subject-bar" style="background:#e85d2c"></span>
+                            <span class="ob__subject-name">수학</span>
+                            <span class="ob__subject-check" style="background:#e85d2c">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                            </span>
+                        </button>
+                        <button class="ob__subject-card" data-val="korean" data-color="purple">
+                            <span class="ob__subject-bar" style="background:#8b3a8b"></span>
+                            <span class="ob__subject-name">국어</span>
+                            <span class="ob__subject-check" style="background:#8b3a8b">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                            </span>
+                        </button>
+                    </div>
+
+                    <!-- Configurator card (reveal after subject) -->
+                    <div class="ob__config ob__config--hidden" id="obConfigCard">
+                        <div class="ob__config-row ob__stagger">
+                            <div class="ob__config-label">유형</div>
+                            <div class="ob__seg" id="obTypeSeg">
+                                <div class="ob__seg-indicator" id="obTypeInd"></div>
                             </div>
                         </div>
-
-                        <div class="ob__flow-step ob__flow-step--reveal" id="obFlowType">
-                            <span class="ob__flow-q">수업 유형은요?</span>
-                            <div class="ob__pills" id="obType">
-                                <button class="ob__pill" data-val="conversation">회화</button>
-                                <button class="ob__pill" data-val="reading">독해</button>
-                                <button class="ob__pill" data-val="grammar">문법</button>
+                        <div class="ob__config-divider"></div>
+                        <div class="ob__config-pair ob__stagger">
+                            <div class="ob__config-row">
+                                <div class="ob__config-label">대상</div>
+                                <div class="ob__seg" id="obLevelSeg">
+                                    <div class="ob__seg-indicator" id="obLevelInd"></div>
+                                    <button class="ob__seg-btn" data-val="elementary">초등</button>
+                                    <button class="ob__seg-btn" data-val="middle">중등</button>
+                                    <button class="ob__seg-btn" data-val="high">고등</button>
+                                    <button class="ob__seg-btn" data-val="adult">성인</button>
+                                </div>
+                            </div>
+                            <div class="ob__config-row">
+                                <div class="ob__config-label">난이도</div>
+                                <div class="ob__seg" id="obDiffSeg">
+                                    <div class="ob__seg-indicator" id="obDiffInd"></div>
+                                    <button class="ob__seg-btn" data-val="beginner">기초</button>
+                                    <button class="ob__seg-btn" data-val="intermediate">중급</button>
+                                    <button class="ob__seg-btn" data-val="advanced">고급</button>
+                                </div>
                             </div>
                         </div>
-
-                        <div class="ob__flow-step ob__flow-step--reveal" id="obFlowDetail">
-                            <span class="ob__flow-q">마지막으로 대상과 난이도를 골라주세요</span>
-                            <div class="ob__flow-row">
-                                <div class="ob__flow-field">
-                                    <span class="ob__flow-field-label">대상</span>
-                                    <div class="ob__dropdown" id="obLevelDrop">
-                                        <button class="ob__dropdown-btn" type="button">
-                                            <span class="ob__dropdown-val">중등</span>
-                                            <svg class="ob__dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-                                        </button>
-                                        <div class="ob__dropdown-menu">
-                                            <div class="ob__dropdown-item" data-val="elementary">초등</div>
-                                            <div class="ob__dropdown-item ob__dropdown-item--active" data-val="middle">중등</div>
-                                            <div class="ob__dropdown-item" data-val="high">고등</div>
-                                            <div class="ob__dropdown-item" data-val="adult">성인</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="ob__flow-field">
-                                    <span class="ob__flow-field-label">난이도</span>
-                                    <div class="ob__dropdown" id="obDiffDrop">
-                                        <button class="ob__dropdown-btn" type="button">
-                                            <span class="ob__dropdown-val">중급</span>
-                                            <svg class="ob__dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-                                        </button>
-                                        <div class="ob__dropdown-menu">
-                                            <div class="ob__dropdown-item" data-val="beginner">기초</div>
-                                            <div class="ob__dropdown-item ob__dropdown-item--active" data-val="intermediate">중급</div>
-                                            <div class="ob__dropdown-item" data-val="advanced">고급</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <!-- Selection summary -->
+                        <div class="ob__config-summary" id="obSelectionSummary">
+                            <span id="obSummaryText"></span>
                         </div>
                     </div>
                 </div>
@@ -243,7 +250,9 @@
             <div class="ob__panel" data-panel="3">
                 <div class="ob__panel-inner ob__panel-inner--wide">
                     <div class="ob__hero">
-                        <span class="ob__greeting">🧩</span>
+                        <span class="ob__hero-icon">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                        </span>
                         <h2 class="ob__title">어떤 섹션을 넣을까요?</h2>
                         <p class="ob__desc">토글하면 왼쪽에 바로 반영돼요. 나중에도 변경 가능해요.</p>
                     </div>
@@ -321,42 +330,67 @@
     <div class="app">
         <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="sidebar__section">
-                <h3 class="sidebar__heading">코스</h3>
+            <!-- Zone 1: Brand header -->
+            <div class="sb__brand" id="sbBrand"></div>
+
+            <!-- Zone 2: Sessions -->
+            <div class="sb__group">
+                <div class="sb__group-header">
+                    <h3 class="sb__label">세션</h3>
+                    <span class="sb__count" id="sessionCount"></span>
+                </div>
                 <div id="courseNav"></div>
+                <button class="sb__add" id="addSessionBtn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    새 세션
+                </button>
             </div>
+
+            <!-- Zone 3: Sections -->
+            <div class="sb__group sb__collapsible" id="sbSectionGroup">
+                <button class="sb__group-header sb__group-toggle" data-collapse="sections">
+                    <h3 class="sb__label">구성 섹션</h3>
+                    <span class="sb__count" id="secCount"></span>
+                    <svg class="sb__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="sb__body" id="sbSectionBody">
+                    <div id="sectionPanel"></div>
+                </div>
+            </div>
+
         </aside>
 
         <!-- Main -->
         <main class="main">
-            <!-- Customize Bar — right aligned -->
+            <!-- Customize Bar -->
             <div class="cbar">
                 <div class="cbar__left" id="breadcrumb"></div>
                 <div class="cbar__right">
                     <div class="cbar__group">
                         <label class="cbar__label">테마</label>
                         <div class="theme-dots" id="themeDots">
-                            <button class="tdot tdot--active" data-theme="ink" style="--c:#111"></button>
-                            <button class="tdot" data-theme="teal" style="--c:#2da5b6"></button>
-                            <button class="tdot" data-theme="forest" style="--c:#1d8a5e"></button>
-                            <button class="tdot" data-theme="plum" style="--c:#8b3a8b"></button>
-                            <button class="tdot" data-theme="ember" style="--c:#d4572a"></button>
-                            <button class="tdot" data-theme="steel" style="--c:#506d85"></button>
+                            <button class="tdot tdot--active" data-theme="ink" style="--c:#111" title="Ink"></button>
+                            <button class="tdot" data-theme="teal" style="--c:#2da5b6" title="Teal"></button>
+                            <button class="tdot" data-theme="forest" style="--c:#1d8a5e" title="Forest"></button>
+                            <button class="tdot" data-theme="plum" style="--c:#8b3a8b" title="Plum"></button>
+                            <button class="tdot" data-theme="ember" style="--c:#d4572a" title="Ember"></button>
+                            <button class="tdot" data-theme="steel" style="--c:#506d85" title="Steel"></button>
                         </div>
                     </div>
                     <div class="cbar__sep"></div>
                     <div class="cbar__group">
                         <label class="cbar__label">선생님</label>
-                        <input class="cbar__input" id="teacherName" placeholder="이름">
+                        <input class="cbar__input" id="teacherName" placeholder="이름" maxlength="20">
                     </div>
                     <div class="cbar__group">
                         <label class="cbar__label">학생</label>
-                        <input class="cbar__input" id="studentName" placeholder="이름">
+                        <input class="cbar__input" id="studentName" placeholder="이름" maxlength="20">
                     </div>
                     <div class="cbar__group">
                         <label class="cbar__label">날짜</label>
                         <input type="date" class="cbar__input cbar__input--date" id="sessionDate">
                     </div>
+                    <span class="topbar__autosave" id="autosaveStatus"></span>
                 </div>
             </div>
 
@@ -367,6 +401,27 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Editor Loading Transition -->
+    <div class="editor-loading" id="editorLoading">
+        <div class="editor-loading__content">
+            <div class="editor-loading__spinner"></div>
+            <p class="editor-loading__text">수업자료 준비 중</p>
+        </div>
+    </div>
+
+    <!-- Undo Toast -->
+    <div class="undo-toast" id="undoToast" style="display:none">
+        <span class="undo-toast__text">항목이 삭제되었습니다</span>
+        <button class="undo-toast__btn" id="undoBtn">실행취소</button>
+    </div>
+
+    <!-- Autosave Restore Toast -->
+    <div class="restore-toast" id="restoreToast" style="display:none">
+        <span class="restore-toast__text">이전 작업이 있습니다. 복원할까요?</span>
+        <button class="restore-toast__btn restore-toast__btn--yes" id="restoreYes">복원</button>
+        <button class="restore-toast__btn restore-toast__btn--no" id="restoreNo">무시</button>
     </div>
 
     <!-- Deploy Modal -->
@@ -385,6 +440,18 @@
                     <button class="deploy-copy-btn" id="deployCopy">복사</button>
                 </div>
                 <p class="deploy-copied" id="deployCopied" style="display:none">링크가 복사되었습니다!</p>
+                <div class="deploy-link-section" id="deployEditorRow" style="display:none">
+                    <p class="deploy-desc" style="margin-top:16px;font-size:13px;color:#888">선생님 편집 링크 (북마크하세요)</p>
+                    <div class="deploy-link-box">
+                        <input class="deploy-link-input" id="deployEditorLink" readonly>
+                        <button class="deploy-copy-btn" id="deployEditorCopy">복사</button>
+                    </div>
+                    <p class="deploy-copied" id="deployEditorCopied" style="display:none">편집 링크가 복사되었습니다!</p>
+                </div>
+                <div class="deploy-qr">
+                    <img id="deployQR" alt="QR코드" width="140" height="140">
+                    <p class="deploy-qr__hint">학생에게 QR코드를 보여주세요</p>
+                </div>
                 <div class="deploy-actions">
                     <button class="deploy-btn deploy-btn--secondary" id="deployOpen">새 탭에서 열기</button>
                     <button class="deploy-btn deploy-btn--primary" id="deployClose">닫기</button>

@@ -3,11 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="클래스노트 — 선생님이 만든 수업자료를 확인하세요.">
+    <meta property="og:title" content="클래스노트 수업자료">
+    <meta property="og:description" content="선생님이 공유한 수업자료입니다. 클릭해서 확인하세요.">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#f7f7f7">
     <title>클래스노트</title>
     <link rel="icon" href="https://fav.farm/📑">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&family=Lora:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="template-styles.css">
     <link rel="stylesheet" href="view.css">
 </head>
@@ -20,14 +25,37 @@
                 <span class="view-header__name">클래스노트</span>
             </div>
             <div class="view-header__meta" id="viewMeta"></div>
-            <button class="view-header__print" id="viewPrint" title="인쇄">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-            </button>
+            <div class="view-header__tools">
+                <button class="view-header__tool" id="viewFontDown" aria-label="글씨 작게">A-</button>
+                <button class="view-header__tool" id="viewFontUp" aria-label="글씨 크게">A+</button>
+                <button class="view-header__tool" id="viewDark" aria-label="다크모드 전환">🌙</button>
+                <button class="view-header__tool" id="viewPrint" aria-label="인쇄">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                </button>
+            </div>
         </div>
     </header>
 
+    <!-- Page Navigator -->
+    <div class="view-nav" id="viewNav" style="display:none">
+        <button class="view-nav__btn" id="viewPrev" aria-label="이전 페이지">&#8592;</button>
+        <span class="view-nav__badge" id="viewBadge"></span>
+        <button class="view-nav__btn" id="viewNext" aria-label="다음 페이지">&#8594;</button>
+    </div>
+
+    <!-- Session Tabs -->
+    <div class="view-sessions" id="viewSessions" style="display:none">
+        <div class="view-sessions__list" id="viewSessionList"></div>
+    </div>
+
     <!-- Note Container -->
     <main class="view-body">
+        <!-- Loading state -->
+        <div class="view-loading" id="viewLoading" style="display:none">
+            <div class="view-loading__spinner"></div>
+            <p class="view-loading__text">수업자료를 불러오는 중...</p>
+        </div>
+
         <div class="view-pages" id="noteContainer">
             <!-- Pages injected here by view.js -->
         </div>
@@ -45,9 +73,9 @@
         <span>Made with <a href="index.html" target="_blank">클래스노트</a></span>
     </footer>
 
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
-    <script src="view.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script defer src="firebase-config.js"></script>
+    <script defer src="view.js"></script>
 </body>
 </html>

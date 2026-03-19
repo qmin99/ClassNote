@@ -24,7 +24,8 @@
         theme: 'ink',
         layout: 'classic',
         font: 'sans',
-        sections: {}
+        sections: {},
+        sectionNames: {}
     };
 
     // ---- Page count: measure real DOM (same approach as editor's paginateContent) ----
@@ -336,9 +337,16 @@
         return subjSections[type] || [];
     }
 
+    var _sectionToggleHandler = null;
+
     function buildSectionToggles() {
         var container = document.getElementById('obSections');
         if (!container) return;
+
+        // Remove previous delegated listener to prevent accumulation
+        if (_sectionToggleHandler) {
+            container.removeEventListener('change', _sectionToggleHandler);
+        }
 
         var sections = getTypeSections();
 
@@ -374,18 +382,28 @@
 
         container.innerHTML = html;
 
-        // Re-bind toggle listeners
-        container.querySelectorAll('input[type="checkbox"]').forEach(function(t) {
-            t.addEventListener('change', function() {
-                var key = this.getAttribute('data-section');
-                if (key) obState.sections[key] = this.checked;
-                checkSectionOverflow();
-                updateSectionSidebar();
-            });
-        });
+        // Single delegated listener on container (replaces per-checkbox binding)
+        _sectionToggleHandler = function(e) {
+            if (e.target.type !== 'checkbox') return;
+            var key = e.target.getAttribute('data-section');
+            if (key) obState.sections[key] = e.target.checked;
+            checkSectionOverflow();
+            updateSectionSidebar();
+        };
+        container.addEventListener('change', _sectionToggleHandler);
 
         checkSectionOverflow();
         updateSectionSidebar();
+    }
+
+    // ===== Stagger entrance animation helper =====
+    function triggerStagger(parent) {
+        if (!parent) return;
+        var items = parent.querySelectorAll('.ob__stagger');
+        items.forEach(function (el) { el.classList.remove('ob__stagger--in'); });
+        items.forEach(function (el, i) {
+            setTimeout(function () { el.classList.add('ob__stagger--in'); }, 150 + i * 140);
+        });
     }
 
     var obEl = document.getElementById('onboarding');
@@ -425,6 +443,29 @@
             }
         });
 
+        // Enter key on teacher name → advance to next step
+        var obTeacherInput = document.getElementById('obTeacher');
+        if (obTeacherInput) {
+            obTeacherInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); nextBtn.click(); }
+            });
+
+            // Real-time name preview
+            var namePreview = document.getElementById('obNamePreview');
+            var nameValue = document.getElementById('obNameValue');
+            if (namePreview && nameValue) {
+                obTeacherInput.addEventListener('input', function () {
+                    var val = this.value.trim();
+                    if (val) {
+                        nameValue.textContent = val;
+                        namePreview.classList.add('ob__name-preview--visible');
+                    } else {
+                        namePreview.classList.remove('ob__name-preview--visible');
+                    }
+                });
+            }
+        }
+
         // Step indicator clicks
         steps.querySelectorAll('.ob__step').forEach(function (btn) {
             btn.addEventListener('click', function () {
@@ -438,32 +479,160 @@
             });
         });
 
-        // Subject pills
-        bindPills('obSubject', function (val) {
-            obState.subject = val;
-            clearStepError();
-            updateTypeChips();
-            var flowType = document.getElementById('obFlowType');
-            if (flowType) flowType.classList.add('ob__flow-step--open');
-        });
+        // Subject labels for summary card
+        var SUBJECT_LABELS = { english: '영어', math: '수학', korean: '국어' };
+        var SUBJECT_DOTS = { english: '#1a6fb5', math: '#e85d2c', korean: '#8b3a8b' };
+        var SUBJECT_IND_CLASS = { english: 'ob__seg-indicator--blue', math: 'ob__seg-indicator--orange', korean: 'ob__seg-indicator--purple' };
 
-        // Type pills
-        bindPills('obType', function (val) {
-            obState.type = val;
-            clearStepError();
-            var flowDetail = document.getElementById('obFlowDetail');
-            if (flowDetail) flowDetail.classList.add('ob__flow-step--open');
-        });
+        window.__updateSelectionSummary = updateSelectionSummary;
+        function updateSelectionSummary() {
+            var el = document.getElementById('obSelectionSummary');
+            var textEl = document.getElementById('obSummaryText');
+            if (!el || !textEl) return;
+            if (!obState.subject) { el.classList.remove('ob__config-summary--visible'); return; }
 
-        // Custom dropdowns (대상 / 난이도)
-        initDropdown('obLevelDrop', function (val) { obState.level = val; });
-        initDropdown('obDiffDrop', function (val) { obState.difficulty = val; });
+            var subjectName = SUBJECT_LABELS[obState.subject] || obState.subject;
+            var dot = SUBJECT_DOTS[obState.subject] || '#888';
+            var parts = [];
 
-        // Close dropdowns on outside click
-        document.addEventListener('click', function (e) {
-            document.querySelectorAll('.ob__dropdown--open').forEach(function (d) {
-                if (!d.contains(e.target)) d.classList.remove('ob__dropdown--open');
+            if (obState.type && subjectTypes[obState.subject]) {
+                var types = subjectTypes[obState.subject];
+                for (var i = 0; i < types.length; i++) {
+                    if (types[i].val === obState.type) { parts.push(types[i].label); break; }
+                }
+            }
+
+            var levelLabel = LEVEL_LABELS[obState.level] || '중등';
+            var diffLabel = DIFF_LABELS[obState.difficulty] || '중급';
+            var summary = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + dot + ';margin-right:8px;vertical-align:middle"></span>';
+            summary += subjectName;
+            if (parts.length) summary += ' · ' + parts[0];
+            summary += ' · ' + levelLabel + ' · ' + diffLabel;
+            textEl.innerHTML = summary;
+            el.classList.add('ob__config-summary--visible');
+        }
+
+        // ===== Segmented control helper =====
+        function initSeg(containerId, indicatorId, defaultVal, onChange) {
+            var container = document.getElementById(containerId);
+            var indicator = document.getElementById(indicatorId);
+            if (!container || !indicator) return;
+            var buttons = container.querySelectorAll('.ob__seg-btn');
+
+            function update(btn) {
+                if (!btn) { indicator.style.opacity = '0'; return; }
+                indicator.style.opacity = '1';
+                indicator.style.left = btn.offsetLeft + 'px';
+                indicator.style.width = btn.offsetWidth + 'px';
+                buttons.forEach(function (b) { b.classList.remove('ob__seg-btn--active'); });
+                btn.classList.add('ob__seg-btn--active');
+            }
+
+            function setIndicatorColor(subj) {
+                indicator.className = 'ob__seg-indicator';
+                var cls = SUBJECT_IND_CLASS[subj];
+                if (cls) indicator.classList.add(cls);
+            }
+
+            buttons.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    update(this);
+                    if (onChange) onChange(this.getAttribute('data-val'));
+                });
             });
+
+            // Set default
+            var defaultBtn = defaultVal ? container.querySelector('[data-val="' + defaultVal + '"]') : null;
+            setTimeout(function () {
+                if (defaultBtn) update(defaultBtn);
+            }, 60);
+
+            return { update: update, setIndicatorColor: setIndicatorColor, container: container, buttons: buttons };
+        }
+
+        // ===== Build type segment buttons dynamically =====
+        window.__buildTypeSegment = buildTypeSegment;
+        function buildTypeSegment() {
+            var seg = document.getElementById('obTypeSeg');
+            if (!seg) return;
+            var types = subjectTypes[obState.subject] || subjectTypes.english;
+            // Keep indicator, remove old buttons
+            var ind = document.getElementById('obTypeInd');
+            seg.innerHTML = '';
+            seg.appendChild(ind);
+            types.forEach(function (t) {
+                var btn = document.createElement('button');
+                btn.className = 'ob__seg-btn';
+                btn.setAttribute('data-val', t.val);
+                btn.textContent = t.label;
+                btn.addEventListener('click', function () {
+                    obState.type = t.val;
+                    clearStepError();
+                    updateTypeIndicator(this);
+                    updateSelectionSummary();
+                });
+                seg.appendChild(btn);
+            });
+            obState.type = '';
+            ind.style.opacity = '0';
+            // Apply subject color to type indicator
+            ind.className = 'ob__seg-indicator';
+            var cls = SUBJECT_IND_CLASS[obState.subject];
+            if (cls) ind.classList.add(cls);
+        }
+        function updateTypeIndicator(btn) {
+            var ind = document.getElementById('obTypeInd');
+            var seg = document.getElementById('obTypeSeg');
+            if (!ind || !seg) return;
+            seg.querySelectorAll('.ob__seg-btn').forEach(function (b) { b.classList.remove('ob__seg-btn--active'); });
+            btn.classList.add('ob__seg-btn--active');
+            ind.style.opacity = '1';
+            ind.style.left = btn.offsetLeft + 'px';
+            ind.style.width = btn.offsetWidth + 'px';
+        }
+
+        // ===== Subject cards =====
+        var subjectCards = document.querySelectorAll('#obSubjectCards .ob__subject-card');
+        subjectCards.forEach(function (card) {
+            card.addEventListener('click', function () {
+                subjectCards.forEach(function (c) { c.classList.remove('ob__subject-card--active'); });
+                this.classList.add('ob__subject-card--active');
+                obState.subject = this.getAttribute('data-val');
+                clearStepError();
+                buildTypeSegment();
+
+                // Reveal config card
+                var config = document.getElementById('obConfigCard');
+                if (config) {
+                    config.classList.remove('ob__config--hidden');
+                    // Trigger stagger on config children
+                    triggerStagger(config);
+                }
+
+                // Update level/diff indicator colors
+                var indLevel = document.getElementById('obLevelInd');
+                var indDiff = document.getElementById('obDiffInd');
+                if (indLevel) { indLevel.className = 'ob__seg-indicator'; var c = SUBJECT_IND_CLASS[obState.subject]; if (c) indLevel.classList.add(c); }
+                if (indDiff) { indDiff.className = 'ob__seg-indicator'; var c2 = SUBJECT_IND_CLASS[obState.subject]; if (c2) indDiff.classList.add(c2); }
+
+                updateSelectionSummary();
+
+                // Focus first type seg after reveal
+                setTimeout(function () {
+                    var firstSeg = document.querySelector('#obTypeSeg .ob__seg-btn');
+                    if (firstSeg) firstSeg.focus();
+                }, 400);
+            });
+        });
+
+        // ===== Level & Difficulty segments =====
+        initSeg('obLevelSeg', 'obLevelInd', 'middle', function (val) {
+            obState.level = val;
+            updateSelectionSummary();
+        });
+        initSeg('obDiffSeg', 'obDiffInd', 'intermediate', function (val) {
+            obState.difficulty = val;
+            updateSelectionSummary();
         });
 
         // Color picker
@@ -492,30 +661,31 @@
             updatePreview();
         });
 
-        // Brand toggle (yes/no)
-        var brandToggle = document.getElementById('obBrandToggle');
+        // Brand toggle (switch)
+        var brandCheck = document.getElementById('obBrandCheck');
         var brandReveal = document.getElementById('obBrandReveal');
-        if (brandToggle && brandReveal) {
-            brandToggle.querySelectorAll('.ob__brand-opt').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    brandToggle.querySelectorAll('.ob__brand-opt').forEach(function (b) { b.classList.remove('ob__brand-opt--active'); });
-                    this.classList.add('ob__brand-opt--active');
-                    var isYes = this.getAttribute('data-val') === 'yes';
-                    obState.hasBrand = isYes;
-                    if (isYes) {
-                        brandReveal.classList.add('ob__brand-reveal--open');
-                    } else {
-                        brandReveal.classList.remove('ob__brand-reveal--open');
-                        obState.brand = '';
-                        obState.logoData = null;
+        if (brandCheck && brandReveal) {
+            brandCheck.addEventListener('change', function () {
+                var isYes = this.checked;
+                obState.hasBrand = isYes;
+                brandReveal.setAttribute('aria-hidden', isYes ? 'false' : 'true');
+                if (isYes) {
+                    brandReveal.classList.add('ob__brand-reveal--open');
+                    setTimeout(function () {
                         var brandInput = document.getElementById('obBrand');
-                        if (brandInput) brandInput.value = '';
-                        var logoPreview = document.getElementById('obLogoPreview');
-                        var logoPlaceholder = document.getElementById('obLogoPlaceholder');
-                        if (logoPreview) logoPreview.style.display = 'none';
-                        if (logoPlaceholder) logoPlaceholder.style.display = '';
-                    }
-                });
+                        if (brandInput) brandInput.focus();
+                    }, 350);
+                } else {
+                    brandReveal.classList.remove('ob__brand-reveal--open');
+                    obState.brand = '';
+                    obState.logoData = null;
+                    var brandInput = document.getElementById('obBrand');
+                    if (brandInput) brandInput.value = '';
+                    var logoPreview = document.getElementById('obLogoPreview');
+                    var logoPlaceholder = document.getElementById('obLogoPlaceholder');
+                    if (logoPreview) logoPreview.style.display = 'none';
+                    if (logoPlaceholder) logoPlaceholder.style.display = '';
+                }
             });
         }
 
@@ -557,7 +727,19 @@
         }
 
         function handleLogoFile(file) {
-            if (!file || !file.type.startsWith('image/')) return;
+            if (!file || !file.type.startsWith('image/')) {
+                alert('이미지 파일만 업로드 가능합니다. (PNG, JPG, WebP, GIF)');
+                return;
+            }
+            var allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml'];
+            if (allowedTypes.indexOf(file.type) === -1) {
+                alert('지원하지 않는 이미지 형식입니다.\nPNG, JPG, WebP, GIF만 가능합니다.');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                alert('파일 크기가 5MB를 초과합니다.\n더 작은 이미지를 선택해주세요.');
+                return;
+            }
             var reader = new FileReader();
             reader.onload = function (e) {
                 obState.logoData = e.target.result;
@@ -670,23 +852,8 @@
     }
 
     function updateTypeChips() {
-        var wrap = document.getElementById('obType');
-        if (!wrap) return;
-        var types = subjectTypes[obState.subject] || subjectTypes.english;
-        var html = '';
-        types.forEach(function (t) {
-            html += '<button class="ob__pill" data-val="' + t.val + '">' + t.label + '</button>';
-        });
-        wrap.innerHTML = html;
-        obState.type = '';
-        // Close detail reveal until type is picked
-        var flowDetail = document.getElementById('obFlowDetail');
-        if (flowDetail) flowDetail.classList.remove('ob__flow-step--open');
-        bindPills('obType', function (val) {
-            obState.type = val;
-            clearStepError();
-            if (flowDetail) flowDetail.classList.add('ob__flow-step--open');
-        });
+        // Now handled by buildTypeSegment() in Hybrid design
+        if (window.__buildTypeSegment) window.__buildTypeSegment();
     }
 
     function collectStepData() {
@@ -774,8 +941,14 @@
             p.classList.toggle('ob__panel--active', idx === obState.step);
         });
 
-        // Back button visibility
-        backBtn.style.visibility = obState.step === 0 ? 'hidden' : 'visible';
+        // Back button visibility + tab order
+        if (obState.step === 0) {
+            backBtn.style.visibility = 'hidden';
+            backBtn.setAttribute('tabindex', '-1');
+        } else {
+            backBtn.style.visibility = 'visible';
+            backBtn.removeAttribute('tabindex');
+        }
 
         // Next button text
         if (obState.step === obState.totalSteps - 1) {
@@ -786,6 +959,31 @@
             nextBtn.className = 'ob__btn ob__btn--next';
         }
 
+        // Personalize Step 2 hero title with teacher name (creative emphasis)
+        if (obState.step === 1) {
+            var step2Title = document.getElementById('obStep2Title');
+            var name = (obState.teacher || '').trim();
+            if (step2Title && name) {
+                step2Title.innerHTML = '<span class="ob__title-name">' + name + '</span> 선생님, 어떤 수업을 맡고 계세요?';
+            }
+        }
+
+        // Trigger stagger entrance animations
+        triggerStagger(document.querySelector('.ob__panel--active'));
+
+        // Autofocus first input or first seg-btn on current step
+        setTimeout(function () {
+            var panel = document.querySelector('.ob__panel--active');
+            if (panel) {
+                var firstInput = panel.querySelector('input:not([hidden]):not([type="file"]):not([type="checkbox"])');
+                if (firstInput) { firstInput.focus(); return; }
+                var firstCard = panel.querySelector('.ob__subject-card');
+                if (firstCard) { firstCard.focus(); return; }
+                var firstPill = panel.querySelector('.ob__pill');
+                if (firstPill) firstPill.focus();
+            }
+        }, 400);
+
         // Update preview if on design step
         if (obState.step === 2) {
             setTimeout(updatePreview, 50);
@@ -793,6 +991,12 @@
         // Build dynamic section toggles when entering content step
         if (obState.step === 3) {
             setTimeout(buildSectionToggles, 50);
+        }
+
+        // Hide page hint when leaving content step
+        var pageHint = document.getElementById('obOverflowWarn');
+        if (pageHint && obState.step !== 3) {
+            pageHint.classList.remove('ob__page-hint--show');
         }
     }
 
@@ -1095,10 +1299,13 @@
     function launchEditor() {
         collectStepData();
 
-        // Apply settings to editor state
         var obOverlay = document.getElementById('onboarding');
+        var loadingEl = document.getElementById('editorLoading');
+
+        // Step 1: Fade out onboarding, show loading screen
         obOverlay.style.opacity = '0';
         obOverlay.style.transition = 'opacity .3s ease';
+        loadingEl.classList.add('editor-loading--visible');
 
         setTimeout(function () {
             obOverlay.classList.add('ob--hidden');
@@ -1119,6 +1326,7 @@
             window.__classnote.brand = obState.brand;
             window.__classnote.logoData = obState.logoData;
             window.__classnote.sections = obState.sections;
+            window.__classnote.sectionNames = obState.sectionNames || {};
             window.__classnote.layout = obState.layout;
             window.__classnote.font = obState.font;
             window.__classnote.subject = obState.subject;
@@ -1158,6 +1366,35 @@
             if (typeof window.__renderPage === 'function') {
                 window.__renderPage();
             }
+
+            // Sync sidebar segment states with onboarding selections
+            var syncSeg = function (segId, val) {
+                var seg = document.getElementById(segId);
+                if (!seg) return;
+                seg.querySelectorAll('.sb__seg-btn').forEach(function (b) {
+                    b.classList.toggle('sb__seg-btn--active', b.getAttribute('data-val') === val);
+                });
+            };
+            syncSeg('sbLayoutSeg', obState.layout || 'classic');
+            syncSeg('sbFontSeg', obState.font || 'sans');
+
+            // Sync theme dot
+            var themeDots = document.getElementById('themeDots');
+            if (themeDots) {
+                themeDots.querySelectorAll('.tdot').forEach(function (d) {
+                    d.classList.toggle('tdot--active', d.getAttribute('data-theme') === obState.theme);
+                });
+            }
+
+            // Step 2: Fade out loading screen after editor is ready
+            setTimeout(function () {
+                loadingEl.classList.add('editor-loading--fade-out');
+                setTimeout(function () {
+                    loadingEl.classList.remove('editor-loading--visible', 'editor-loading--fade-out');
+                    // Check for autosave data now that editor is visible
+                    if (typeof checkAutosave === 'function') checkAutosave();
+                }, 300);
+            }, 500);
 
         }, 300);
     }
@@ -1233,9 +1470,7 @@
                             ],
                             vocab: [
                                 { term: 'Overwhelming', def: '감당하기 힘든, too much to deal with' },
-                                { term: 'In a good way', def: '좋은 쪽으로' },
                                 { term: 'Walk someone through', def: '단계별로 설명해주다' },
-                                { term: 'Spare a few minutes', def: '잠깐 시간을 내다' },
                                 { term: 'Double-check', def: '재확인하다' }
                             ],
                             scenarios: [
@@ -1254,8 +1489,7 @@
                             sections: [
                                 { num: '01', name: '피드백 줄 때', phrases: [
                                     '"Overall it looks great, but I have a couple of suggestions."',
-                                    '"Have you considered doing it this way instead?"',
-                                    '"One small thing — I think we could simplify this part."'
+                                    '"Have you considered doing it this way instead?"'
                                 ]},
                                 { num: '02', name: '피드백 받을 때', phrases: [
                                     '"That\'s a really good point. I\'ll update that."',
@@ -1297,7 +1531,7 @@
                             sections: [
                                 { num: '01', name: '카페에서 주문하기', phrases: [
                                     '"Can I get a medium iced latte, please?"',
-                                    '"I\'ll have the same thing as last time — just a flat white."',
+                                    '"I\'ll have a flat white, same as last time."',
                                     '"Could I get that with oat milk instead?"'
                                 ]},
                                 { num: '02', name: '레스토랑에서', phrases: [
@@ -1347,18 +1581,18 @@
                                 ]}
                             ],
                             vocab: [
-                                { term: 'What brings you here?', def: '여기 어쩐 일이에요?' },
+                                { term: 'What brings you here', def: '여기 어쩐 일이에요?' },
                                 { term: 'Get into', def: '~에 빠지다, 시작하게 되다' },
                                 { term: 'Keep in touch', def: '연락하고 지내다' },
                                 { term: 'No way!', def: '말도 안 돼! (놀람)' }
                             ],
                             scenarios: [
-                                { num: 'Scenario 01', title: '파티에서 처음 만난 사람', prompt: '"Hey! I don\'t think we\'ve met. I\'m Alex. Are you a friend of the host?"' },
+                                { num: 'Scenario 01', title: '파티에서 처음 만난 사람', prompt: '"Hey! I don\'t think we\'ve met — I\'m Alex. Nice to meet you!"' },
                                 { num: 'Scenario 02', title: '카페에서 옆자리 사람', prompt: '"Excuse me, is this seat taken? Oh nice, what are you reading?"' }
                             ],
                             homework: [
                                 { title: '스몰토크 주제 5가지 준비', desc: '날씨, 음식, 취미 등 가볍게 꺼낼 수 있는 주제 정리' },
-                                { title: '리액션 표현 연습', desc: '"Really?", "No way!", "That\'s awesome!" 등 자연스러운 리액션 5가지' }
+                                { title: '리액션 표현 연습', desc: '자연스러운 리액션 표현 5가지 정리하기' }
                             ]
                         },
                         {
@@ -1366,9 +1600,9 @@
                             subtitle: '길 찾기와 교통 — 택시, 지하철, 길 물어보기',
                             sections: [
                                 { num: '01', name: '길 물어보기', phrases: [
-                                    '"Excuse me, do you know how to get to the nearest subway station?"',
+                                    '"Excuse me, how do I get to the subway station?"',
                                     '"Is it walking distance, or should I take a cab?"',
-                                    '"Am I going the right way?"'
+                                    '"Am I going the right way to get there?"'
                                 ]},
                                 { num: '02', name: '택시/우버 이용', phrases: [
                                     '"Could you take me to [place], please?"',
@@ -1388,8 +1622,8 @@
                                 { term: 'Get off at', def: '~에서 내리다' }
                             ],
                             scenarios: [
-                                { num: 'Scenario 01', title: '길 잃었을 때', prompt: '"You look a bit lost. Are you trying to find something?"' },
-                                { num: 'Scenario 02', title: '택시 탑승', prompt: '"Where to?"' }
+                                { num: 'Scenario 01', title: '길 잃었을 때', prompt: '"You look a bit lost. Can I help you find your way?"' },
+                                { num: 'Scenario 02', title: '택시 탑승', prompt: '"Where to? Do you have the address, or do you know the name of the place?"' }
                             ],
                             homework: [
                                 { title: '우리 동네 영어로 길 안내하기', desc: '집에서 가까운 장소까지 영어로 길 안내 연습' },
@@ -1508,7 +1742,8 @@
                             problems: [
                                 { q: '{ x + y = 5, x − y = 1 }의 해를 구하시오.', choices: ['x=2, y=3', 'x=3, y=2', 'x=4, y=1', 'x=1, y=4'] },
                                 { q: '사과 3개와 배 2개의 가격이 7,000원이고, 사과 1개와 배 4개의 가격이 9,000원일 때, 사과와 배의 가격을 각각 구하시오.', answer: true },
-                                { q: '{ 3x − y = 7, x + 2y = 4 }의 해가 x = a, y = b일 때, a + b의 값을 구하시오.', answer: true }
+                                { q: '{ 3x − y = 7, x + 2y = 4 }의 해가 x = a, y = b일 때, a + b의 값을 구하시오.', answer: true },
+                                { q: '{ 2x + y = 10, x − y = 2 }를 가감법으로 풀어 x, y의 값을 구하시오.', answer: true }
                             ]
                         }
                     ]
@@ -1653,7 +1888,7 @@
         var max = ITEM_MAX[type] || 6;
         var cls = currentLen >= max ? ' crud-maxed' : '';
         var sec = secIdx !== undefined ? ' data-crud-sec="' + secIdx + '"' : '';
-        return '<button class="crud-add' + cls + '" data-crud-action="add" data-crud-type="' + type + '"' + sec + '>+ 추가</button>';
+        return '<button class="crud-add' + cls + '" data-crud-action="add" data-crud-type="' + type + '"' + sec + '>+</button>';
     }
 
     // +/- line buttons for line-count items (dictation, memo, etc.)
@@ -1674,7 +1909,7 @@
         if (secOn('phrases')) {
             s.sections.forEach(function (sec, si) {
                 var solo = sec.phrases.length <= 1 ? ' crud-solo' : '';
-                h += '<div class="ps">' + secH(sec.num, sec.name);
+                h += '<div class="ps">' + secH(sec.num, sec.name, 'phrases');
                 h += '<ul class="pl">';
                 sec.phrases.forEach(function (p, pi) {
                     h += '<li' + solo + ' data-crud-type="phrases" data-crud-sec="' + si + '" data-crud-idx="' + pi + '"><span' + E + '>' + p + '</span>';
@@ -1686,7 +1921,7 @@
 
         if (secOn('vocab')) {
             var solo = s.vocab.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '핵심 표현');
+            h += '<div class="ps">' + secH('', '핵심 표현', 'vocab');
             h += '<div class="vg">';
             s.vocab.forEach(function (v, i) {
                 h += '<div class="vi' + solo + '" data-crud-type="vocab" data-crud-idx="' + i + '"><div class="vi__t"' + E + '>' + v.term + '</div><div class="vi__d"' + E + '>' + v.def + '</div>';
@@ -1697,7 +1932,7 @@
 
         if (secOn('scenarios')) {
             var solo = s.scenarios.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '롤플레이 시나리오');
+            h += '<div class="ps">' + secH('', '롤플레이 시나리오', 'scenarios');
             h += '<div class="scs">';
             s.scenarios.forEach(function (sc, i) {
                 h += '<div class="sc' + solo + '" data-crud-type="scenarios" data-crud-idx="' + i + '"><div class="sc__n">' + sc.num + '</div><div class="sc__t"' + E + '>' + sc.title + '</div><div class="sc__p"' + E + '>' + sc.prompt + '</div>';
@@ -1708,7 +1943,7 @@
 
         if (secOn('homework')) {
             var solo = s.homework.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '숙제');
+            h += '<div class="ps">' + secH('', '숙제', 'homework');
             h += '<ul class="hwl">';
             s.homework.forEach(function (hw, i) {
                 h += '<li' + solo + ' data-crud-type="homework" data-crud-idx="' + i + '"><div class="hw__n">' + (i + 1) + '</div><div><div class="hw__t"' + E + '>' + hw.title + '</div><div class="hw__d"' + E + '>' + hw.desc + '</div></div>';
@@ -1722,7 +1957,7 @@
         if (secOn('wordlist')) {
             var wl = ensureArray(s, '_wordlist', 5, ITEM_FACTORIES.wordlist);
             var solo = wl.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '단어장');
+            h += '<div class="ps">' + secH('', '단어장', 'wordlist');
             h += '<table class="ptb"><tr><th style="width:25%">단어</th><th style="width:30%">뜻</th><th>예문</th></tr>';
             wl.forEach(function (w, i) {
                 h += '<tr' + solo + ' data-crud-type="wordlist" data-crud-idx="' + i + '"><td' + E + '>' + (w.word || '') + '</td><td' + E + '>' + (w.pos || '') + '</td><td' + E + '>' + (w.meaning || '') + '</td>';
@@ -1734,7 +1969,7 @@
         if (secOn('slang')) {
             var sl = ensureArray(s, '_slang', 3, ITEM_FACTORIES.slang);
             var solo = sl.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '구어체·슬랭');
+            h += '<div class="ps">' + secH('', '구어체·슬랭', 'slang');
             h += '<div class="cb" style="padding:0;overflow:hidden">';
             sl.forEach(function (item, i) {
                 h += '<div style="padding:10px 14px;border-bottom:1px solid var(--bd2);display:flex;gap:12px;align-items:baseline;position:relative"' + solo + ' data-crud-type="slang" data-crud-idx="' + i + '">';
@@ -1746,7 +1981,7 @@
         }
 
         if (secOn('compare')) {
-            h += '<div class="ps">' + secH('', '유사 표현 비교');
+            h += '<div class="ps">' + secH('', '유사 표현 비교', 'compare');
             h += '<div class="scs">';
             h += '<div class="sc"><div class="sc__n">A</div><div class="sc__t"' + E + '>표현 A</div><div class="sc__p"' + E + '>뉘앙스 설명</div></div>';
             h += '<div class="sc"><div class="sc__n">B</div><div class="sc__t"' + E + '>표현 B</div><div class="sc__p"' + E + '>뉘앙스 설명</div></div>';
@@ -1756,7 +1991,7 @@
         if (secOn('mistakes')) {
             var mk = ensureArray(s, '_mistakes', 3, ITEM_FACTORIES.mistakes);
             var solo = mk.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '틀리기 쉬운 표현');
+            h += '<div class="ps">' + secH('', '틀리기 쉬운 표현', 'mistakes');
             h += '<div class="cb" style="padding:0;overflow:hidden">';
             mk.forEach(function (item, i) {
                 h += '<div style="padding:10px 14px;border-bottom:1px solid var(--bd2);display:flex;gap:12px;align-items:center;position:relative"' + solo + ' data-crud-type="mistakes" data-crud-idx="' + i + '">';
@@ -1773,7 +2008,7 @@
         if (secOn('fillblank')) {
             var fb = ensureArray(s, '_fillblank', 3, ITEM_FACTORIES.fillblank);
             var solo = fb.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '빈칸 채우기');
+            h += '<div class="ps">' + secH('', '빈칸 채우기', 'fillblank');
             fb.forEach(function (item, i) {
                 h += '<div class="prb' + solo + '" data-crud-type="fillblank" data-crud-idx="' + i + '">';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -1787,7 +2022,7 @@
         if (secOn('writing')) {
             var wr = ensureArray(s, '_writing', 3, ITEM_FACTORIES['writing-prb']);
             var solo = wr.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '영작 연습');
+            h += '<div class="ps">' + secH('', '영작 연습', 'writing');
             wr.forEach(function (item, i) {
                 h += '<div class="prb' + solo + '" data-crud-type="writing-prb" data-crud-idx="' + i + '">';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -1801,7 +2036,7 @@
         if (secOn('dialogue')) {
             var dl = ensureArray(s, '_dialogue', 4, ITEM_FACTORIES.dialogue);
             var solo = dl.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '대화문');
+            h += '<div class="ps">' + secH('', '대화문', 'dialogue');
             h += '<div class="cb" style="padding:0;overflow:hidden">';
             dl.forEach(function (item, i) {
                 var isA = item.role === 'A';
@@ -1815,7 +2050,7 @@
 
         if (secOn('dictation')) {
             var dc = ensureLineCount(s, '_dictation');
-            h += '<div class="ps">' + secH('', '딕테이션');
+            h += '<div class="ps">' + secH('', '딕테이션', 'dictation');
             h += '<div style="font-size:11px;color:var(--t3);margin-bottom:8px">선생님이 읽어주는 문장을 듣고 받아 적어보세요.</div>';
             var wlines = '';
             for (var dli = 0; dli < dc; dli++) wlines += '<div class="wl wl--t"></div>';
@@ -1823,21 +2058,21 @@
         }
 
         if (secOn('summary')) {
-            h += '<div class="ps">' + secH('', '오늘의 요약');
+            h += '<div class="ps">' + secH('', '오늘의 요약', 'summary');
             h += '<div class="cb"><div class="cb__t"' + E + '>오늘 배운 핵심</div>';
             h += '<div class="cb__b"' + E + '>• 핵심 포인트 1\n• 핵심 포인트 2\n• 핵심 포인트 3</div></div></div>';
         }
 
         if (secOn('memo')) {
             var mc = ensureLineCount(s, '_memo');
-            h += '<div class="ps">' + secH('', '메모란');
+            h += '<div class="ps">' + secH('', '메모란', 'memo');
             var mlines = '';
             for (var mli = 0; mli < mc; mli++) mlines += '<div class="wl wl--t"></div>';
             h += '<div>' + mlines + '</div>' + crudLines('memo', mc) + '</div>';
         }
 
         if (secOn('comment')) {
-            h += '<div class="ps">' + secH('', '선생님 코멘트');
+            h += '<div class="ps">' + secH('', '선생님 코멘트', 'comment');
             h += '<div class="cb" style="border-left-color:#1d8a5e"><div class="cb__t" style="color:#1d8a5e"' + E + '>피드백</div>';
             h += '<div class="cb__b"' + E + '>학생에 대한 피드백을 작성해주세요.</div></div></div>';
         }
@@ -1850,7 +2085,7 @@
         var h = pageHeader(c.series, s.title, s.subtitle, s.num, ctx);
 
         if (secOn('passage') && s.passage) {
-            h += '<div class="ps">' + secH('', '독해 지문');
+            h += '<div class="ps">' + secH('', '독해 지문', 'passage');
             var paras = s.passage.text.split('\n\n');
             h += '<div class="psg">';
             h += '<div style="font-weight:600;font-size:12px;margin-bottom:8px;color:var(--ac)">' + s.passage.title + '</div>';
@@ -1860,7 +2095,7 @@
 
         if (secOn('vocab')) {
             var solo = s.vocab.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '어휘 정리');
+            h += '<div class="ps">' + secH('', '어휘 정리', 'vocab');
             h += '<div class="vg">';
             s.vocab.forEach(function (v, i) {
                 h += '<div class="vi' + solo + '" data-crud-type="vocab" data-crud-idx="' + i + '"><div class="vi__t"' + E + '>' + v.term + '</div><div class="vi__d"' + E + '>' + v.def + '</div>';
@@ -1872,7 +2107,7 @@
         if (secOn('structure')) {
             var sq = ensureArray(s, '_structure', 2, ITEM_FACTORIES['structure-q']);
             var solo = sq.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '문장 구조 분석');
+            h += '<div class="ps">' + secH('', '문장 구조 분석', 'structure');
             sq.forEach(function (item, i) {
                 h += '<div class="prb' + solo + '" data-crud-type="structure-q" data-crud-idx="' + i + '">';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -1886,7 +2121,7 @@
         if (secOn('translate')) {
             var tr = ensureArray(s, '_translate', 3, ITEM_FACTORIES.translate);
             var solo = tr.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '해석 연습');
+            h += '<div class="ps">' + secH('', '해석 연습', 'translate');
             tr.forEach(function (item, i) {
                 h += '<div class="prb' + solo + '" data-crud-type="translate" data-crud-idx="' + i + '">';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -1899,7 +2134,7 @@
 
         if (secOn('questions') && s.questions) {
             var solo = s.questions.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '독해 문제');
+            h += '<div class="ps">' + secH('', '독해 문제', 'questions');
             s.questions.forEach(function (q, i) {
                 h += '<div data-crud-type="questions" data-crud-idx="' + i + '"' + solo + ' style="position:relative">';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -1911,7 +2146,7 @@
         if (secOn('truefalse')) {
             var tf = ensureArray(s, '_truefalse', 3, ITEM_FACTORIES.truefalse);
             var solo = tf.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', 'True / False');
+            h += '<div class="ps">' + secH('', 'True / False', 'truefalse');
             tf.forEach(function (item, i) {
                 h += '<div class="prb' + solo + '" data-crud-type="truefalse" data-crud-idx="' + i + '">';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -1925,7 +2160,7 @@
         if (secOn('fillblank')) {
             var fb = ensureArray(s, '_fillblank', 3, function () { return { q: '지문 속 핵심 어휘를 빈칸으로. _______' }; });
             var solo = fb.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '빈칸 채우기');
+            h += '<div class="ps">' + secH('', '빈칸 채우기', 'fillblank');
             fb.forEach(function (item, i) {
                 h += '<div class="prb' + solo + '" data-crud-type="fillblank" data-crud-idx="' + i + '">';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -1938,7 +2173,7 @@
 
         if (secOn('summarize')) {
             var sc = ensureLineCount(s, '_summarize');
-            h += '<div class="ps">' + secH('', '요약하기');
+            h += '<div class="ps">' + secH('', '요약하기', 'summarize');
             h += '<div style="font-size:11px;color:var(--t3);margin-bottom:8px">본문의 핵심 내용을 자신의 말로 요약해보세요.</div>';
             var sl = '';
             for (var sli = 0; sli < sc; sli++) sl += '<div class="wl wl--t"></div>';
@@ -1947,7 +2182,7 @@
 
         if (secOn('opinion')) {
             var oc = ensureLineCount(s, '_opinion');
-            h += '<div class="ps">' + secH('', '의견 쓰기');
+            h += '<div class="ps">' + secH('', '의견 쓰기', 'opinion');
             h += '<div style="font-size:11px;color:var(--t3);margin-bottom:8px">주제에 대한 자신의 생각을 써보세요.</div>';
             var ol = '';
             for (var oli = 0; oli < oc; oli++) ol += '<div class="wl wl--t"></div>';
@@ -1957,7 +2192,7 @@
         if (secOn('homework')) {
             var hw = ensureArray(s, '_homework', 3, ITEM_FACTORIES.homework);
             var solo = hw.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '숙제');
+            h += '<div class="ps">' + secH('', '숙제', 'homework');
             h += '<ul class="hwl">';
             hw.forEach(function (item, i) {
                 h += '<li' + solo + ' data-crud-type="homework" data-crud-idx="' + i + '"><div class="hw__n">' + (i + 1) + '</div><div><div class="hw__t"' + E + '>' + item.title + '</div><div class="hw__d"' + E + '>' + item.desc + '</div></div>';
@@ -1967,14 +2202,14 @@
         }
 
         if (secOn('summary')) {
-            h += '<div class="ps">' + secH('', '오늘의 요약');
+            h += '<div class="ps">' + secH('', '오늘의 요약', 'summary');
             h += '<div class="cb"><div class="cb__t"' + E + '>오늘 배운 핵심</div>';
             h += '<div class="cb__b"' + E + '>• 핵심 포인트 1\n• 핵심 포인트 2</div></div></div>';
         }
 
         if (secOn('memo')) {
             var mc = ensureLineCount(s, '_memo');
-            h += '<div class="ps">' + secH('', '메모란');
+            h += '<div class="ps">' + secH('', '메모란', 'memo');
             var ml = '';
             for (var mli = 0; mli < mc; mli++) ml += '<div class="wl wl--t"></div>';
             h += '<div>' + ml + '</div>' + crudLines('memo', mc) + '</div>';
@@ -1988,13 +2223,13 @@
         var h = pageHeader(c.series, s.title, s.subtitle, s.num, ctx);
 
         if (secOn('rule')) {
-            h += '<div class="ps">' + secH('', '핵심 개념');
+            h += '<div class="ps">' + secH('', '핵심 개념', 'rule');
             h += '<div class="cb"><div class="cb__t">' + s.concept.title + '</div><div class="cb__b"' + E + '>' + s.concept.body + '</div></div></div>';
         }
 
         if (secOn('examples') && s.table) {
             var solo = s.table.rows.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '정리표');
+            h += '<div class="ps">' + secH('', '정리표', 'examples');
             h += '<table class="ptb"><tr>' + s.table.headers.map(function (hd) { return '<th>' + hd + '</th>'; }).join('') + '</tr>';
             s.table.rows.forEach(function (r, i) {
                 h += '<tr' + solo + ' data-crud-type="table-rows" data-crud-idx="' + i + '">' + r.map(function (c) { return '<td' + E + '>' + c + '</td>'; }).join('');
@@ -2004,7 +2239,7 @@
         }
 
         if (secOn('examples') && s.examples) {
-            h += '<div class="ps">' + secH('', '예문');
+            h += '<div class="ps">' + secH('', '예문', 'examples');
             h += '<div class="cb" style="padding:0;overflow:hidden">';
             s.examples.forEach(function (ex, i) {
                 h += '<div style="padding:10px 14px;border-bottom:1px solid var(--bd2)"><div style="font-size:12px;margin-bottom:2px"' + E + '>' + (i + 1) + '. ' + ex.en + '</div><div style="font-size:10px;color:var(--t3)">&nbsp;&nbsp;→ ' + ex.note + '</div></div>';
@@ -2013,7 +2248,7 @@
         }
 
         if (secOn('compare')) {
-            h += '<div class="ps">' + secH('', '비교 정리');
+            h += '<div class="ps">' + secH('', '비교 정리', 'compare');
             h += '<div class="scs">';
             h += '<div class="sc"><div class="sc__n">A</div><div class="sc__t"' + E + '>표현 A</div><div class="sc__p"' + E + '>설명</div></div>';
             h += '<div class="sc"><div class="sc__n">B</div><div class="sc__t"' + E + '>표현 B</div><div class="sc__p"' + E + '>설명</div></div>';
@@ -2021,13 +2256,13 @@
         }
 
         if (secOn('exceptions')) {
-            h += '<div class="ps">' + secH('', '예외·주의사항');
+            h += '<div class="ps">' + secH('', '예외·주의사항', 'exceptions');
             h += '<div class="cb" style="border-left-color:#f5a623"><div class="cb__t" style="color:#f5a623"' + E + '>주의</div>';
             h += '<div class="cb__b"' + E + '>예외 케이스를 정리하세요.</div></div></div>';
         }
 
         if (secOn('fillblank')) {
-            h += '<div class="ps">' + secH('', '빈칸 채우기');
+            h += '<div class="ps">' + secH('', '빈칸 채우기', 'fillblank');
             if (s.problems) {
                 var solo = s.problems.length <= 1 ? ' crud-solo' : '';
                 s.problems.forEach(function (q, i) {
@@ -2054,7 +2289,7 @@
         if (secOn('correct')) {
             var cr = ensureArray(s, '_correct', 3, ITEM_FACTORIES.correct);
             var solo = cr.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '오류 수정');
+            h += '<div class="ps">' + secH('', '오류 수정', 'correct');
             h += '<div class="cb" style="padding:0;overflow:hidden">';
             cr.forEach(function (item, i) {
                 h += '<div style="padding:10px 14px;border-bottom:1px solid var(--bd2);display:flex;gap:12px;align-items:center;position:relative"' + solo + ' data-crud-type="correct" data-crud-idx="' + i + '">';
@@ -2071,7 +2306,7 @@
         if (secOn('writing')) {
             var wr = ensureArray(s, '_writing', 3, function () { return { q: '배운 문법으로 문장을 만드세요.' }; });
             var solo = wr.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '문장 만들기');
+            h += '<div class="ps">' + secH('', '문장 만들기', 'writing');
             wr.forEach(function (item, i) {
                 h += '<div class="prb' + solo + '" data-crud-type="writing-prb" data-crud-idx="' + i + '">';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -2085,7 +2320,7 @@
         if (secOn('choice')) {
             var ch = ensureArray(s, '_choice', 2, ITEM_FACTORIES.choice);
             var solo = ch.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '객관식 문제');
+            h += '<div class="ps">' + secH('', '객관식 문제', 'choice');
             ch.forEach(function (item, i) {
                 h += '<div class="prb' + solo + '" data-crud-type="choice" data-crud-idx="' + i + '">';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -2102,7 +2337,7 @@
         if (secOn('transform')) {
             var tf = ensureArray(s, '_transform', 3, ITEM_FACTORIES.transform);
             var solo = tf.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '문장 변환');
+            h += '<div class="ps">' + secH('', '문장 변환', 'transform');
             tf.forEach(function (item, i) {
                 h += '<div class="prb' + solo + '" data-crud-type="transform" data-crud-idx="' + i + '">';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -2116,7 +2351,7 @@
         if (secOn('homework')) {
             var hw = ensureArray(s, '_homework', 3, ITEM_FACTORIES.homework);
             var solo = hw.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '숙제');
+            h += '<div class="ps">' + secH('', '숙제', 'homework');
             h += '<ul class="hwl">';
             hw.forEach(function (item, i) {
                 h += '<li' + solo + ' data-crud-type="homework" data-crud-idx="' + i + '"><div class="hw__n">' + (i + 1) + '</div><div><div class="hw__t"' + E + '>' + item.title + '</div><div class="hw__d"' + E + '>' + item.desc + '</div></div>';
@@ -2126,13 +2361,13 @@
         }
 
         if (secOn('summary')) {
-            h += '<div class="ps">' + secH('', '오늘의 요약');
+            h += '<div class="ps">' + secH('', '오늘의 요약', 'summary');
             h += '<div class="cb"><div class="cb__t"' + E + '>핵심 문법 한줄 정리</div>';
             h += '<div class="cb__b"' + E + '>• 핵심 포인트</div></div></div>';
         }
 
         if (secOn('comment')) {
-            h += '<div class="ps">' + secH('', '선생님 코멘트');
+            h += '<div class="ps">' + secH('', '선생님 코멘트', 'comment');
             h += '<div class="cb" style="border-left-color:#1d8a5e"><div class="cb__t" style="color:#1d8a5e"' + E + '>피드백</div>';
             h += '<div class="cb__b"' + E + '>학생에 대한 피드백을 작성해주세요.</div></div></div>';
         }
@@ -2146,36 +2381,36 @@
 
         // -- 학습 섹션 --
         if (secOn('concept') && s.concept) {
-            h += '<div class="ps">' + secH('', '핵심 개념');
+            h += '<div class="ps">' + secH('', '핵심 개념', 'concept');
             var body = s.concept.body.split('\n').map(function (l) { return '<div>' + l + '</div>'; }).join('');
             h += '<div class="cb"><div class="cb__t">' + s.concept.title + '</div><div class="cb__b"' + E + '>' + body + '</div></div></div>';
         }
 
         if (secOn('strategy')) {
-            h += '<div class="ps">' + secH('', '풀이 전략');
+            h += '<div class="ps">' + secH('', '풀이 전략', 'strategy');
             h += '<div class="cb"><div class="cb__t"' + E + '>문제 유형별 접근법</div>';
             h += '<div class="cb__b"' + E + '>• 전략 1: ...\n• 전략 2: ...\n• 전략 3: ...</div></div></div>';
         }
 
         if (secOn('formula')) {
-            h += '<div class="ps">' + secH('', '공식 정리');
+            h += '<div class="ps">' + secH('', '공식 정리', 'formula');
             h += '<div class="cb" style="text-align:center;padding:16px;border:2px solid var(--ac)">';
             h += '<div class="cb__b" style="font-size:14px;font-weight:700"' + E + '>공식을 입력하세요</div></div></div>';
         }
 
         if (secOn('proof')) {
-            h += '<div class="ps">' + secH('', '증명');
+            h += '<div class="ps">' + secH('', '증명', 'proof');
             h += '<div class="cb"><div class="cb__t"' + E + '>정리명</div>';
             h += '<div class="cb__b"' + E + '>증명 과정을 작성하세요.</div></div></div>';
         }
 
         if (secOn('visual')) {
-            h += '<div class="ps">' + secH('', '그림·도식');
+            h += '<div class="ps">' + secH('', '그림·도식', 'visual');
             h += '<div style="height:140px;border:1.5px dashed var(--bd);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--t4);font-size:11px"' + E + '>그래프 / 도형 영역</div></div>';
         }
 
         if (secOn('tip')) {
-            h += '<div class="ps">' + secH('', '풀이 팁');
+            h += '<div class="ps">' + secH('', '풀이 팁', 'tip');
             h += '<div class="cb" style="border-left-color:#f5a623"><div class="cb__t" style="color:#f5a623"' + E + '>TIP</div>';
             h += '<div class="cb__b"' + E + '>풀이 팁을 작성하세요.</div></div></div>';
         }
@@ -2184,7 +2419,7 @@
         if (secOn('example')) {
             var ex = ensureArray(s, '_exampleSteps', 3, ITEM_FACTORIES['example-steps']);
             var solo = ex.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '풀이 예제');
+            h += '<div class="ps">' + secH('', '풀이 예제', 'example');
             h += '<div class="cb" style="padding:0;overflow:hidden">';
             ex.forEach(function (item, i) {
                 h += '<div style="padding:10px 14px;border-bottom:1px solid var(--bd2);display:flex;gap:10px;position:relative"' + solo + ' data-crud-type="example-steps" data-crud-idx="' + i + '">';
@@ -2197,7 +2432,7 @@
 
         if (secOn('practice') && s.problems) {
             var solo = s.problems.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '연습 문제');
+            h += '<div class="ps">' + secH('', '연습 문제', 'practice');
             s.problems.forEach(function (q, i) {
                 h += '<div data-crud-type="problems" data-crud-idx="' + i + '"' + solo + ' style="position:relative">';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -2209,7 +2444,7 @@
         if (secOn('guided')) {
             var gd = ensureArray(s, '_guided', 3, ITEM_FACTORIES.guided);
             var solo = gd.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '유도 풀이');
+            h += '<div class="ps">' + secH('', '유도 풀이', 'guided');
             gd.forEach(function (item, i) {
                 h += '<div class="prb' + solo + '" data-crud-type="guided" data-crud-idx="' + i + '">';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -2223,7 +2458,7 @@
         if (secOn('word')) {
             var wp = ensureArray(s, '_wordProb', 2, ITEM_FACTORIES['word-prb']);
             var solo = wp.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '서술형 문제');
+            h += '<div class="ps">' + secH('', '서술형 문제', 'word');
             wp.forEach(function (item, i) {
                 h += '<div class="prb' + solo + '" data-crud-type="word-prb" data-crud-idx="' + i + '">';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -2235,7 +2470,7 @@
         }
 
         if (secOn('challenge')) {
-            h += '<div class="ps">' + secH('', '도전 문제');
+            h += '<div class="ps">' + secH('', '도전 문제', 'challenge');
             h += '<div class="prb"><div class="prb__h"><div class="prb__n">★</div>';
             h += '<div class="prb__q"' + E + '>최고 난이도 문제를 입력하세요.</div></div>';
             h += '<div class="prb__a"' + E + '>풀이 / 답</div></div></div>';
@@ -2244,7 +2479,7 @@
         if (secOn('mock')) {
             var mk = ensureArray(s, '_mock', 3, ITEM_FACTORIES.mock);
             var solo = mk.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '실전 모의');
+            h += '<div class="ps">' + secH('', '실전 모의', 'mock');
             mk.forEach(function (item, i) {
                 h += '<div class="prb' + solo + '" data-crud-type="mock" data-crud-idx="' + i + '">';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -2258,7 +2493,7 @@
         if (secOn('speed')) {
             var sp = ensureArray(s, '_speed', 4, ITEM_FACTORIES.speed);
             var solo = sp.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '시간 측정 연습');
+            h += '<div class="ps">' + secH('', '시간 측정 연습', 'speed');
             h += '<div style="font-size:11px;color:var(--t3);margin-bottom:8px">제한 시간: ___분</div>';
             sp.forEach(function (item, i) {
                 h += '<div class="prb' + solo + '" data-crud-type="speed" data-crud-idx="' + i + '">';
@@ -2273,7 +2508,7 @@
         if (secOn('mistake')) {
             var mm = ensureArray(s, '_mistakeMath', 3, ITEM_FACTORIES['mistake-math']);
             var solo = mm.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '오답 노트');
+            h += '<div class="ps">' + secH('', '오답 노트', 'mistake');
             h += '<div class="cb" style="padding:0;overflow:hidden">';
             mm.forEach(function (item, i) {
                 h += '<div style="padding:10px 14px;border-bottom:1px solid var(--bd2);position:relative"' + solo + ' data-crud-type="mistake-math" data-crud-idx="' + i + '">';
@@ -2287,7 +2522,7 @@
         if (secOn('review')) {
             var rv = ensureArray(s, '_review', 3, ITEM_FACTORIES['review-rows']);
             var solo = rv.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '오답 복기');
+            h += '<div class="ps">' + secH('', '오답 복기', 'review');
             h += '<table class="ptb"><tr><th style="width:8%">번호</th><th style="width:42%">틀린 부분</th><th style="width:50%">수정·복기</th></tr>';
             rv.forEach(function (item, i) {
                 h += '<tr' + solo + ' data-crud-type="review-rows" data-crud-idx="' + i + '"><td>' + (i + 1) + '</td><td' + E + '>' + (item.wrong || '') + '</td><td' + E + '>' + (item.fix || '') + '</td>';
@@ -2300,7 +2535,7 @@
         if (secOn('homework')) {
             var hw = ensureArray(s, '_homework', 3, ITEM_FACTORIES.homework);
             var solo = hw.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '숙제');
+            h += '<div class="ps">' + secH('', '숙제', 'homework');
             h += '<ul class="hwl">';
             hw.forEach(function (item, i) {
                 h += '<li' + solo + ' data-crud-type="homework" data-crud-idx="' + i + '"><div class="hw__n">' + (i + 1) + '</div><div><div class="hw__t"' + E + '>' + item.title + '</div><div class="hw__d"' + E + '>' + item.desc + '</div></div>';
@@ -2310,21 +2545,21 @@
         }
 
         if (secOn('summary')) {
-            h += '<div class="ps">' + secH('', '오늘의 요약');
+            h += '<div class="ps">' + secH('', '오늘의 요약', 'summary');
             h += '<div class="cb"><div class="cb__t"' + E + '>오늘 배운 핵심</div>';
             h += '<div class="cb__b"' + E + '>• 핵심 포인트 1\n• 핵심 포인트 2\n• 핵심 포인트 3</div></div></div>';
         }
 
         if (secOn('memo')) {
             var mc = ensureLineCount(s, '_memo');
-            h += '<div class="ps">' + secH('', '풀이 메모');
+            h += '<div class="ps">' + secH('', '풀이 메모', 'memo');
             var ml = '';
             for (var mli = 0; mli < mc; mli++) ml += '<div class="wl wl--t"></div>';
             h += '<div>' + ml + '</div>' + crudLines('memo', mc) + '</div>';
         }
 
         if (secOn('comment')) {
-            h += '<div class="ps">' + secH('', '선생님 코멘트');
+            h += '<div class="ps">' + secH('', '선생님 코멘트', 'comment');
             h += '<div class="cb" style="border-left-color:#1d8a5e"><div class="cb__t" style="color:#1d8a5e"' + E + '>피드백</div>';
             h += '<div class="cb__b"' + E + '>학생에 대한 피드백을 작성해주세요.</div></div></div>';
         }
@@ -2341,7 +2576,7 @@
         // ======= 문학 =======
         if (krType === 'literature') {
             if (secOn('text') && s.poem) {
-                h += '<div class="ps">' + secH('', '작품 본문');
+                h += '<div class="ps">' + secH('', '작품 본문', 'text');
                 var lines = s.poem.text.split('\n').map(function (l) { return l === '' ? '<br>' : l; }).join('<br>');
                 h += '<div class="psg" style="text-align:center;font-family:var(--kr);font-size:14px;line-height:2.2">';
                 h += '<div style="font-weight:700;font-size:15px;margin-bottom:12px;color:var(--ac)">' + s.poem.title + '</div>';
@@ -2351,14 +2586,14 @@
             }
 
             if (secOn('background')) {
-                h += '<div class="ps">' + secH('', '작품 배경');
+                h += '<div class="ps">' + secH('', '작품 배경', 'background');
                 h += '<div class="cb"><div class="cb__t"' + E + '>작가·시대·장르</div>';
                 h += '<div class="cb__b"' + E + '>작품의 배경 정보를 입력하세요.</div></div></div>';
             }
 
             if (secOn('analysis') && s.analysis) {
                 var solo = s.analysis.length <= 1 ? ' crud-solo' : '';
-                h += '<div class="ps">' + secH('', '작품 분석');
+                h += '<div class="ps">' + secH('', '작품 분석', 'analysis');
                 h += '<table class="ptb"><tr><th style="width:25%">항목</th><th>내용</th></tr>';
                 s.analysis.forEach(function (r, i) {
                     h += '<tr' + solo + ' data-crud-type="analysis" data-crud-idx="' + i + '"><td style="font-weight:600"' + E + '>' + r[0] + '</td><td' + E + '>' + (r[1] || '<span style="color:var(--t4);font-size:10px">클릭하여 작성</span>') + '</td>';
@@ -2370,7 +2605,7 @@
             if (secOn('vocab')) {
                 var vocabArr = s.vocab || ensureArray(s, 'vocab', 4, ITEM_FACTORIES.vocab);
                 var solo = vocabArr.length <= 1 ? ' crud-solo' : '';
-                h += '<div class="ps">' + secH('', '어휘·어구');
+                h += '<div class="ps">' + secH('', '어휘·어구', 'vocab');
                 h += '<div class="vg">';
                 vocabArr.forEach(function (v, i) {
                     h += '<div class="vi' + solo + '" data-crud-type="vocab" data-crud-idx="' + i + '"><div class="vi__t"' + E + '>' + v.term + '</div><div class="vi__d"' + E + '>' + v.def + '</div>';
@@ -2381,7 +2616,7 @@
 
             if (secOn('questions') && s.questions) {
                 var solo = s.questions.length <= 1 ? ' crud-solo' : '';
-                h += '<div class="ps">' + secH('', '감상 문제');
+                h += '<div class="ps">' + secH('', '감상 문제', 'questions');
                 s.questions.forEach(function (q, i) {
                     h += '<div data-crud-type="questions" data-crud-idx="' + i + '"' + solo + ' style="position:relative">';
                     h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -2393,7 +2628,7 @@
             if (secOn('compare')) {
                 var cmp = ensureArray(s, '_compareRows', 3, function () { return { aspect: '', a: '', b: '' }; });
                 var solo = cmp.length <= 1 ? ' crud-solo' : '';
-                h += '<div class="ps">' + secH('', '작품 비교');
+                h += '<div class="ps">' + secH('', '작품 비교', 'compare');
                 h += '<table class="ptb"><tr><th style="width:20%">항목</th><th style="width:40%">작품 A</th><th style="width:40%">작품 B</th></tr>';
                 var defaultAspects = ['주제', '화자/시점', '표현 기법'];
                 cmp.forEach(function (item, i) {
@@ -2405,7 +2640,7 @@
 
             if (secOn('writing')) {
                 var wc = ensureLineCount(s, '_writingLines');
-                h += '<div class="ps">' + secH('', '감상문 쓰기');
+                h += '<div class="ps">' + secH('', '감상문 쓰기', 'writing');
                 h += '<div style="font-size:11px;color:var(--t3);margin-bottom:8px">' + (s.writingPrompt || '작품을 읽고 자신의 감상을 자유롭게 써보세요.') + '</div>';
                 var wl = '';
                 for (var wli = 0; wli < wc; wli++) wl += '<div class="wl wl--t"></div>';
@@ -2416,7 +2651,7 @@
         // ======= 문법 (grammar-kr) =======
         if (krType === 'grammar-kr') {
             if (secOn('rule')) {
-                h += '<div class="ps">' + secH('', '문법 규칙');
+                h += '<div class="ps">' + secH('', '문법 규칙', 'rule');
                 h += '<div class="cb"><div class="cb__t"' + E + '>핵심 문법 규칙</div>';
                 h += '<div class="cb__b"' + E + '>문법 규칙을 정리하세요.</div></div></div>';
             }
@@ -2424,7 +2659,7 @@
             if (secOn('examples')) {
                 var ekr = ensureArray(s, '_examplesKr', 3, ITEM_FACTORIES['examples-kr']);
                 var solo = ekr.length <= 1 ? ' crud-solo' : '';
-                h += '<div class="ps">' + secH('', '예시');
+                h += '<div class="ps">' + secH('', '예시', 'examples');
                 h += '<div class="cb" style="padding:0;overflow:hidden">';
                 ekr.forEach(function (item, i) {
                     h += '<div style="padding:10px 14px;border-bottom:1px solid var(--bd2);position:relative"' + solo + ' data-crud-type="examples-kr" data-crud-idx="' + i + '">';
@@ -2436,7 +2671,7 @@
             }
 
             if (secOn('compare')) {
-                h += '<div class="ps">' + secH('', '혼동 구분');
+                h += '<div class="ps">' + secH('', '혼동 구분', 'compare');
                 h += '<div class="scs">';
                 h += '<div class="sc"><div class="sc__n">A</div><div class="sc__t"' + E + '>표현 A</div><div class="sc__p"' + E + '>사용법 설명</div></div>';
                 h += '<div class="sc"><div class="sc__n">B</div><div class="sc__t"' + E + '>표현 B</div><div class="sc__p"' + E + '>사용법 설명</div></div>';
@@ -2444,7 +2679,7 @@
             }
 
             if (secOn('exceptions')) {
-                h += '<div class="ps">' + secH('', '예외·주의');
+                h += '<div class="ps">' + secH('', '예외·주의', 'exceptions');
                 h += '<div class="cb" style="border-left-color:#f5a623"><div class="cb__t" style="color:#f5a623"' + E + '>주의사항</div>';
                 h += '<div class="cb__b"' + E + '>불규칙·예외 케이스를 정리하세요.</div></div></div>';
             }
@@ -2452,7 +2687,7 @@
             if (secOn('fillblank')) {
                 var fb = ensureArray(s, '_fillblank', 3, function () { return { q: '문장에서 알맞은 표현을 채우세요. _______' }; });
                 var solo = fb.length <= 1 ? ' crud-solo' : '';
-                h += '<div class="ps">' + secH('', '빈칸 채우기');
+                h += '<div class="ps">' + secH('', '빈칸 채우기', 'fillblank');
                 fb.forEach(function (item, i) {
                     h += '<div class="prb' + solo + '" data-crud-type="fillblank" data-crud-idx="' + i + '">';
                     h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -2466,7 +2701,7 @@
             if (secOn('correct')) {
                 var cr = ensureArray(s, '_correct', 3, ITEM_FACTORIES.correct);
                 var solo = cr.length <= 1 ? ' crud-solo' : '';
-                h += '<div class="ps">' + secH('', '맞춤법 교정');
+                h += '<div class="ps">' + secH('', '맞춤법 교정', 'correct');
                 h += '<div class="cb" style="padding:0;overflow:hidden">';
                 cr.forEach(function (item, i) {
                     h += '<div style="padding:10px 14px;border-bottom:1px solid var(--bd2);display:flex;gap:12px;align-items:center;position:relative"' + solo + ' data-crud-type="correct" data-crud-idx="' + i + '">';
@@ -2483,7 +2718,7 @@
             if (secOn('classify')) {
                 var cl = ensureArray(s, '_classify', 4, ITEM_FACTORIES['classify-rows']);
                 var solo = cl.length <= 1 ? ' crud-solo' : '';
-                h += '<div class="ps">' + secH('', '분류하기');
+                h += '<div class="ps">' + secH('', '분류하기', 'classify');
                 h += '<table class="ptb"><tr><th>단어/표현</th><th>품사/문장성분</th><th>설명</th></tr>';
                 cl.forEach(function (item, i) {
                     h += '<tr' + solo + ' data-crud-type="classify-rows" data-crud-idx="' + i + '"><td' + E + '>' + (item.word || '') + '</td><td' + E + '>' + (item.type || '') + '</td><td' + E + '>' + (item.note || '') + '</td>';
@@ -2495,7 +2730,7 @@
             if (secOn('choice')) {
                 var ch = ensureArray(s, '_choice', 2, ITEM_FACTORIES.choice);
                 var solo = ch.length <= 1 ? ' crud-solo' : '';
-                h += '<div class="ps">' + secH('', '객관식 문제');
+                h += '<div class="ps">' + secH('', '객관식 문제', 'choice');
                 ch.forEach(function (item, i) {
                     h += '<div class="prb' + solo + '" data-crud-type="choice" data-crud-idx="' + i + '">';
                     h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
@@ -2513,13 +2748,13 @@
         // ======= 작문 (writing-kr) =======
         if (krType === 'writing-kr') {
             if (secOn('theory')) {
-                h += '<div class="ps">' + secH('', '작문 이론');
+                h += '<div class="ps">' + secH('', '작문 이론', 'theory');
                 h += '<div class="cb"><div class="cb__t"' + E + '>글쓰기 원칙</div>';
                 h += '<div class="cb__b"' + E + '>작문 이론을 정리하세요.</div></div></div>';
             }
 
             if (secOn('structure')) {
-                h += '<div class="ps">' + secH('', '글 구조');
+                h += '<div class="ps">' + secH('', '글 구조', 'structure');
                 h += '<div class="cb" style="padding:0;overflow:hidden">';
                 var parts = ['서론', '본론', '결론'];
                 parts.forEach(function (p, i) {
@@ -2531,14 +2766,14 @@
             }
 
             if (secOn('sample')) {
-                h += '<div class="ps">' + secH('', '모범 글');
+                h += '<div class="ps">' + secH('', '모범 글', 'sample');
                 h += '<div class="psg"><div' + E + '>모범 글을 입력하세요. 잘 쓴 글의 예시를 보여주세요.</div></div></div>';
             }
 
             if (secOn('vocab')) {
                 var vocabArr = s.vocab || ensureArray(s, 'vocab', 4, ITEM_FACTORIES.vocab);
                 var solo = vocabArr.length <= 1 ? ' crud-solo' : '';
-                h += '<div class="ps">' + secH('', '표현·어휘');
+                h += '<div class="ps">' + secH('', '표현·어휘', 'vocab');
                 h += '<div class="vg">';
                 vocabArr.forEach(function (v, i) {
                     h += '<div class="vi' + solo + '" data-crud-type="vocab" data-crud-idx="' + i + '"><div class="vi__t"' + E + '>' + v.term + '</div><div class="vi__d"' + E + '>' + v.def + '</div>';
@@ -2553,7 +2788,7 @@
                     return { part: names[i] || '', content: '' };
                 });
                 var solo = ol.length <= 1 ? ' crud-solo' : '';
-                h += '<div class="ps">' + secH('', '개요 작성');
+                h += '<div class="ps">' + secH('', '개요 작성', 'outline');
                 h += '<table class="ptb"><tr><th style="width:20%">단락</th><th>핵심 내용</th></tr>';
                 ol.forEach(function (item, i) {
                     h += '<tr' + solo + ' data-crud-type="outline-rows" data-crud-idx="' + i + '"><td style="font-weight:600"' + E + '>' + (item.part || '') + '</td><td' + E + '>' + (item.content || '') + '</td>';
@@ -2564,7 +2799,7 @@
 
             if (secOn('draft')) {
                 var dc = ensureLineCount(s, '_draft');
-                h += '<div class="ps">' + secH('', '초고 쓰기');
+                h += '<div class="ps">' + secH('', '초고 쓰기', 'draft');
                 h += '<div style="font-size:11px;color:var(--t3);margin-bottom:8px">아래에 글을 작성해보세요.</div>';
                 var dl = '';
                 for (var dli = 0; dli < dc; dli++) dl += '<div class="wl wl--t"></div>';
@@ -2574,7 +2809,7 @@
             if (secOn('revise')) {
                 var rv = ensureArray(s, '_revise', 3, ITEM_FACTORIES['revise-rows']);
                 var solo = rv.length <= 1 ? ' crud-solo' : '';
-                h += '<div class="ps">' + secH('', '퇴고 연습');
+                h += '<div class="ps">' + secH('', '퇴고 연습', 'revise');
                 h += '<table class="ptb"><tr><th style="width:45%">원문</th><th style="width:10%"></th><th style="width:45%">수정</th></tr>';
                 rv.forEach(function (item, i) {
                     h += '<tr' + solo + ' data-crud-type="revise-rows" data-crud-idx="' + i + '"><td' + E + '>' + (item.original || '') + '</td><td style="text-align:center;color:var(--ac)">→</td><td' + E + '>' + (item.revised || '') + '</td>';
@@ -2584,7 +2819,7 @@
             }
 
             if (secOn('peer')) {
-                h += '<div class="ps">' + secH('', '동료 평가');
+                h += '<div class="ps">' + secH('', '동료 평가', 'peer');
                 h += '<table class="ptb"><tr><th style="width:30%">평가 항목</th><th>피드백</th></tr>';
                 var evalItems = ['내용 전달', '문장 구조', '맞춤법·문법'];
                 evalItems.forEach(function (it) {
@@ -2594,7 +2829,7 @@
             }
 
             if (secOn('prompt')) {
-                h += '<div class="ps">' + secH('', '글감 제시');
+                h += '<div class="ps">' + secH('', '글감 제시', 'prompt');
                 h += '<div class="cb" style="border-left-color:#f5a623"><div class="cb__t" style="color:#f5a623"' + E + '>작문 주제</div>';
                 h += '<div class="cb__b"' + E + '>주제 또는 상황을 제시하세요.</div></div></div>';
             }
@@ -2604,7 +2839,7 @@
         if (secOn('homework')) {
             var hw = ensureArray(s, '_homework', 3, ITEM_FACTORIES.homework);
             var solo = hw.length <= 1 ? ' crud-solo' : '';
-            h += '<div class="ps">' + secH('', '숙제');
+            h += '<div class="ps">' + secH('', '숙제', 'homework');
             h += '<ul class="hwl">';
             hw.forEach(function (item, i) {
                 h += '<li' + solo + ' data-crud-type="homework" data-crud-idx="' + i + '"><div class="hw__n">' + (i + 1) + '</div><div><div class="hw__t"' + E + '>' + item.title + '</div><div class="hw__d"' + E + '>' + item.desc + '</div></div>';
@@ -2614,21 +2849,21 @@
         }
 
         if (secOn('summary')) {
-            h += '<div class="ps">' + secH('', '오늘의 요약');
+            h += '<div class="ps">' + secH('', '오늘의 요약', 'summary');
             h += '<div class="cb"><div class="cb__t"' + E + '>오늘 배운 핵심</div>';
             h += '<div class="cb__b"' + E + '>• 핵심 포인트 1\n• 핵심 포인트 2\n• 핵심 포인트 3</div></div></div>';
         }
 
         if (secOn('memo')) {
             var mc = ensureLineCount(s, '_memo');
-            h += '<div class="ps">' + secH('', '메모란');
+            h += '<div class="ps">' + secH('', '메모란', 'memo');
             var ml = '';
             for (var mli = 0; mli < mc; mli++) ml += '<div class="wl wl--t"></div>';
             h += '<div>' + ml + '</div>' + crudLines('memo', mc) + '</div>';
         }
 
         if (secOn('comment')) {
-            h += '<div class="ps">' + secH('', '선생님 코멘트');
+            h += '<div class="ps">' + secH('', '선생님 코멘트', 'comment');
             h += '<div class="cb" style="border-left-color:#1d8a5e"><div class="cb__t" style="color:#1d8a5e"' + E + '>피드백</div>';
             h += '<div class="cb__b"' + E + '>학생에 대한 피드백을 작성해주세요.</div></div></div>';
         }
@@ -2651,17 +2886,17 @@
             h += '<img class="p-logo" src="' + ctx.logoData + '" alt="로고">';
         }
         h += '<div class="p-header__nav">';
-        h += '<button class="p-nav" id="prevBtn" onclick="window.__go(-1)">←</button>';
+        h += '<button class="p-nav" id="prevBtn" onclick="window.__go(-1)" aria-label="이전 세션">←</button>';
         h += '<div class="p-badge">Session ' + num + '</div>';
-        h += '<button class="p-nav" id="nextBtn" onclick="window.__go(1)">→</button>';
+        h += '<button class="p-nav" id="nextBtn" onclick="window.__go(1)" aria-label="다음 세션">→</button>';
         h += '</div>';
-        if (ctx.teacherName || ctx.studentName || ctx.date) {
-            h += '<div class="p-meta">';
-            if (ctx.date) h += '<div>' + ctx.date + '</div>';
-            if (ctx.teacherName) h += '<div>선생님: <strong>' + esc(ctx.teacherName) + '</strong></div>';
-            if (ctx.studentName) h += '<div>학생: <strong>' + esc(ctx.studentName) + '</strong></div>';
-            h += '</div>';
+        h += '<div class="p-meta">';
+        if (ctx.date) h += '<div>' + ctx.date + '</div>';
+        if (ctx.teacherName) h += '<div>선생님: <strong>' + esc(ctx.teacherName) + '</strong></div>';
+        if (ctx.studentName) {
+            h += '<div>학생: <strong>' + esc(ctx.studentName) + '</strong></div>';
         }
+        h += '</div>';
         h += '</div></div>';
         return h;
     }
@@ -2672,8 +2907,10 @@
         return '<div class="pf"><span>' + left + '</span><span>' + r + '</span></div>';
     }
 
-    function secH(num, name) {
-        return '<div class="psh">' + (num ? '<span class="psh__n">' + num + '</span>' : '') + '<span class="psh__t"' + E + '>' + name + '</span></div>';
+    function secH(num, name, key) {
+        var cn = window.__classnote;
+        var display = (key && cn && cn.sectionNames && cn.sectionNames[key]) ? cn.sectionNames[key] : name;
+        return '<div class="psh">' + (num ? '<span class="psh__n">' + num + '</span>' : '') + '<span class="psh__t"' + E + '>' + display + '</span></div>';
     }
 
     function renderQ(num, item) {
@@ -2890,6 +3127,42 @@
         });
     }
 
+    // B2: Undo support
+    var _undoData = null;
+    var _undoTimer = null;
+    var _undoToast = null;
+    var _undoBtn = null;
+
+    function _showUndoToast() {
+        if (!_undoToast) _undoToast = document.getElementById('undoToast');
+        if (!_undoBtn) {
+            _undoBtn = document.getElementById('undoBtn');
+            if (_undoBtn) {
+                _undoBtn.addEventListener('click', function () {
+                    if (!_undoData) return;
+                    clearTimeout(_undoTimer);
+                    var session = getSession();
+                    if (!session) { _undoData = null; return; }
+                    if (_undoData.lineKey) {
+                        session[_undoData.lineKey] = _undoData.oldVal;
+                    } else {
+                        var arr = resolveArray(session, _undoData.type, _undoData.secIdx);
+                        if (arr) arr.splice(_undoData.itemIdx, 0, _undoData.item);
+                    }
+                    _undoData = null;
+                    if (_undoToast) _undoToast.style.display = 'none';
+                    renderPage();
+                });
+            }
+        }
+        if (_undoToast) _undoToast.style.display = 'flex';
+        clearTimeout(_undoTimer);
+        _undoTimer = setTimeout(function () {
+            _undoData = null;
+            if (_undoToast) _undoToast.style.display = 'none';
+        }, 5000);
+    }
+
     function removeItem(type, itemIdx, secIdx) {
         syncEditablesToSession();
         var session = getSession();
@@ -2902,18 +3175,22 @@
             var lk = resolveLineKey(type);
             ensureLineCount(session, lk);
             if (session[lk] > LINE_MIN) {
+                _undoData = { lineKey: lk, oldVal: session[lk], type: type };
                 session[lk]--;
                 renderPage();
                 sc.scrollTop = scrollY;
+                _showUndoToast();
             }
             return;
         }
 
         var arr = resolveArray(session, type, secIdx);
         if (!arr || arr.length <= 1) return;
-        arr.splice(itemIdx, 1);
+        var removed = arr.splice(itemIdx, 1)[0];
+        _undoData = { type: type, itemIdx: itemIdx, secIdx: secIdx, item: removed };
         renderPage();
         requestAnimationFrame(function () { sc.scrollTop = scrollY; });
+        _showUndoToast();
     }
 
     // =========================================
@@ -2953,7 +3230,14 @@
     }
 
     function getCourse() { return ALL_COURSES.find(function (c) { return c.id === state.courseId; }); }
-    function getSession() { var c = getCourse(); return c ? c.sessions[state.sessionIdx] : null; }
+    function getSession() {
+        var c = getCourse();
+        if (!c || !c.sessions || !c.sessions.length) return null;
+        if (state.sessionIdx < 0 || state.sessionIdx >= c.sessions.length) {
+            state.sessionIdx = Math.max(0, Math.min(state.sessionIdx, c.sessions.length - 1));
+        }
+        return c.sessions[state.sessionIdx] || null;
+    }
     function getCtx() {
         var cn = window.__classnote || {};
         return {
@@ -2970,62 +3254,421 @@
     // =========================================
 
     function renderNav() {
-        var h = '';
-        COURSE_GROUPS.forEach(function (g) {
-            var hasActiveCourse = g.courses.some(function (c) { return c.id === state.courseId; });
-            h += '<div class="ng' + (hasActiveCourse ? ' open' : '') + '" data-group="' + g.id + '">';
-            h += '<div class="ng__hdr"><span class="ng__dot" style="background:' + g.dot + '"></span>' + g.name + '<span class="ng__arrow">▶</span></div>';
-            h += '<div class="ng__body">';
+        var course = getCourse();
+        if (!course) return;
 
-            g.courses.forEach(function (c) {
-                var isActive = c.id === state.courseId;
-                h += '<div class="ns' + (isActive ? ' ns--active' : '') + '" data-course="' + c.id + '">' + c.name + '</div>';
-
-                if (isActive) {
-                    h += '<div class="nss">';
-                    c.sessions.forEach(function (s, i) {
-                        var sActive = i === state.sessionIdx;
-                        h += '<div class="nsi' + (sActive ? ' nsi--active' : '') + '" data-idx="' + i + '">';
-                        h += '<span class="nsi__n">' + s.num + '</span>';
-                        h += '<span class="nsi__t">' + esc(s.title) + '</span>';
-                        h += '</div>';
-                    });
-                    h += '</div>';
+        // Zone 1: Brand header
+        var brandEl = document.getElementById('sbBrand');
+        if (brandEl) {
+            var cn = window.__classnote || {};
+            var bh = '<div class="sb__brand-row">';
+            if (cn.logoData) {
+                bh += '<img class="sb__brand-logo" src="' + cn.logoData + '" alt="">';
+            }
+            bh += '<div class="sb__brand-info">';
+            bh += '<div class="sb__brand-name">' + esc(course.name) + '</div>';
+            bh += '</div></div>';
+            // Tags
+            var subjectLabels = { english: '영어', math: '수학', korean: '국어' };
+            var typeLabels = { conversation: '회화', daily: '일상', reading: '독해', grammar: '문법', basic: '기본', 'advanced-math': '심화', 'problem-solving': '문풀', literature: '문학', 'grammar-kr': '문법', 'writing-kr': '작문' };
+            if (cn.subject || cn.type) {
+                bh += '<div class="sb__brand-tags">';
+                if (cn.subject) bh += '<span class="sb__tag">' + (subjectLabels[cn.subject] || cn.subject) + '</span>';
+                if (cn.type) bh += '<span class="sb__tag">' + (typeLabels[cn.type] || cn.type) + '</span>';
+                if (cn.level) {
+                    var levelLabels = { elementary: '초등', middle: '중등', high: '고등', adult: '성인' };
+                    bh += '<span class="sb__tag">' + (levelLabels[cn.level] || cn.level) + '</span>';
                 }
-            });
+                bh += '</div>';
+            }
+            brandEl.innerHTML = bh;
+        }
 
-            h += '</div></div>';
+        // Session count
+        var countEl = document.getElementById('sessionCount');
+        if (countEl) countEl.textContent = course.sessions.length;
+
+        // Zone 2: Session list
+        var h = '';
+        course.sessions.forEach(function (s, i) {
+            var sActive = i === state.sessionIdx;
+            h += '<div class="nsi' + (sActive ? ' nsi--active' : '') + '" data-idx="' + i + '" draggable="true">';
+            h += '<span class="nsi__grip" title="드래그하여 순서 변경">⠿</span>';
+            h += '<span class="nsi__n">' + s.num + '</span>';
+            h += '<input class="nsi__input" value="' + esc(s.title) + '" data-rename-idx="' + i + '" readonly>';
+            h += '<span class="nsi__actions">';
+            h += '<button class="nsi__btn" data-dup-idx="' + i + '" title="세션 복제"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>';
+            if (course.sessions.length > 1) {
+                h += '<button class="nsi__btn nsi__btn--danger" data-del-idx="' + i + '" title="세션 삭제"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+            }
+            h += '</span>';
+            h += '</div>';
         });
 
         els.courseNav.innerHTML = h;
 
-        // Bind group toggles
-        els.courseNav.querySelectorAll('.ng__hdr').forEach(function (hdr) {
-            hdr.addEventListener('click', function () {
-                this.parentElement.classList.toggle('open');
-            });
-        });
-
-        // Bind course clicks
-        els.courseNav.querySelectorAll('.ns').forEach(function (item) {
-            item.addEventListener('click', function (e) {
-                e.stopPropagation();
-                state.courseId = this.getAttribute('data-course');
-                state.sessionIdx = 0;
-                renderNav();
-                renderPage();
-            });
-        });
-
         // Bind session clicks
         els.courseNav.querySelectorAll('.nsi').forEach(function (item) {
             item.addEventListener('click', function (e) {
+                if (e.target.closest('.nsi__actions') || e.target.closest('.nsi__input:not([readonly])')) return;
                 e.stopPropagation();
-                state.sessionIdx = parseInt(this.getAttribute('data-idx'));
+                var newIdx = parseInt(this.getAttribute('data-idx'));
+                if (newIdx === state.sessionIdx) return;
+                if (hasEdited && !confirm('저장하지 않은 변경사항이 있습니다. 이동하시겠습니까?')) return;
+                syncEditablesToSession();
+                hasEdited = false;
+                state.sessionIdx = newIdx;
                 renderNav();
                 renderPage();
             });
         });
+
+        // Bind click to rename (only on active session)
+        els.courseNav.querySelectorAll('.nsi__input').forEach(function (input) {
+            input.addEventListener('click', function (e) {
+                var nsi = this.closest('.nsi');
+                if (!nsi || !nsi.classList.contains('nsi--active')) return;
+                e.stopPropagation();
+                if (this.hasAttribute('readonly')) {
+                    this.removeAttribute('readonly');
+                    this.focus();
+                    this.select();
+                }
+            });
+            input.addEventListener('blur', function () {
+                this.setAttribute('readonly', '');
+                var idx = parseInt(this.getAttribute('data-rename-idx'));
+                var val = this.value.trim();
+                if (val && course.sessions[idx]) {
+                    course.sessions[idx].title = val;
+                    renderPage();
+                    saveCourseToFirestore();
+                }
+            });
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+                if (e.key === 'Escape') {
+                    var idx = parseInt(this.getAttribute('data-rename-idx'));
+                    this.value = course.sessions[idx].title;
+                    this.setAttribute('readonly', '');
+                    this.blur();
+                }
+            });
+        });
+
+        // Bind duplicate session buttons
+        els.courseNav.querySelectorAll('[data-dup-idx]').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var idx = parseInt(this.getAttribute('data-dup-idx'));
+                duplicateSession(state.courseId, idx);
+            });
+        });
+
+        // Bind delete session buttons
+        els.courseNav.querySelectorAll('[data-del-idx]').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var idx = parseInt(this.getAttribute('data-del-idx'));
+                if (!confirm('세션 ' + course.sessions[idx].num + '을(를) 삭제하시겠습니까?')) return;
+                syncEditablesToSession();
+                course.sessions.splice(idx, 1);
+                // Renumber remaining sessions
+                course.sessions.forEach(function (s, i) { s.num = i + 1; });
+                // Adjust active index
+                if (state.sessionIdx >= course.sessions.length) {
+                    state.sessionIdx = course.sessions.length - 1;
+                } else if (state.sessionIdx > idx) {
+                    state.sessionIdx--;
+                }
+                hasEdited = false;
+                renderNav();
+                renderPage();
+                saveCourseToFirestore();
+            });
+        });
+
+        // Drag reorder
+        var dragIdx = null;
+        els.courseNav.querySelectorAll('.nsi').forEach(function (item) {
+            item.addEventListener('dragstart', function (e) {
+                dragIdx = parseInt(this.getAttribute('data-idx'));
+                this.classList.add('nsi--dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+            item.addEventListener('dragend', function () {
+                this.classList.remove('nsi--dragging');
+                els.courseNav.querySelectorAll('.nsi').forEach(function (n) { n.classList.remove('nsi--drag-over'); });
+                dragIdx = null;
+            });
+            item.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                els.courseNav.querySelectorAll('.nsi').forEach(function (n) { n.classList.remove('nsi--drag-over'); });
+                this.classList.add('nsi--drag-over');
+            });
+            item.addEventListener('dragleave', function () {
+                this.classList.remove('nsi--drag-over');
+            });
+            item.addEventListener('drop', function (e) {
+                e.preventDefault();
+                var dropIdx = parseInt(this.getAttribute('data-idx'));
+                if (dragIdx === null || dragIdx === dropIdx) return;
+                syncEditablesToSession();
+                var moved = course.sessions.splice(dragIdx, 1)[0];
+                course.sessions.splice(dropIdx, 0, moved);
+                course.sessions.forEach(function (s, i) { s.num = i + 1; });
+                // Adjust active index
+                if (state.sessionIdx === dragIdx) {
+                    state.sessionIdx = dropIdx;
+                } else if (dragIdx < state.sessionIdx && dropIdx >= state.sessionIdx) {
+                    state.sessionIdx--;
+                } else if (dragIdx > state.sessionIdx && dropIdx <= state.sessionIdx) {
+                    state.sessionIdx++;
+                }
+                hasEdited = false;
+                renderNav();
+                renderPage();
+                saveCourseToFirestore();
+            });
+        });
+
+        // "새 세션" button
+        var addBtn = document.getElementById('addSessionBtn');
+        if (addBtn) {
+            addBtn.onclick = function () {
+                syncEditablesToSession();
+                var lastSession = course.sessions[course.sessions.length - 1];
+                var newSession = JSON.parse(JSON.stringify(lastSession));
+                newSession.num = course.sessions.length + 1;
+                newSession.title = 'Session ' + newSession.num;
+                // Clear content but keep structure
+                clearSessionContent(newSession);
+                course.sessions.push(newSession);
+                state.sessionIdx = course.sessions.length - 1;
+                hasEdited = false;
+                renderNav();
+                renderPage();
+                saveCourseToFirestore();
+            };
+        }
+    }
+
+    // =========================================
+    // SECTION PANEL — sidebar section manager
+    // =========================================
+    function persistSections() {
+        try {
+            var raw = localStorage.getItem('classnote_onboarding');
+            if (raw) {
+                var ob = JSON.parse(raw);
+                var cn = window.__classnote;
+                if (cn) {
+                    ob.sections = cn.sections;
+                    ob.sectionNames = cn.sectionNames || {};
+                    localStorage.setItem('classnote_onboarding', JSON.stringify(ob));
+                }
+            }
+        } catch (e) {}
+    }
+
+    function renderSectionPanel() {
+        var panel = document.getElementById('sectionPanel');
+        if (!panel) return;
+
+        var cn = window.__classnote;
+        if (!cn || !cn.sections || !cn.subject || !cn.type) {
+            panel.innerHTML = '<div style="font-size:11px;color:var(--t4);padding:4px 8px">온보딩 완료 후 표시됩니다</div>';
+            return;
+        }
+
+        var subj = cn.subject;
+        var type = cn.type;
+        var subjSections = TYPE_SECTIONS[subj];
+        if (!subjSections) return;
+        var allSections = subjSections[type];
+        if (!allSections) return;
+
+        // Ensure sectionNames map exists
+        if (!cn.sectionNames) cn.sectionNames = {};
+
+        var catLabels = { learn: '학습', practice: '연습', wrap: '마무리' };
+        var catOrder = ['learn', 'practice', 'wrap'];
+        var groups = { learn: [], practice: [], wrap: [] };
+
+        allSections.forEach(function (s) {
+            var g = groups[s.cat];
+            if (g) g.push(s);
+        });
+
+        var h = '';
+        catOrder.forEach(function (cat) {
+            var items = groups[cat];
+            if (!items.length) return;
+            h += '<div class="sp__cat">';
+            h += '<div class="sp__cat-label">' + catLabels[cat] + '</div>';
+            items.forEach(function (s) {
+                var isOn = cn.sections[s.key] === true;
+                var displayName = cn.sectionNames[s.key] || s.name;
+                h += '<div class="sp__item' + (isOn ? '' : ' sp__item--off') + '" data-sec-key="' + s.key + '">';
+                h += '<span class="sp__dot sp__dot--' + s.cat + '"></span>';
+                h += '<input class="sp__name" value="' + esc(displayName) + '" data-sec-rename="' + s.key + '" title="' + esc(s.desc) + '">';
+                h += '<span class="sp__actions">';
+                h += '<button class="sp__btn" data-sec-toggle="' + s.key + '" title="' + (isOn ? '숨기기' : '표시하기') + '">';
+                if (isOn) {
+                    h += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+                } else {
+                    h += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+                }
+                h += '</button>';
+                if (isOn) {
+                    h += '<button class="sp__btn sp__btn--danger" data-sec-del="' + s.key + '" title="삭제">';
+                    h += '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                    h += '</button>';
+                }
+                h += '</span>';
+                h += '</div>';
+            });
+            h += '</div>';
+        });
+
+        // Add section button (show available off sections)
+        var offSections = allSections.filter(function (s) { return cn.sections[s.key] !== true; });
+        if (offSections.length > 0) {
+            h += '<div style="position:relative" id="spAddWrap">';
+            h += '<button class="sp__add" id="spAddBtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 섹션 추가</button>';
+            h += '</div>';
+        }
+
+        panel.innerHTML = h;
+
+        // Bind toggle clicks
+        panel.querySelectorAll('[data-sec-toggle]').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var key = this.getAttribute('data-sec-toggle');
+                cn.sections[key] = !cn.sections[key];
+                persistSections();
+                renderSectionPanel();
+                renderPage();
+            });
+        });
+
+        // Bind delete (same as toggle off)
+        panel.querySelectorAll('[data-sec-del]').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var key = this.getAttribute('data-sec-del');
+                cn.sections[key] = false;
+                persistSections();
+                renderSectionPanel();
+                renderPage();
+            });
+        });
+
+        // Bind rename (blur saves)
+        panel.querySelectorAll('[data-sec-rename]').forEach(function (input) {
+            input.addEventListener('blur', function () {
+                var key = this.getAttribute('data-sec-rename');
+                var val = this.value.trim();
+                var original = allSections.find(function (s) { return s.key === key; });
+                if (val && original) {
+                    if (val === original.name) {
+                        delete cn.sectionNames[key];
+                    } else {
+                        cn.sectionNames[key] = val;
+                    }
+                    persistSections();
+                    renderPage();
+                }
+            });
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+                if (e.key === 'Escape') {
+                    var key = this.getAttribute('data-sec-rename');
+                    var original = allSections.find(function (s) { return s.key === key; });
+                    this.value = cn.sectionNames[key] || (original ? original.name : '');
+                    this.blur();
+                }
+            });
+        });
+
+        // Bind add section button
+        var addBtn = document.getElementById('spAddBtn');
+        var addWrap = document.getElementById('spAddWrap');
+        if (addBtn && addWrap) {
+            addBtn.addEventListener('click', function () {
+                // Check if dropdown already open
+                var existing = addWrap.querySelector('.sp__dropdown');
+                if (existing) { existing.remove(); return; }
+
+                var dd = document.createElement('div');
+                dd.className = 'sp__dropdown';
+                offSections.forEach(function (s) {
+                    var item = document.createElement('button');
+                    item.className = 'sp__dropdown-item';
+                    item.innerHTML = '<span class="sp__dropdown-item__name">' + esc(s.name) + '</span><span class="sp__dropdown-item__desc">' + esc(s.desc) + '</span>';
+                    item.addEventListener('click', function () {
+                        cn.sections[s.key] = true;
+                        dd.remove();
+                        persistSections();
+                        renderSectionPanel();
+                        renderPage();
+                    });
+                    dd.appendChild(item);
+                });
+                addWrap.appendChild(dd);
+
+                // Close on outside click
+                setTimeout(function () {
+                    document.addEventListener('click', function closeDD(e) {
+                        if (!dd.contains(e.target) && e.target !== addBtn) {
+                            dd.remove();
+                            document.removeEventListener('click', closeDD);
+                        }
+                    });
+                }, 0);
+            });
+        }
+    }
+
+    // Clear editable content from a session (keep section structure)
+    function clearSessionContent(session) {
+        if (!session || !session.sections) return;
+        session.sections.forEach(function (sec) {
+            if (sec.phrases) sec.phrases = sec.phrases.map(function () { return ''; });
+        });
+        // Clear common array fields
+        ['vocab', 'homework', 'quiz', 'notes', 'sentences', 'examples', 'problems'].forEach(function (key) {
+            if (Array.isArray(session[key])) {
+                session[key] = session[key].map(function (item) {
+                    if (typeof item === 'string') return '';
+                    if (typeof item === 'object' && item !== null) {
+                        var copy = {};
+                        Object.keys(item).forEach(function (k) { copy[k] = ''; });
+                        return copy;
+                    }
+                    return item;
+                });
+            }
+        });
+    }
+
+    // A1: Duplicate a session
+    function duplicateSession(courseId, sessionIdx) {
+        var course = ALL_COURSES.find(function (c) { return c.id === courseId; });
+        if (!course || !course.sessions[sessionIdx]) return;
+        syncEditablesToSession();
+        var original = course.sessions[sessionIdx];
+        var copy = JSON.parse(JSON.stringify(original));
+        copy.num = course.sessions.length + 1;
+        copy.title = original.title + ' (복사)';
+        course.sessions.push(copy);
+        state.courseId = courseId;
+        state.sessionIdx = course.sessions.length - 1;
+        renderNav();
+        renderPage();
+        saveCourseToFirestore();
     }
 
     // =========================================
@@ -3054,16 +3697,32 @@
         var globalFit = null;
 
         if (trueHeight > A4_HEIGHT) {
-            var fitLevels = ['fit--1', 'fit--2', 'fit--3'];
-            for (var fi = 0; fi < fitLevels.length; fi++) {
-                pageEl.classList.add(fitLevels[fi]);
-                trueHeight = pageEl.scrollHeight;
-                if (trueHeight <= A4_HEIGHT) { globalFit = fitLevels[fi]; break; }
-                if (fi < fitLevels.length - 1) pageEl.classList.remove(fitLevels[fi]);
-            }
-            if (trueHeight > A4_HEIGHT) {
-                pageEl.classList.remove('fit--1', 'fit--2', 'fit--3');
-                trueHeight = pageEl.scrollHeight;
+            var overflowPct = (trueHeight - A4_HEIGHT) / A4_HEIGHT;
+            // Only try global fit if overflow is modest (≤10%)
+            if (overflowPct <= 0.10) {
+                var fitLevels = ['fit--1', 'fit--2', 'fit--3'];
+                for (var fi = 0; fi < fitLevels.length; fi++) {
+                    pageEl.classList.add(fitLevels[fi]);
+                    trueHeight = pageEl.scrollHeight;
+                    if (trueHeight <= A4_HEIGHT) {
+                        // Check: does fit leave too much whitespace (>8%)?
+                        var wastedPct = (A4_HEIGHT - trueHeight) / A4_HEIGHT;
+                        if (wastedPct > 0.08) {
+                            // Fit shrinks too aggressively — reject it, go multi-page
+                            pageEl.classList.remove(fitLevels[fi]);
+                            trueHeight = pageEl.scrollHeight;
+                            globalFit = null;
+                        } else {
+                            globalFit = fitLevels[fi];
+                        }
+                        break;
+                    }
+                    if (fi < fitLevels.length - 1) pageEl.classList.remove(fitLevels[fi]);
+                }
+                if (trueHeight > A4_HEIGHT) {
+                    pageEl.classList.remove('fit--1', 'fit--2', 'fit--3');
+                    trueHeight = pageEl.scrollHeight;
+                }
             }
         }
 
@@ -3105,11 +3764,14 @@
                 var overflow = (currentH + secH) - limit;
                 var overflowRatio = overflow / (currentH + secH);
 
-                if (overflowRatio <= 0.25) {
+                if (overflowRatio <= 0.08) {
                     var candidateSecs = dist[dist.length - 1].concat([sec]);
                     for (var fl = 1; fl <= 3; fl++) {
                         var fittedH = measurePageAtFit(candidateSecs, fl);
                         if (fittedH <= limit) {
+                            // Reject if fit leaves >8% whitespace
+                            var wasted = (limit - fittedH) / limit;
+                            if (wasted > 0.08) break;
                             pageFitLevel[dist.length - 1] = fl;
                             dist[dist.length - 1].push(sec);
                             currentH = fittedH;
@@ -3295,11 +3957,7 @@
         els.page.style.fontFamily = fontFamily;
 
         // Breadcrumb
-        var groupName = '';
-        COURSE_GROUPS.forEach(function (g) {
-            g.courses.forEach(function (c) { if (c.id === state.courseId) groupName = g.name; });
-        });
-        els.breadcrumb.innerHTML = groupName + ' › ' + course.name + ' › <span>Session ' + session.num + '</span>';
+        els.breadcrumb.innerHTML = course.name + ' › <span>Session ' + session.num + '</span>';
 
         // Nav buttons
         var prev = document.getElementById('prevBtn');
@@ -3320,6 +3978,9 @@
             els.page.style.opacity = '1';
             els.page.style.transform = 'translateY(0)';
         });
+
+        // Update sidebar section panel
+        renderSectionPanel();
     }
 
     window.__go = function (dir) {
@@ -3353,6 +4014,14 @@
         });
     });
 
+    // Collapsible groups
+    document.querySelectorAll('.sb__group-toggle').forEach(function (toggle) {
+        toggle.addEventListener('click', function () {
+            var group = this.closest('.sb__collapsible');
+            if (group) group.classList.toggle('sb__collapsible--closed');
+        });
+    });
+
     // Names & Date
     var debounce;
     function onInputChange() {
@@ -3367,6 +4036,87 @@
     els.teacherName.addEventListener('input', onInputChange);
     els.studentName.addEventListener('input', onInputChange);
     els.sessionDate.addEventListener('change', onInputChange);
+
+    // --- Autosave (every 5s after last edit) ---
+    var autosaveTimer;
+    var autosaveEl = document.getElementById('autosaveStatus');
+    function triggerAutosave() {
+        clearTimeout(autosaveTimer);
+        autosaveTimer = setTimeout(function () {
+            syncEditablesToSession();
+            var course = getCourse();
+            var session = getSession();
+            if (!course || !session) return;
+            try {
+                var key = 'classnote_autosave_' + state.courseId + '_' + state.sessionIdx;
+                localStorage.setItem(key, JSON.stringify({
+                    session: session,
+                    teacherName: state.teacherName,
+                    studentName: state.studentName,
+                    date: state.date,
+                    theme: state.theme,
+                    ts: Date.now()
+                }));
+                // Show saved indicator (only if no Firestore save happening)
+                if (autosaveEl && !currentCourseDocId) {
+                    autosaveEl.textContent = '저장됨';
+                    autosaveEl.classList.add('topbar__autosave--show');
+                    setTimeout(function () {
+                        autosaveEl.classList.remove('topbar__autosave--show');
+                    }, 2000);
+                }
+            } catch (e) {}
+            // Firestore cloud save (debounced separately)
+            saveCourseToFirestore();
+        }, 5000);
+    }
+    document.addEventListener('input', function (e) {
+        if (e.target.closest('.page') || e.target.closest('.cbar') || e.target.closest('.sidebar')) triggerAutosave();
+    });
+
+    // --- beforeunload: 편집 중 탭 닫기 경고 ---
+    var hasEdited = false;
+    document.addEventListener('input', function (e) {
+        if (e.target.closest('.page') || e.target.closest('.cbar') || e.target.closest('.sidebar')) hasEdited = true;
+    });
+    window.addEventListener('beforeunload', function (e) {
+        if (hasEdited) { e.preventDefault(); e.returnValue = ''; }
+    });
+
+    // --- A2: Ctrl+S / Cmd+S instant save ---
+    document.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            clearTimeout(autosaveTimer);
+            syncEditablesToSession();
+            var course = getCourse();
+            var session = getSession();
+            if (!course || !session) return;
+            try {
+                var key = 'classnote_autosave_' + state.courseId + '_' + state.sessionIdx;
+                localStorage.setItem(key, JSON.stringify({
+                    session: session,
+                    teacherName: state.teacherName,
+                    studentName: state.studentName,
+                    date: state.date,
+                    theme: state.theme,
+                    ts: Date.now()
+                }));
+            } catch (ex) {}
+            if (autosaveEl) {
+                autosaveEl.textContent = '저장됨';
+                autosaveEl.classList.add('topbar__autosave--show');
+                setTimeout(function () {
+                    autosaveEl.classList.remove('topbar__autosave--show');
+                }, 2000);
+            }
+        }
+    });
+
+    // --- Global error handler ---
+    window.addEventListener('error', function (e) {
+        console.error('[클래스노트]', e.message, e.filename, e.lineno);
+    });
 
     // CRUD event delegation
     document.addEventListener('click', function (e) {
@@ -3411,18 +4161,198 @@
     // --- Firebase init ---
     var db = null;
     if (typeof firebase !== 'undefined' && typeof CLASSNOTE_FIREBASE !== 'undefined') {
-        firebase.initializeApp(CLASSNOTE_FIREBASE);
+        if (!firebase.apps.length) firebase.initializeApp(CLASSNOTE_FIREBASE);
         db = firebase.firestore();
     }
 
     // --- Slug generator ---
-    function generateSlug() {
+    function generateSlug(len) {
         var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-        var arr = new Uint8Array(6);
+        var n = len || 6;
+        var arr = new Uint8Array(n);
         crypto.getRandomValues(arr);
         var slug = '';
-        for (var i = 0; i < 6; i++) slug += chars[arr[i] % 36];
+        for (var i = 0; i < n; i++) slug += chars[arr[i] % 36];
         return slug;
+    }
+
+    // =========================================
+    // COURSE PERSISTENCE (Firestore)
+    // =========================================
+
+    var currentCourseDocId = null;
+    var _courseSaveTimer = null;
+    var _courseSaving = false;
+
+    function saveCourseToFirestore(immediate) {
+        if (!db) return;
+        // Only auto-save if courseDocId already exists (created during first deploy)
+        if (!currentCourseDocId) return;
+        clearTimeout(_courseSaveTimer);
+
+        var doSave = function () {
+            if (_courseSaving) return;
+            syncEditablesToSession();
+            var course = getCourse();
+            if (!course) return;
+
+            var cn = window.__classnote || {};
+            var isNew = false;
+
+            _courseSaving = true;
+
+            var docData = {
+                courseId: state.courseId,
+                classnote: {
+                    brand: cn.brand || '',
+                    sections: cn.sections || {},
+                    sectionNames: cn.sectionNames || {},
+                    layout: cn.layout || 'classic',
+                    font: cn.font || 'sans',
+                    subject: cn.subject || '',
+                    type: cn.type || '',
+                    level: cn.level || '',
+                    difficulty: cn.difficulty || ''
+                },
+                state: {
+                    theme: state.theme,
+                    teacherName: state.teacherName,
+                    studentName: state.studentName,
+                    date: state.date
+                },
+                sessions: JSON.parse(JSON.stringify(course.sessions)),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            if (currentPublishedSlug) {
+                docData.publishedSlug = currentPublishedSlug;
+            }
+            if (isNew) {
+                docData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            }
+
+            db.collection('courses').doc(currentCourseDocId).set(docData, { merge: true })
+                .then(function () {
+                    _courseSaving = false;
+                    // Update URL on first save
+                    if (isNew) {
+                        var url = new URL(location.href);
+                        url.searchParams.set('c', currentCourseDocId);
+                        history.replaceState(null, '', url.toString());
+                        // Save to recent list in localStorage
+                        _saveRecentCourse(currentCourseDocId, course.name);
+                    }
+                    // Show saved indicator
+                    if (autosaveEl) {
+                        autosaveEl.textContent = '클라우드 저장됨';
+                        autosaveEl.classList.add('topbar__autosave--show');
+                        setTimeout(function () {
+                            autosaveEl.classList.remove('topbar__autosave--show');
+                        }, 2000);
+                    }
+                })
+                .catch(function (err) {
+                    _courseSaving = false;
+                    console.error('Course save failed:', err);
+                });
+        };
+
+        if (immediate) {
+            doSave();
+        } else {
+            _courseSaveTimer = setTimeout(doSave, 3000);
+        }
+    }
+
+    function loadCourseFromFirestore(courseDocId, callback) {
+        if (!db) { callback(false); return; }
+
+        db.collection('courses').doc(courseDocId).get()
+            .then(function (doc) {
+                if (!doc.exists) { callback(false); return; }
+
+                var data = doc.data();
+                currentCourseDocId = courseDocId;
+
+                // Restore __classnote
+                var cn = data.classnote || {};
+                window.__classnote = window.__classnote || {};
+                window.__classnote.brand = cn.brand || '';
+                window.__classnote.sections = cn.sections || {};
+                window.__classnote.sectionNames = cn.sectionNames || {};
+                window.__classnote.layout = cn.layout || 'classic';
+                window.__classnote.font = cn.font || 'sans';
+                window.__classnote.subject = cn.subject || '';
+                window.__classnote.type = cn.type || '';
+                window.__classnote.level = cn.level || '';
+                window.__classnote.difficulty = cn.difficulty || '';
+                // Restore logoData from localStorage if available
+                try {
+                    var logoKey = 'classnote_logo_' + courseDocId;
+                    var savedLogo = localStorage.getItem(logoKey);
+                    if (savedLogo) window.__classnote.logoData = savedLogo;
+                } catch (e) {}
+
+                // Restore state
+                var savedState = data.state || {};
+                state.courseId = data.courseId || ALL_COURSES[0].id;
+                state.sessionIdx = 0;
+                state.theme = savedState.theme || 'ink';
+                state.teacherName = savedState.teacherName || '';
+                state.studentName = savedState.studentName || '';
+                state.date = savedState.date || '';
+
+                // Restore sessions into the matching course
+                var course = getCourse();
+                if (course && data.sessions && data.sessions.length) {
+                    course.sessions = data.sessions;
+                }
+
+                // Restore published slug
+                if (data.publishedSlug) {
+                    currentPublishedSlug = data.publishedSlug;
+                }
+
+                // Sync UI inputs
+                if (els.teacherName) els.teacherName.value = state.teacherName;
+                if (els.studentName) els.studentName.value = state.studentName;
+                if (els.sessionDate && state.date) {
+                    // Reverse format "2026년 3월 19일" → "2026-03-19"
+                    var m = state.date.match(/(\d+)년\s*(\d+)월\s*(\d+)일/);
+                    if (m) {
+                        var mm = m[2].length === 1 ? '0' + m[2] : m[2];
+                        var dd = m[3].length === 1 ? '0' + m[3] : m[3];
+                        els.sessionDate.value = m[1] + '-' + mm + '-' + dd;
+                    }
+                }
+                // Apply theme
+                var themeDot = document.querySelector('.tdot[data-theme="' + state.theme + '"]');
+                if (themeDot) themeDot.click();
+
+                // Apply layout
+                var layoutBtns = document.querySelectorAll('[data-layout]');
+                layoutBtns.forEach(function (b) {
+                    b.classList.toggle('sb__seg-btn--active', b.getAttribute('data-layout') === cn.layout);
+                });
+
+                // Save to recent list
+                _saveRecentCourse(courseDocId, course ? course.name : '');
+
+                callback(true);
+            })
+            .catch(function (err) {
+                console.error('Course load failed:', err);
+                callback(false);
+            });
+    }
+
+    function _saveRecentCourse(docId, name) {
+        try {
+            var recent = JSON.parse(localStorage.getItem('classnote_recent_courses') || '[]');
+            recent = recent.filter(function (r) { return r.id !== docId; });
+            recent.unshift({ id: docId, name: name, ts: Date.now() });
+            if (recent.length > 10) recent = recent.slice(0, 10);
+            localStorage.setItem('classnote_recent_courses', JSON.stringify(recent));
+        } catch (e) {}
     }
 
     // --- Capture note data (no side effects) ---
@@ -3493,6 +4423,18 @@
         } else if (stateName === 'success') {
             success.style.display = '';
             document.getElementById('deployLink').value = data.url;
+            // Editor link
+            var editorLinkEl = document.getElementById('deployEditorLink');
+            if (editorLinkEl && data.editorUrl) {
+                editorLinkEl.value = data.editorUrl;
+                var editorRow = document.getElementById('deployEditorRow');
+                if (editorRow) editorRow.style.display = '';
+            }
+            // A6: QR code
+            var qrImg = document.getElementById('deployQR');
+            if (qrImg) {
+                qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=' + encodeURIComponent(data.url);
+            }
         } else if (stateName === 'error') {
             error.style.display = '';
             document.getElementById('deployErrorMsg').textContent =
@@ -3507,14 +4449,105 @@
     // --- Main publish function ---
     var currentPublishedSlug = null;
 
+    // Capture a single session's HTML using offscreen rendering
+    function captureSessionHtml(session, course) {
+        var renderer = renderers[course.renderer];
+        if (!renderer) return '';
+
+        // Create offscreen container
+        var offscreen = document.createElement('div');
+        offscreen.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;visibility:hidden;';
+        document.body.appendChild(offscreen);
+
+        // Create page element matching the real one
+        var cn = window.__classnote || {};
+        var page = document.createElement('div');
+        page.className = 'page layout--' + ((cn.layout) || 'classic');
+        page.setAttribute('data-theme', state.theme);
+        var fontVal = cn.font || 'sans';
+        if (fontVal === 'serif') page.style.fontFamily = 'var(--serif)';
+        else if (fontVal === 'mono') page.style.fontFamily = 'var(--mono)';
+
+        page.innerHTML = renderer(session, course, getCtx());
+        offscreen.appendChild(page);
+
+        // Force layout calculation
+        void page.offsetHeight;
+
+        // Capture and clean HTML
+        var clone = page.cloneNode(true);
+        clone.querySelectorAll('[contenteditable]').forEach(function (el) {
+            el.removeAttribute('contenteditable');
+        });
+        clone.querySelectorAll('.p-nav, .p-header__nav').forEach(function (el) {
+            el.remove();
+        });
+        clone.querySelectorAll('.crud-x, .crud-add, .crud-lines').forEach(function (el) {
+            el.remove();
+        });
+        clone.querySelectorAll('[data-crud-type]').forEach(function (el) {
+            el.removeAttribute('data-crud-type');
+            el.removeAttribute('data-crud-idx');
+            el.removeAttribute('data-crud-sec');
+        });
+        clone.querySelectorAll('.crud-solo').forEach(function (el) {
+            el.classList.remove('crud-solo');
+        });
+
+        var html = clone.outerHTML;
+        document.body.removeChild(offscreen);
+        return html;
+    }
+
     function publishNote() {
         syncEditablesToSession();
-        var noteData = captureNoteData();
-        if (!noteData) return;
+        var course = getCourse();
+        if (!course) return;
+
+        var cn = window.__classnote || {};
+        var sessionsData = [];
+
+        // Capture all sessions
+        course.sessions.forEach(function (session) {
+            var html = captureSessionHtml(session, course);
+            sessionsData.push({
+                html: html,
+                title: session.title || '',
+                subtitle: session.subtitle || ''
+            });
+        });
+
+        var settings = {
+            theme: state.theme,
+            layout: cn.layout || 'classic',
+            font: cn.font || 'sans',
+            brand: cn.brand || '',
+            teacherName: state.teacherName || '',
+            studentName: state.studentName || '',
+            date: state.date || ''
+        };
+
+        // Also keep backward-compatible single html (current session)
+        var currentSession = getSession();
+        var legacyNoteData = {
+            html: sessionsData[state.sessionIdx] ? sessionsData[state.sessionIdx].html : '',
+            settings: {
+                theme: settings.theme,
+                layout: settings.layout,
+                font: settings.font,
+                brand: settings.brand,
+                teacherName: settings.teacherName,
+                studentName: settings.studentName,
+                date: settings.date,
+                title: currentSession ? currentSession.title : '',
+                subtitle: currentSession ? currentSession.subtitle : ''
+            },
+            timestamp: Date.now()
+        };
 
         // Always save to localStorage as fallback
         try {
-            localStorage.setItem('classnote_preview', JSON.stringify(noteData));
+            localStorage.setItem('classnote_preview', JSON.stringify(legacyNoteData));
         } catch (e) { /* ignore */ }
 
         // No Firebase → fall back to local preview
@@ -3525,22 +4558,85 @@
 
         showDeployModal('loading');
 
+        // Create courseDocId on first deploy
+        var isFirstCourse = !currentCourseDocId;
+        if (isFirstCourse) currentCourseDocId = generateSlug(8);
+
         var slug = currentPublishedSlug || generateSlug();
 
-        var docData = {
-            html: noteData.html,
-            settings: noteData.settings,
+        var deployDocData = {
+            sessions: sessionsData,
+            html: legacyNoteData.html,
+            settings: settings,
+            courseDocId: currentCourseDocId,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         if (!currentPublishedSlug) {
-            docData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            deployDocData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         }
 
-        db.collection('published_notes').doc(slug).set(docData, { merge: true }).then(function () {
+        // Build course doc data
+        var cn = window.__classnote || {};
+        var courseDocData = {
+            courseId: state.courseId,
+            classnote: {
+                brand: cn.brand || '',
+                sections: cn.sections || {},
+                sectionNames: cn.sectionNames || {},
+                layout: cn.layout || 'classic',
+                font: cn.font || 'sans',
+                subject: cn.subject || '',
+                type: cn.type || '',
+                level: cn.level || '',
+                difficulty: cn.difficulty || ''
+            },
+            state: {
+                theme: state.theme,
+                teacherName: state.teacherName,
+                studentName: state.studentName,
+                date: state.date
+            },
+            sessions: JSON.parse(JSON.stringify(course.sessions)),
+            publishedSlug: slug,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        if (isFirstCourse) {
+            courseDocData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        }
+
+        // Timeout: 30s 후 자동 에러 표시
+        var deployTimeout = setTimeout(function () {
+            showDeployModal('error', { message: '배포 시간이 초과되었습니다. 네트워크를 확인 후 다시 시도해주세요.' });
+        }, 30000);
+
+        // Save both: published note + course data
+        var batch = db.batch();
+        batch.set(db.collection('published_notes').doc(slug), deployDocData, { merge: true });
+        batch.set(db.collection('courses').doc(currentCourseDocId), courseDocData, { merge: true });
+
+        batch.commit().then(function () {
+            clearTimeout(deployTimeout);
             currentPublishedSlug = slug;
+
+            // Update URL with ?c= on first deploy
+            if (isFirstCourse) {
+                var url = new URL(location.href);
+                url.searchParams.set('c', currentCourseDocId);
+                history.replaceState(null, '', url.toString());
+                _saveRecentCourse(currentCourseDocId, course.name);
+                // Save logo to localStorage keyed by courseDocId
+                if (cn.logoData) {
+                    try { localStorage.setItem('classnote_logo_' + currentCourseDocId, cn.logoData); } catch (e) {}
+                }
+            }
+
             var shareUrl = 'https://class-note-material.netlify.app/view.html?id=' + slug;
-            showDeployModal('success', { url: shareUrl });
+            var editorUrl = location.origin + location.pathname + '?c=' + currentCourseDocId;
+            showDeployModal('success', { url: shareUrl, editorUrl: editorUrl });
         }).catch(function (err) {
+            clearTimeout(deployTimeout);
+            // Roll back courseDocId if first deploy failed
+            if (isFirstCourse) currentCourseDocId = null;
             console.error('Deploy failed:', err);
             showDeployModal('error', {
                 message: err.message || '배포 중 오류가 발생했습니다. 다시 시도해주세요.'
@@ -3569,12 +4665,55 @@
         window.open(document.getElementById('deployLink').value, '_blank');
     });
 
+    // Editor link copy button
+    var deployEditorCopy = document.getElementById('deployEditorCopy');
+    if (deployEditorCopy) {
+        deployEditorCopy.addEventListener('click', function () {
+            var input = document.getElementById('deployEditorLink');
+            input.select();
+            navigator.clipboard.writeText(input.value).then(function () {
+                var copied = document.getElementById('deployEditorCopied');
+                copied.style.display = '';
+                setTimeout(function () { copied.style.display = 'none'; }, 2500);
+            });
+        });
+    }
+
     document.getElementById('deployClose').addEventListener('click', hideDeployModal);
     document.getElementById('deployErrorClose').addEventListener('click', hideDeployModal);
     document.getElementById('deployRetry').addEventListener('click', publishNote);
 
     document.getElementById('deployOverlay').addEventListener('click', function (e) {
         if (e.target === this) hideDeployModal();
+    });
+
+    // B4: ESC key closes deploy modal + focus trap
+    var _deployPrevFocus = null;
+    var _origShowDeploy = showDeployModal;
+    showDeployModal = function (stateName, data) {
+        _deployPrevFocus = document.activeElement;
+        _origShowDeploy(stateName, data);
+        // Focus first button in modal
+        setTimeout(function () {
+            var modal = document.querySelector('.deploy-modal');
+            if (modal) {
+                var btn = modal.querySelector('button:not([style*="display:none"])');
+                if (btn) btn.focus();
+            }
+        }, 50);
+    };
+    var _origHideDeploy = hideDeployModal;
+    hideDeployModal = function () {
+        _origHideDeploy();
+        if (_deployPrevFocus) { _deployPrevFocus.focus(); _deployPrevFocus = null; }
+    };
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            var overlay = document.getElementById('deployOverlay');
+            if (overlay && overlay.style.display !== 'none') {
+                hideDeployModal();
+            }
+        }
     });
 
     // =========================================
@@ -3618,7 +4757,111 @@
     // =========================================
     // INIT
     // =========================================
-    renderNav();
-    renderPage();
+
+    // Check for ?c= parameter (returning teacher with saved course)
+    var _urlParams = new URLSearchParams(location.search);
+    var _courseParam = _urlParams.get('c');
+
+    if (_courseParam && /^[a-z0-9]{4,20}$/.test(_courseParam)) {
+        // Skip onboarding, load from Firestore
+        var obOverlay = document.getElementById('onboarding');
+        var loadingEl = document.getElementById('editorLoading');
+        if (obOverlay) obOverlay.classList.add('ob--hidden');
+        if (loadingEl) loadingEl.classList.add('editor-loading--visible');
+
+        loadCourseFromFirestore(_courseParam, function (success) {
+            if (success) {
+                renderNav();
+                renderPage();
+                if (typeof calcPageZoom === 'function') calcPageZoom();
+                // Fade out loading
+                setTimeout(function () {
+                    if (loadingEl) {
+                        loadingEl.classList.add('editor-loading--fade-out');
+                        setTimeout(function () {
+                            loadingEl.classList.remove('editor-loading--visible', 'editor-loading--fade-out');
+                        }, 300);
+                    }
+                }, 500);
+            } else {
+                // Load failed — fall back to onboarding
+                if (obOverlay) obOverlay.classList.remove('ob--hidden');
+                if (loadingEl) loadingEl.classList.remove('editor-loading--visible');
+                renderNav();
+                renderPage();
+            }
+        });
+    } else {
+        // Normal flow: onboarding → editor
+        renderNav();
+        renderPage();
+    }
+
+    // --- Autosave restore check ---
+    // Deferred: only show after onboarding is complete (editor visible)
+    function checkAutosave() {
+        // Don't show if onboarding is still visible
+        var obEl = document.getElementById('onboarding');
+        if (obEl && obEl.style.display !== 'none' && obEl.offsetParent !== null) return;
+
+        var key = 'classnote_autosave_' + state.courseId + '_' + state.sessionIdx;
+        var raw;
+        try { raw = localStorage.getItem(key); } catch (e) { return; }
+        if (!raw) return;
+
+        var saved;
+        try { saved = JSON.parse(raw); } catch (e) { return; }
+
+        // Only show if saved within last 24h
+        if (!saved.ts || Date.now() - saved.ts > 86400000) {
+            localStorage.removeItem(key);
+            return;
+        }
+
+        var toast = document.getElementById('restoreToast');
+        var btnYes = document.getElementById('restoreYes');
+        var btnNo = document.getElementById('restoreNo');
+        if (!toast || !btnYes || !btnNo) return;
+
+        toast.style.display = 'flex';
+
+        btnYes.addEventListener('click', function () {
+            toast.style.display = 'none';
+
+            // Restore session data
+            var course = getCourse();
+            if (course && saved.session) {
+                course.sessions[state.sessionIdx] = saved.session;
+            }
+
+            // Restore state fields
+            if (saved.teacherName !== undefined) {
+                state.teacherName = saved.teacherName;
+                if (els.teacherName) els.teacherName.value = saved.teacherName;
+            }
+            if (saved.studentName !== undefined) {
+                state.studentName = saved.studentName;
+                if (els.studentName) els.studentName.value = saved.studentName;
+            }
+            if (saved.theme) {
+                var dot = document.querySelector('.tdot[data-theme="' + saved.theme + '"]');
+                if (dot) dot.click();
+            }
+
+            renderPage();
+        });
+
+        btnNo.addEventListener('click', function () {
+            toast.style.display = 'none';
+            localStorage.removeItem(key);
+        });
+
+        // Auto-dismiss after 10s
+        setTimeout(function () {
+            toast.style.display = 'none';
+        }, 10000);
+    }
+    // Run check now (in case editor is already visible)
+    checkAutosave();
 
 })();
