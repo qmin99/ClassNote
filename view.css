@@ -52,9 +52,26 @@ body{
     border-bottom:1px solid #e5e5e5;
     flex-shrink:0;
 }
+.view-sessions__bar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:5px 16px;
+}
+.view-sessions__tools-left,.view-sessions__tools-right{
+    display:flex;align-items:center;gap:2px;min-width:72px;
+}
+.view-sessions__tools-right{justify-content:flex-end}
+.view-sessions__tool{
+    width:30px;height:30px;border-radius:6px;
+    border:1px solid transparent;background:transparent;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    color:#888;transition:all .15s;font-size:12px;
+}
+.view-sessions__tool:hover{background:#f0f0f0;color:#333}
+.view-sessions__tool:active{background:#e4e4e4}
+.view-sessions__tool--soon{opacity:.35;cursor:not-allowed}
 .view-sessions__stepper{
     display:flex;align-items:center;justify-content:center;gap:4px;
-    padding:7px 20px;
+    flex:1;
 }
 .view-sessions__arrow{
     width:30px;height:30px;border-radius:50%;
@@ -249,7 +266,10 @@ body{
     .view-header__inner{padding:6px 12px;gap:6px}
     .view-header__brand .view-header__name{display:none}
     .view-header__tool{width:30px;height:30px;font-size:11px}
-    .view-sessions__stepper{padding:5px 12px;gap:2px}
+    .view-sessions__bar{padding:4px 8px}
+    .view-sessions__tools-left,.view-sessions__tools-right{min-width:auto}
+    .view-sessions__tool{width:26px;height:26px}
+    .view-sessions__stepper{gap:2px}
     .view-sessions__label{font-size:12px;max-width:200px}
     .view-sessions__popover{width:calc(100vw - 24px);border-radius:12px}
     .view-pager{bottom:10px;padding:4px 8px}
@@ -264,6 +284,8 @@ body{
 [data-dark="true"] .view-header__tool:hover{background:#333;color:#fff}
 
 [data-dark="true"] .view-sessions{background:rgba(28,28,28,.97);border-bottom-color:#333}
+[data-dark="true"] .view-sessions__tool{color:#aaa}
+[data-dark="true"] .view-sessions__tool:hover{background:#333;color:#fff}
 [data-dark="true"] .view-sessions__arrow{color:#555}
 [data-dark="true"] .view-sessions__arrow:hover{color:#ccc;background:rgba(255,255,255,.06)}
 [data-dark="true"] .view-sessions__trigger:hover{background:rgba(255,255,255,.06)}
