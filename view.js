@@ -327,11 +327,20 @@
             metaEl.textContent = metaParts.join(' · ');
         }
 
+        // Check ?s= parameter for initial session
+        var sParam = new URLSearchParams(location.search).get('s');
+        if (sParam) {
+            var sIdx = parseInt(sParam) - 1; // 1-based for user
+            if (sIdx >= 0 && sIdx < viewSessions.length) {
+                currentSessionIdx = sIdx;
+            }
+        }
+
         // Build session stepper (only if multiple sessions)
         if (viewSessions.length > 1 && sessionsBar) {
+            sessionsBar.style.display = '';
             buildSessionPopover();
             updateSessionStepper();
-            sessionsBar.style.display = '';
 
             // Arrow buttons
             if (sessionPrevBtn) {
@@ -351,15 +360,6 @@
             // Overlay click → close popover
             if (sessionOverlay) {
                 sessionOverlay.addEventListener('click', function () { closePopover(); });
-            }
-        }
-
-        // Check ?s= parameter for initial session
-        var sParam = new URLSearchParams(location.search).get('s');
-        if (sParam) {
-            var sIdx = parseInt(sParam) - 1; // 1-based for user
-            if (sIdx >= 0 && sIdx < viewSessions.length) {
-                currentSessionIdx = sIdx;
             }
         }
 
