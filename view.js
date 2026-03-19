@@ -390,6 +390,14 @@
             pg.classList.add('layout--' + noteLayout);
         });
 
+        // Replace brand text in page footer with "Made with 클래스노트"
+        container.querySelectorAll('.pf').forEach(function (pf) {
+            var firstSpan = pf.querySelector('span');
+            if (firstSpan) {
+                firstSpan.innerHTML = 'Made with 클래스노트';
+            }
+        });
+
         // Apply font
         if (noteFont !== 'sans') {
             var fontFamily = noteFont === 'serif' ? 'var(--serif)' : 'var(--mono)';

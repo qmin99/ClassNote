@@ -233,7 +233,7 @@ body{
 
 /* --- Session Stepper --- */
 .view-sessions{
-    position:sticky;top:49px;z-index:98;
+    position:relative;z-index:98;
     background:rgba(255,255,255,.95);
     backdrop-filter:blur(10px);
     border-bottom:1px solid #e0e0e0;
