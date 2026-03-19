@@ -286,7 +286,6 @@
     var noteFont = 'sans';
 
     var sessionsBar = document.getElementById('viewSessions');
-    var footerNameEl = document.getElementById('viewFooterName');
 
     // --- Render note into container ---
     function renderNote(data, errorReason) {
@@ -320,15 +319,12 @@
         noteLayout = validLayouts.indexOf(settings.layout) !== -1 ? settings.layout : 'classic';
         noteFont = settings.font || 'sans';
 
-        // Show student name in footer
-        if (footerNameEl) {
-            if (settings.studentName) {
-                footerNameEl.textContent = settings.studentName;
-            } else {
-                footerNameEl.style.display = 'none';
-                var sep = document.querySelector('.view-footer__sep');
-                if (sep) sep.style.display = 'none';
-            }
+        // Show meta info in header
+        var metaParts = [];
+        if (settings.teacherName) metaParts.push(settings.teacherName + ' 선생님');
+        if (settings.brand) metaParts.push(settings.brand);
+        if (metaEl && metaParts.length) {
+            metaEl.textContent = metaParts.join(' · ');
         }
 
         // Build session stepper (only if multiple sessions)

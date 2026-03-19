@@ -161,7 +161,6 @@ body{
 }
 .view-footer a{color:#888;text-decoration:none}
 .view-footer a:hover{color:#555;text-decoration:underline}
-.view-footer__sep{margin:0 6px;color:#ccc}
 
 /* --- Responsive: tablet --- */
 @media(max-width:840px){
