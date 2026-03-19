@@ -319,9 +319,9 @@
         noteLayout = validLayouts.indexOf(settings.layout) !== -1 ? settings.layout : 'classic';
         noteFont = settings.font || 'sans';
 
-        // Show meta info in header
+        // Show meta info in header (student name)
         var metaParts = [];
-        if (settings.teacherName) metaParts.push(settings.teacherName + ' 선생님');
+        if (settings.studentName) metaParts.push(settings.studentName);
         if (settings.brand) metaParts.push(settings.brand);
         if (metaEl && metaParts.length) {
             metaEl.textContent = metaParts.join(' · ');
@@ -389,6 +389,16 @@
         container.querySelectorAll('.page').forEach(function (pg) {
             pg.classList.add('layout--' + noteLayout);
         });
+
+        // Inject "Made with 클래스노트" into the last page
+        var allPages = container.querySelectorAll('.page');
+        if (allPages.length) {
+            var lastPage = allPages[allPages.length - 1];
+            var footerEl = document.createElement('div');
+            footerEl.className = 'view-page-footer';
+            footerEl.innerHTML = 'Made with <a href="index.html" target="_blank">클래스노트</a>';
+            lastPage.appendChild(footerEl);
+        }
 
         // Apply font
         if (noteFont !== 'sans') {
