@@ -1,8 +1,7 @@
 /* ============================================
-   클래스노트 — Student View
-   Reads note data and renders read-only pages.
-   Phase 2: fetches from Firebase Firestore by slug
-   Fallback: reads from localStorage (local preview)
+   클래스노트 — Student View (v2)
+   Viewport-fit A4, modern session pills,
+   share/fullscreen, light-mode default
    ============================================ */
 
 (function () {
@@ -13,19 +12,43 @@
     var metaEl = document.getElementById('viewMeta');
     var printBtn = document.getElementById('viewPrint');
     var loadingEl = document.getElementById('viewLoading');
-
     // Page navigator elements
-    var viewNav = document.getElementById('viewNav');
+    var viewPager = document.getElementById('viewPager');
     var viewPrev = document.getElementById('viewPrev');
     var viewNext = document.getElementById('viewNext');
     var viewBadge = document.getElementById('viewBadge');
+    var viewDots = document.getElementById('viewDots');
 
     // Tool buttons
     var darkBtn = document.getElementById('viewDark');
-    var fontUpBtn = document.getElementById('viewFontUp');
-    var fontDownBtn = document.getElementById('viewFontDown');
+    var toastEl = document.getElementById('viewToast');
+
+    // Session stepper elements
+    var sessionPrevBtn = document.getElementById('sessionPrev');
+    var sessionNextBtn = document.getElementById('sessionNext');
+    var sessionTitleEl = document.getElementById('sessionTitle');
+    var sessionSelector = document.getElementById('sessionSelector');
+    var sessionDropdown = document.getElementById('sessionDropdown');
+    var sessionDropdownList = document.getElementById('sessionDropdownList');
+
+    // Extra tool buttons
+    var shareBtn = document.getElementById('viewShare');
+    var fullscreenBtn = document.getElementById('viewFullscreen');
+    var pdfBtn = document.getElementById('viewPdf');
 
     var viewState = { pages: [], current: 0, total: 0 };
+
+    // --- Toast ---
+    var toastTimer = null;
+    function showToast(msg) {
+        if (!toastEl) return;
+        clearTimeout(toastTimer);
+        toastEl.textContent = msg;
+        toastEl.style.display = '';
+        toastTimer = setTimeout(function () {
+            toastEl.style.display = 'none';
+        }, 2500);
+    }
 
     // --- Show/hide loading ---
     function showLoading() {
@@ -38,12 +61,13 @@
     }
 
     // =========================================
-    // A8: DARK MODE
+    // DARK MODE — default to LIGHT
     // =========================================
 
     function initDarkMode() {
         var saved = localStorage.getItem('classnote_dark');
-        var isDark = saved !== null ? saved === 'true' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        // Default to light mode — only dark if explicitly saved as true
+        var isDark = saved === 'true';
         applyDark(isDark);
     }
 
@@ -57,39 +81,70 @@
         darkBtn.addEventListener('click', function () {
             var current = document.documentElement.getAttribute('data-dark') === 'true';
             applyDark(!current);
+            // Rescale pages after theme change
+            requestAnimationFrame(scalePages);
         });
     }
 
     initDarkMode();
 
     // =========================================
-    // B5: FONT SIZE CONTROL
+    // SHARE
     // =========================================
 
-    var fontLevels = ['view-font--small', '', 'view-font--large'];
-    var fontLevel = parseInt(localStorage.getItem('classnote_fontlevel') || '1', 10);
-
-    function applyFontLevel() {
-        fontLevels.forEach(function (cls) { if (cls) document.body.classList.remove(cls); });
-        if (fontLevels[fontLevel]) document.body.classList.add(fontLevels[fontLevel]);
-        localStorage.setItem('classnote_fontlevel', fontLevel);
-    }
-
-    applyFontLevel();
-
-    if (fontUpBtn) {
-        fontUpBtn.addEventListener('click', function () {
-            if (fontLevel < 2) { fontLevel++; applyFontLevel(); }
-        });
-    }
-    if (fontDownBtn) {
-        fontDownBtn.addEventListener('click', function () {
-            if (fontLevel > 0) { fontLevel--; applyFontLevel(); }
+    if (shareBtn) {
+        shareBtn.addEventListener('click', function () {
+            if (navigator.share) {
+                navigator.share({ title: document.title, url: location.href }).catch(function () {});
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(location.href).then(function () {
+                    showToast('링크가 복사되었습니다');
+                });
+            }
         });
     }
 
     // =========================================
-    // A7: OFFLINE CACHE
+    // FULLSCREEN
+    // =========================================
+
+    var fsEnterSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+    var fsExitSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', function () {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                var el = document.documentElement;
+                var rfs = el.requestFullscreen || el.webkitRequestFullscreen;
+                if (rfs) rfs.call(el).catch(function () {});
+            } else {
+                var efs = document.exitFullscreen || document.webkitExitFullscreen;
+                if (efs) efs.call(document);
+            }
+        });
+        document.addEventListener('fullscreenchange', function () {
+            fullscreenBtn.innerHTML = document.fullscreenElement ? fsExitSvg : fsEnterSvg;
+            setTimeout(scalePages, 100);
+        });
+    }
+
+    // =========================================
+    // PDF DOWNLOAD (triggers print dialog)
+    // =========================================
+
+    if (pdfBtn) {
+        pdfBtn.addEventListener('click', function () {
+            showToast('PDF로 저장하려면 인쇄 대화상자에서 "PDF로 저장"을 선택하세요');
+            setTimeout(function () {
+                viewState.pages.forEach(function (pg) { pg.style.display = ''; });
+                window.print();
+                if (viewState.total > 1) showCurrentPage();
+            }, 800);
+        });
+    }
+
+    // =========================================
+    // OFFLINE CACHE
     // =========================================
 
     var CACHE_MAX = 5;
@@ -97,17 +152,15 @@
     function cacheNote(slug, data) {
         try {
             var index = JSON.parse(localStorage.getItem('classnote_cache_index') || '[]');
-            // Remove existing entry for this slug
             index = index.filter(function (s) { return s !== slug; });
             index.push(slug);
-            // LRU eviction
             while (index.length > CACHE_MAX) {
                 var old = index.shift();
                 localStorage.removeItem('classnote_cache_' + old);
             }
             localStorage.setItem('classnote_cache_index', JSON.stringify(index));
             localStorage.setItem('classnote_cache_' + slug, JSON.stringify(data));
-        } catch (e) { /* storage full — ignore */ }
+        } catch (e) { /* storage full */ }
     }
 
     function getCachedNote(slug) {
@@ -134,13 +187,11 @@
         var slug = new URLSearchParams(location.search).get('id');
         if (slug) slug = slug.toLowerCase();
 
-        // Validate slug format (alphanumeric, 4-20 chars)
         if (slug && !/^[a-z0-9]{4,20}$/.test(slug)) {
             callback(null, 'invalid');
             return;
         }
 
-        // If slug exists and Firebase is available → fetch from Firestore
         if (slug && typeof firebase !== 'undefined' && typeof CLASSNOTE_FIREBASE !== 'undefined') {
             showLoading();
             if (!firebase.apps.length) firebase.initializeApp(CLASSNOTE_FIREBASE);
@@ -156,7 +207,6 @@
                 })
                 .catch(function (err) {
                     console.error('Firestore load failed:', err.code || '', err.message || err);
-                    // A7: Try offline cache on network error
                     var cached = getCachedNote(slug);
                     if (cached) {
                         showOfflineBanner();
@@ -168,7 +218,6 @@
             return;
         }
 
-        // No slug → check localStorage (local preview from editor)
         if (!slug) {
             var raw = localStorage.getItem('classnote_preview');
             if (!raw) { callback(null, 'noslug'); return; }
@@ -183,12 +232,11 @@
         callback(null, 'nofirebase');
     }
 
-    // --- Strip interactive/dangerous elements from HTML ---
+    // --- Strip interactive/dangerous elements ---
     function stripInteractive(html) {
         html = html.replace(/ contenteditable="true"/g, '');
         html = html.replace(/<button[^>]*id="(?:prevBtn|nextBtn)"[^>]*>.*?<\/button>/gs, '');
         html = html.replace(/<div[^>]*class="p-header__nav"[^>]*>[\s\S]*?<\/div>/g, '');
-        // XSS: remove dangerous tags
         html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
         html = html.replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe>/gi, '');
         html = html.replace(/<object\b[^>]*>[\s\S]*?<\/object>/gi, '');
@@ -197,14 +245,12 @@
         html = html.replace(/<meta\b[^>]*>/gi, '');
         html = html.replace(/<base\b[^>]*>/gi, '');
         html = html.replace(/<form\b[^>]*>[\s\S]*?<\/form>/gi, '');
-        // XSS: remove all on* event handler attributes
         html = html.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
-        // XSS: remove javascript: protocol in href/src/action
         html = html.replace(/(href|src|action)\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, '$1=""');
         return html;
     }
 
-    // --- Show empty state with context ---
+    // --- Show empty state ---
     function showEmpty(reason) {
         hideLoading();
         container.style.display = 'none';
@@ -229,22 +275,26 @@
         }
     }
 
-    // --- Multi-session state ---
-    var viewSessions = [];   // { html, title, subtitle }[]
+    // =========================================
+    // MULTI-SESSION STATE
+    // =========================================
+
+    var viewSessions = [];
     var currentSessionIdx = 0;
-    var noteSettings = {};
     var noteTheme = 'ink';
     var noteLayout = 'classic';
     var noteFont = 'sans';
 
     var sessionsBar = document.getElementById('viewSessions');
-    var sessionList = document.getElementById('viewSessionList');
 
-    // --- Render note into container ---
+    // =========================================
+    // RENDER NOTE
+    // =========================================
+
     function renderNote(data, errorReason) {
         hideLoading();
 
-        // Normalize: support both new sessions[] and legacy html field
+        // Normalize: new sessions[] vs legacy html field
         if (data && data.sessions && data.sessions.length) {
             viewSessions = data.sessions;
         } else if (data && data.html) {
@@ -262,7 +312,7 @@
         container.style.display = '';
 
         var settings = data.settings || {};
-        noteSettings = settings;
+        // settings used below for theme/layout/font/meta
 
         // Validate theme/layout
         var validThemes = ['ink', 'teal', 'forest', 'plum', 'ember', 'steel'];
@@ -272,66 +322,70 @@
         noteLayout = validLayouts.indexOf(settings.layout) !== -1 ? settings.layout : 'classic';
         noteFont = settings.font || 'sans';
 
-        // Show meta info in header
+        // Show meta: student name + date (not teacher name)
         var metaParts = [];
-        if (settings.teacherName) metaParts.push(settings.teacherName + ' 선생님');
-        if (settings.brand) metaParts.push(settings.brand);
+        if (settings.studentName) metaParts.push(settings.studentName);
+        if (settings.date) metaParts.push(settings.date);
         if (metaEl && metaParts.length) {
             metaEl.textContent = metaParts.join(' · ');
         }
 
-        // Build session tabs (only if multiple sessions)
-        if (viewSessions.length > 1 && sessionsBar && sessionList) {
-            var tabsHtml = '';
-            viewSessions.forEach(function (s, i) {
-                tabsHtml += '<div class="view-sessions__tab' + (i === 0 ? ' view-sessions__tab--active' : '') + '" data-session="' + i + '">';
-                tabsHtml += s.title || ('Session ' + (i + 1));
-                tabsHtml += '</div>';
-            });
-            sessionList.innerHTML = tabsHtml;
+        // Show session stepper (only if multiple sessions)
+        if (viewSessions.length > 1 && sessionsBar) {
             sessionsBar.style.display = '';
-
-            // Bind tab clicks
-            sessionList.querySelectorAll('.view-sessions__tab').forEach(function (tab) {
-                tab.addEventListener('click', function () {
-                    var idx = parseInt(this.getAttribute('data-session'));
-                    if (idx !== currentSessionIdx) switchSession(idx);
+            buildSessionDropdown();
+            // Bind stepper arrows (once)
+            if (sessionPrevBtn && !sessionPrevBtn._bound) {
+                sessionPrevBtn._bound = true;
+                sessionPrevBtn.addEventListener('click', function () {
+                    if (currentSessionIdx > 0) switchSession(currentSessionIdx - 1);
                 });
-            });
+            }
+            if (sessionNextBtn && !sessionNextBtn._bound) {
+                sessionNextBtn._bound = true;
+                sessionNextBtn.addEventListener('click', function () {
+                    if (currentSessionIdx < viewSessions.length - 1) switchSession(currentSessionIdx + 1);
+                });
+            }
+            // Bind selector click → toggle dropdown
+            if (sessionSelector && !sessionSelector._bound) {
+                sessionSelector._bound = true;
+                sessionSelector.addEventListener('click', function () {
+                    toggleSessionDropdown();
+                });
+            }
         }
 
-        // Check ?s= parameter for initial session
+        // Check ?s= parameter
         var sParam = new URLSearchParams(location.search).get('s');
         if (sParam) {
-            var sIdx = parseInt(sParam) - 1; // 1-based for user
+            var sIdx = parseInt(sParam) - 1;
             if (sIdx >= 0 && sIdx < viewSessions.length) {
                 currentSessionIdx = sIdx;
             }
         }
 
-        // Render initial session
         renderSession(currentSessionIdx);
+        if (viewSessions.length > 1) updateSessionStepper(currentSessionIdx);
     }
 
     function renderSession(idx) {
         var session = viewSessions[idx];
         if (!session) return;
 
-        // Set page title
         if (session.title) {
             document.title = session.title + ' — 클래스노트';
         }
 
-        // Clean and inject HTML
         var cleanHtml = stripInteractive(session.html);
         container.innerHTML = cleanHtml;
 
-        // Apply theme to all pages
+        // Apply theme
         container.querySelectorAll('.page').forEach(function (pg) {
             pg.setAttribute('data-theme', noteTheme);
         });
 
-        // Apply layout class
+        // Apply layout
         container.querySelectorAll('.page').forEach(function (pg) {
             pg.classList.add('layout--' + noteLayout);
         });
@@ -344,32 +398,95 @@
             });
         }
 
-        // Setup page navigation
         setupPageNav();
         requestAnimationFrame(scalePages);
     }
 
+    function updateSessionStepper(idx) {
+        var session = viewSessions[idx];
+        var label = (idx + 1) + '회차';
+        var title = session.title || ('Session ' + (idx + 1));
+        if (sessionTitleEl) sessionTitleEl.textContent = label + '  ·  ' + title;
+        if (sessionPrevBtn) sessionPrevBtn.disabled = idx === 0;
+        if (sessionNextBtn) sessionNextBtn.disabled = idx === viewSessions.length - 1;
+        // Update dropdown active state
+        if (sessionDropdownList) {
+            sessionDropdownList.querySelectorAll('.view-sessions__dropdown-item').forEach(function (item, i) {
+                item.classList.toggle('view-sessions__dropdown-item--active', i === idx);
+            });
+        }
+    }
+
+    function buildSessionDropdown() {
+        if (!sessionDropdownList) return;
+        var html = '';
+        viewSessions.forEach(function (s, i) {
+            var isActive = i === currentSessionIdx;
+            html += '<button class="view-sessions__dropdown-item' + (isActive ? ' view-sessions__dropdown-item--active' : '') + '" data-session="' + i + '">';
+            html += '<span class="view-sessions__dropdown-num">' + (i + 1) + '</span>';
+            html += (s.title || ('Session ' + (i + 1)));
+            html += '</button>';
+        });
+        sessionDropdownList.innerHTML = html;
+
+        // Bind clicks
+        sessionDropdownList.querySelectorAll('.view-sessions__dropdown-item').forEach(function (item) {
+            item.addEventListener('click', function () {
+                var idx = parseInt(this.getAttribute('data-session'));
+                if (idx !== currentSessionIdx) switchSession(idx);
+                closeSessionDropdown();
+            });
+        });
+    }
+
+    var dropdownOpen = false;
+
+    function toggleSessionDropdown() {
+        if (dropdownOpen) {
+            closeSessionDropdown();
+        } else {
+            openSessionDropdown();
+        }
+    }
+
+    function openSessionDropdown() {
+        if (!sessionDropdown) return;
+        dropdownOpen = true;
+        sessionDropdown.style.display = '';
+        if (sessionSelector) sessionSelector.classList.add('view-sessions__selector--open');
+    }
+
+    function closeSessionDropdown() {
+        if (!sessionDropdown) return;
+        dropdownOpen = false;
+        sessionDropdown.style.display = 'none';
+        if (sessionSelector) sessionSelector.classList.remove('view-sessions__selector--open');
+    }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function (e) {
+        if (!dropdownOpen) return;
+        var target = e.target;
+        if (sessionSelector && sessionSelector.contains(target)) return;
+        if (sessionDropdown && sessionDropdown.contains(target)) return;
+        closeSessionDropdown();
+    });
+
     function switchSession(idx) {
         currentSessionIdx = idx;
         renderSession(idx);
+        updateSessionStepper(idx);
 
-        // Update tab active state
-        if (sessionList) {
-            sessionList.querySelectorAll('.view-sessions__tab').forEach(function (tab, i) {
-                tab.classList.toggle('view-sessions__tab--active', i === idx);
-            });
-        }
-
-        // Update URL ?s= parameter
+        // Update URL ?s=
         var url = new URL(location.href);
         url.searchParams.set('s', idx + 1);
         history.replaceState(null, '', url.toString());
-
-        // Scroll to top
-        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // --- Page navigation ---
+    // =========================================
+    // PAGE NAVIGATION
+    // =========================================
+
     function setupPageNav() {
         var pages = Array.prototype.slice.call(container.querySelectorAll('.page'));
         viewState.pages = pages;
@@ -377,13 +494,35 @@
         viewState.current = 0;
 
         if (pages.length <= 1) {
-            if (viewNav) viewNav.style.display = 'none';
+            if (viewPager) viewPager.style.display = 'none';
             return;
         }
 
-        if (viewNav) viewNav.style.display = '';
+        if (viewPager) viewPager.style.display = '';
+        buildDots();
         updatePageNav();
         showCurrentPage();
+    }
+
+    function buildDots() {
+        if (!viewDots) return;
+        var html = '';
+        for (var i = 0; i < viewState.total; i++) {
+            html += '<div class="view-pager__dot' + (i === 0 ? ' view-pager__dot--active' : '') + '" data-page="' + i + '"></div>';
+        }
+        viewDots.innerHTML = html;
+
+        // Click on dots
+        viewDots.querySelectorAll('.view-pager__dot').forEach(function (dot) {
+            dot.addEventListener('click', function () {
+                var pg = parseInt(this.getAttribute('data-page'));
+                if (pg !== viewState.current) {
+                    viewState.current = pg;
+                    showCurrentPage();
+                }
+            });
+            dot.style.cursor = 'pointer';
+        });
     }
 
     function updatePageNav() {
@@ -391,6 +530,13 @@
         viewBadge.textContent = (viewState.current + 1) + ' / ' + viewState.total;
         if (viewPrev) viewPrev.disabled = viewState.current === 0;
         if (viewNext) viewNext.disabled = viewState.current === viewState.total - 1;
+
+        // Update dots
+        if (viewDots) {
+            viewDots.querySelectorAll('.view-pager__dot').forEach(function (dot, i) {
+                dot.classList.toggle('view-pager__dot--active', i === viewState.current);
+            });
+        }
     }
 
     function showCurrentPage() {
@@ -399,7 +545,6 @@
         });
         updatePageNav();
         requestAnimationFrame(scalePages);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function goPage(delta) {
@@ -409,7 +554,7 @@
         showCurrentPage();
     }
 
-    // --- Mobile swipe support ---
+    // --- Mobile swipe ---
     var touchStartX = 0;
     var touchStartY = 0;
     document.addEventListener('touchstart', function (e) {
@@ -421,14 +566,16 @@
         if (viewState.total <= 1) return;
         var dx = touchStartX - e.changedTouches[0].clientX;
         var dy = touchStartY - e.changedTouches[0].clientY;
-        // Only horizontal swipe (dx > dy to avoid scroll conflicts)
         if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-            if (dx > 0) goPage(1);   // swipe left → next
-            else goPage(-1);          // swipe right → prev
+            if (dx > 0) goPage(1);
+            else goPage(-1);
         }
     }, { passive: true });
 
-    // --- B1: Scale pages (skip on mobile — use reading mode) ---
+    // =========================================
+    // SCALE PAGES — fit to viewport
+    // =========================================
+
     function isMobileReading() {
         return window.innerWidth <= 600;
     }
@@ -436,7 +583,8 @@
     function scalePages() {
         var pages = container.querySelectorAll('.page');
         if (!pages.length) return;
-        // B1: mobile reading mode — no scaling
+
+        // Mobile: reading mode, no scaling
         if (isMobileReading()) {
             pages.forEach(function (pg) {
                 pg.style.transform = '';
@@ -444,16 +592,28 @@
             });
             return;
         }
-        var viewBody = document.querySelector('.view-body');
-        if (!viewBody) return;
-        var viewWidth = viewBody.clientWidth - 40;
+
+        // Calculate available space
+        var header = document.getElementById('viewHeader');
+        var headerH = header ? header.offsetHeight : 0;
+        var sessionsH = (sessionsBar && sessionsBar.style.display !== 'none') ? sessionsBar.offsetHeight : 0;
+        var pagerH = (viewPager && viewPager.style.display !== 'none') ? 48 : 0; // reserve space for floating pager
+
+        var availW = window.innerWidth - 48; // 24px padding each side
+        var availH = window.innerHeight - headerH - sessionsH - pagerH - 32; // 16px top + 16px bottom
+
         pages.forEach(function (pg) {
             if (pg.style.display === 'none') return;
-            var pageWidth = pg.offsetWidth || 794;
-            if (viewWidth < pageWidth) {
-                var scale = viewWidth / pageWidth;
+            var pageW = pg.offsetWidth || 794;
+            var pageH = pg.offsetHeight || 1123;
+
+            var scaleW = availW / pageW;
+            var scaleH = availH / pageH;
+            var scale = Math.min(scaleW, scaleH, 1); // Never scale up
+
+            if (scale < 0.99) {
                 pg.style.transform = 'scale(' + scale + ')';
-                pg.style.marginBottom = '-' + Math.round(pg.offsetHeight * (1 - scale)) + 'px';
+                pg.style.marginBottom = '-' + Math.round(pageH * (1 - scale)) + 'px';
             } else {
                 pg.style.transform = '';
                 pg.style.marginBottom = '';
@@ -461,20 +621,23 @@
         });
     }
 
-    // --- Init ---
+    // =========================================
+    // INIT
+    // =========================================
+
     loadNote(function (noteData, errorReason) {
         renderNote(noteData, errorReason);
         requestAnimationFrame(scalePages);
     });
 
-    // --- Resize debounce ---
+    // Resize debounce
     var resizeTimer;
     window.addEventListener('resize', function () {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(scalePages, 150);
+        resizeTimer = setTimeout(scalePages, 100);
     });
 
-    // --- Keyboard arrow navigation ---
+    // Keyboard navigation
     document.addEventListener('keydown', function (e) {
         if (viewState.total <= 1) return;
         if (e.key === 'ArrowLeft') goPage(-1);
@@ -484,10 +647,8 @@
     // Print button
     if (printBtn) {
         printBtn.addEventListener('click', function () {
-            // Show all pages for print
             viewState.pages.forEach(function (pg) { pg.style.display = ''; });
             window.print();
-            // Restore current page view
             if (viewState.total > 1) showCurrentPage();
         });
     }
@@ -495,41 +656,5 @@
     // Page nav buttons
     if (viewPrev) viewPrev.addEventListener('click', function () { goPage(-1); });
     if (viewNext) viewNext.addEventListener('click', function () { goPage(1); });
-
-    // =========================================
-    // A9: SCROLL HIDE HEADER
-    // =========================================
-
-    var lastScrollY = 0;
-    var scrollDelta = 0;
-    var headerHidden = false;
-    var SCROLL_THRESHOLD = 60;
-
-    window.addEventListener('scroll', function () {
-        var currentY = window.scrollY;
-        var diff = currentY - lastScrollY;
-
-        if (diff > 0) {
-            // Scrolling down
-            scrollDelta += diff;
-            if (scrollDelta > SCROLL_THRESHOLD && !headerHidden && currentY > 100) {
-                headerHidden = true;
-                var header = document.querySelector('.view-header');
-                if (header) header.classList.add('view-header--hidden');
-                if (viewNav) viewNav.classList.add('view-nav--hidden');
-            }
-        } else {
-            // Scrolling up
-            scrollDelta = 0;
-            if (headerHidden) {
-                headerHidden = false;
-                var header = document.querySelector('.view-header');
-                if (header) header.classList.remove('view-header--hidden');
-                if (viewNav) viewNav.classList.remove('view-nav--hidden');
-            }
-        }
-
-        lastScrollY = currentY;
-    }, { passive: true });
 
 })();
