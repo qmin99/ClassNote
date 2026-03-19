@@ -1,7 +1,8 @@
 /* ============================================
-   클래스노트 — Student View (v4)
-   Single bar, maximum A4 viewport fill,
-   modern minimal UI
+   클래스노트 — Student View
+   Reads note data and renders read-only pages.
+   Phase 2: fetches from Firebase Firestore by slug
+   Fallback: reads from localStorage (local preview)
    ============================================ */
 
 (function () {
@@ -13,46 +14,20 @@
     var printBtn = document.getElementById('viewPrint');
     var loadingEl = document.getElementById('viewLoading');
 
-    // Page navigator
-    var viewPager = document.getElementById('viewPager');
+    // Page navigator elements
+    var viewNav = document.getElementById('viewNav');
     var viewPrev = document.getElementById('viewPrev');
     var viewNext = document.getElementById('viewNext');
     var viewBadge = document.getElementById('viewBadge');
-    var viewDots = document.getElementById('viewDots');
 
     // Tool buttons
     var darkBtn = document.getElementById('viewDark');
-    var shareBtn = document.getElementById('viewShare');
-    var fullscreenBtn = document.getElementById('viewFullscreen');
-    var pdfBtn = document.getElementById('viewPdf');
-    var toastEl = document.getElementById('viewToast');
-
-    // Session nav (v4 — inside unified bar)
-    var viewNav = document.getElementById('viewNav');
-    var sessionPrevBtn = document.getElementById('sessionPrev');
-    var sessionNextBtn = document.getElementById('sessionNext');
-    var sessionTitleEl = document.getElementById('sessionTitle');
-    var sessionSelector = document.getElementById('sessionSelector');
-    var sessionPopover = document.getElementById('sessionPopover');
-    var sessionOverlay = document.getElementById('sessionOverlay');
-    var sessionDropdownList = document.getElementById('sessionDropdownList');
-    var sessionsAnchor = document.getElementById('viewSessions');
+    var fontUpBtn = document.getElementById('viewFontUp');
+    var fontDownBtn = document.getElementById('viewFontDown');
 
     var viewState = { pages: [], current: 0, total: 0 };
 
-    // --- Toast ---
-    var toastTimer = null;
-    function showToast(msg) {
-        if (!toastEl) return;
-        clearTimeout(toastTimer);
-        toastEl.textContent = msg;
-        toastEl.style.display = '';
-        toastTimer = setTimeout(function () {
-            toastEl.style.display = 'none';
-        }, 2500);
-    }
-
-    // --- Loading ---
+    // --- Show/hide loading ---
     function showLoading() {
         if (loadingEl) loadingEl.style.display = '';
         container.style.display = 'none';
@@ -63,12 +38,13 @@
     }
 
     // =========================================
-    // DARK MODE — default to LIGHT
+    // A8: DARK MODE
     // =========================================
 
     function initDarkMode() {
         var saved = localStorage.getItem('classnote_dark');
-        applyDark(saved === 'true');
+        var isDark = saved !== null ? saved === 'true' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        applyDark(isDark);
     }
 
     function applyDark(isDark) {
@@ -81,69 +57,39 @@
         darkBtn.addEventListener('click', function () {
             var current = document.documentElement.getAttribute('data-dark') === 'true';
             applyDark(!current);
-            requestAnimationFrame(scalePages);
         });
     }
 
     initDarkMode();
 
     // =========================================
-    // SHARE
+    // B5: FONT SIZE CONTROL
     // =========================================
 
-    if (shareBtn) {
-        shareBtn.addEventListener('click', function () {
-            if (navigator.share) {
-                navigator.share({ title: document.title, url: location.href }).catch(function () {});
-            } else if (navigator.clipboard) {
-                navigator.clipboard.writeText(location.href).then(function () {
-                    showToast('링크가 복사되었습니다');
-                });
-            }
+    var fontLevels = ['view-font--small', '', 'view-font--large'];
+    var fontLevel = parseInt(localStorage.getItem('classnote_fontlevel') || '1', 10);
+
+    function applyFontLevel() {
+        fontLevels.forEach(function (cls) { if (cls) document.body.classList.remove(cls); });
+        if (fontLevels[fontLevel]) document.body.classList.add(fontLevels[fontLevel]);
+        localStorage.setItem('classnote_fontlevel', fontLevel);
+    }
+
+    applyFontLevel();
+
+    if (fontUpBtn) {
+        fontUpBtn.addEventListener('click', function () {
+            if (fontLevel < 2) { fontLevel++; applyFontLevel(); }
+        });
+    }
+    if (fontDownBtn) {
+        fontDownBtn.addEventListener('click', function () {
+            if (fontLevel > 0) { fontLevel--; applyFontLevel(); }
         });
     }
 
     // =========================================
-    // FULLSCREEN
-    // =========================================
-
-    var fsEnterSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
-    var fsExitSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
-
-    if (fullscreenBtn) {
-        fullscreenBtn.addEventListener('click', function () {
-            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                var el = document.documentElement;
-                var rfs = el.requestFullscreen || el.webkitRequestFullscreen;
-                if (rfs) rfs.call(el).catch(function () {});
-            } else {
-                var efs = document.exitFullscreen || document.webkitExitFullscreen;
-                if (efs) efs.call(document);
-            }
-        });
-        document.addEventListener('fullscreenchange', function () {
-            fullscreenBtn.innerHTML = document.fullscreenElement ? fsExitSvg : fsEnterSvg;
-            setTimeout(scalePages, 100);
-        });
-    }
-
-    // =========================================
-    // PDF
-    // =========================================
-
-    if (pdfBtn) {
-        pdfBtn.addEventListener('click', function () {
-            showToast('PDF로 저장하려면 인쇄 대화상자에서 "PDF로 저장"을 선택하세요');
-            setTimeout(function () {
-                viewState.pages.forEach(function (pg) { pg.style.display = ''; });
-                window.print();
-                if (viewState.total > 1) showCurrentPage();
-            }, 800);
-        });
-    }
-
-    // =========================================
-    // OFFLINE CACHE
+    // A7: OFFLINE CACHE
     // =========================================
 
     var CACHE_MAX = 5;
@@ -151,15 +97,17 @@
     function cacheNote(slug, data) {
         try {
             var index = JSON.parse(localStorage.getItem('classnote_cache_index') || '[]');
+            // Remove existing entry for this slug
             index = index.filter(function (s) { return s !== slug; });
             index.push(slug);
+            // LRU eviction
             while (index.length > CACHE_MAX) {
                 var old = index.shift();
                 localStorage.removeItem('classnote_cache_' + old);
             }
             localStorage.setItem('classnote_cache_index', JSON.stringify(index));
             localStorage.setItem('classnote_cache_' + slug, JSON.stringify(data));
-        } catch (e) { /* storage full */ }
+        } catch (e) { /* storage full — ignore */ }
     }
 
     function getCachedNote(slug) {
@@ -186,11 +134,13 @@
         var slug = new URLSearchParams(location.search).get('id');
         if (slug) slug = slug.toLowerCase();
 
+        // Validate slug format (alphanumeric, 4-20 chars)
         if (slug && !/^[a-z0-9]{4,20}$/.test(slug)) {
             callback(null, 'invalid');
             return;
         }
 
+        // If slug exists and Firebase is available → fetch from Firestore
         if (slug && typeof firebase !== 'undefined' && typeof CLASSNOTE_FIREBASE !== 'undefined') {
             showLoading();
             if (!firebase.apps.length) firebase.initializeApp(CLASSNOTE_FIREBASE);
@@ -206,6 +156,7 @@
                 })
                 .catch(function (err) {
                     console.error('Firestore load failed:', err.code || '', err.message || err);
+                    // A7: Try offline cache on network error
                     var cached = getCachedNote(slug);
                     if (cached) {
                         showOfflineBanner();
@@ -217,6 +168,7 @@
             return;
         }
 
+        // No slug → check localStorage (local preview from editor)
         if (!slug) {
             var raw = localStorage.getItem('classnote_preview');
             if (!raw) { callback(null, 'noslug'); return; }
@@ -231,10 +183,12 @@
         callback(null, 'nofirebase');
     }
 
+    // --- Strip interactive/dangerous elements from HTML ---
     function stripInteractive(html) {
         html = html.replace(/ contenteditable="true"/g, '');
         html = html.replace(/<button[^>]*id="(?:prevBtn|nextBtn)"[^>]*>.*?<\/button>/gs, '');
         html = html.replace(/<div[^>]*class="p-header__nav"[^>]*>[\s\S]*?<\/div>/g, '');
+        // XSS: remove dangerous tags
         html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
         html = html.replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe>/gi, '');
         html = html.replace(/<object\b[^>]*>[\s\S]*?<\/object>/gi, '');
@@ -243,19 +197,22 @@
         html = html.replace(/<meta\b[^>]*>/gi, '');
         html = html.replace(/<base\b[^>]*>/gi, '');
         html = html.replace(/<form\b[^>]*>[\s\S]*?<\/form>/gi, '');
+        // XSS: remove all on* event handler attributes
         html = html.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+        // XSS: remove javascript: protocol in href/src/action
         html = html.replace(/(href|src|action)\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, '$1=""');
         return html;
     }
 
+    // --- Show empty state with context ---
     function showEmpty(reason) {
         hideLoading();
         container.style.display = 'none';
         emptyEl.style.display = '';
 
-        var iconEl = emptyEl.querySelector('.vmain__empty-icon');
-        var titleEl = emptyEl.querySelector('.vmain__empty-title');
-        var descEl = emptyEl.querySelector('.vmain__empty-desc');
+        var iconEl = emptyEl.querySelector('.view-empty__icon');
+        var titleEl = emptyEl.querySelector('.view-empty__title');
+        var descEl = emptyEl.querySelector('.view-empty__desc');
 
         if (reason === 'network') {
             if (iconEl) iconEl.textContent = '📡';
@@ -272,23 +229,22 @@
         }
     }
 
-    // =========================================
-    // MULTI-SESSION STATE
-    // =========================================
-
-    var viewSessions = [];
+    // --- Multi-session state ---
+    var viewSessions = [];   // { html, title, subtitle }[]
     var currentSessionIdx = 0;
+    var noteSettings = {};
     var noteTheme = 'ink';
     var noteLayout = 'classic';
     var noteFont = 'sans';
 
-    // =========================================
-    // RENDER NOTE
-    // =========================================
+    var sessionsBar = document.getElementById('viewSessions');
+    var sessionList = document.getElementById('viewSessionList');
 
+    // --- Render note into container ---
     function renderNote(data, errorReason) {
         hideLoading();
 
+        // Normalize: support both new sessions[] and legacy html field
         if (data && data.sessions && data.sessions.length) {
             viewSessions = data.sessions;
         } else if (data && data.html) {
@@ -306,6 +262,9 @@
         container.style.display = '';
 
         var settings = data.settings || {};
+        noteSettings = settings;
+
+        // Validate theme/layout
         var validThemes = ['ink', 'teal', 'forest', 'plum', 'ember', 'steel'];
         var validLayouts = ['classic', 'modern', 'compact'];
 
@@ -313,74 +272,71 @@
         noteLayout = validLayouts.indexOf(settings.layout) !== -1 ? settings.layout : 'classic';
         noteFont = settings.font || 'sans';
 
-        // Meta
+        // Show meta info in header
         var metaParts = [];
-        if (settings.studentName) metaParts.push(settings.studentName);
-        if (settings.date) metaParts.push(settings.date);
+        if (settings.teacherName) metaParts.push(settings.teacherName + ' 선생님');
+        if (settings.brand) metaParts.push(settings.brand);
         if (metaEl && metaParts.length) {
             metaEl.textContent = metaParts.join(' · ');
         }
 
-        // Show session nav in unified bar (only if multiple sessions)
-        if (viewSessions.length > 1) {
-            if (viewNav) viewNav.style.display = '';
-            if (sessionsAnchor) sessionsAnchor.style.display = '';
-            if (metaEl) metaEl.style.display = 'none'; // hide meta when nav visible
-            buildSessionPopover();
+        // Build session tabs (only if multiple sessions)
+        if (viewSessions.length > 1 && sessionsBar && sessionList) {
+            var tabsHtml = '';
+            viewSessions.forEach(function (s, i) {
+                tabsHtml += '<div class="view-sessions__tab' + (i === 0 ? ' view-sessions__tab--active' : '') + '" data-session="' + i + '">';
+                tabsHtml += s.title || ('Session ' + (i + 1));
+                tabsHtml += '</div>';
+            });
+            sessionList.innerHTML = tabsHtml;
+            sessionsBar.style.display = '';
 
-            if (sessionPrevBtn && !sessionPrevBtn._bound) {
-                sessionPrevBtn._bound = true;
-                sessionPrevBtn.addEventListener('click', function () {
-                    if (currentSessionIdx > 0) switchSession(currentSessionIdx - 1);
+            // Bind tab clicks
+            sessionList.querySelectorAll('.view-sessions__tab').forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    var idx = parseInt(this.getAttribute('data-session'));
+                    if (idx !== currentSessionIdx) switchSession(idx);
                 });
-            }
-            if (sessionNextBtn && !sessionNextBtn._bound) {
-                sessionNextBtn._bound = true;
-                sessionNextBtn.addEventListener('click', function () {
-                    if (currentSessionIdx < viewSessions.length - 1) switchSession(currentSessionIdx + 1);
-                });
-            }
-            if (sessionSelector && !sessionSelector._bound) {
-                sessionSelector._bound = true;
-                sessionSelector.addEventListener('click', function () {
-                    togglePopover();
-                });
-            }
-            if (sessionOverlay && !sessionOverlay._bound) {
-                sessionOverlay._bound = true;
-                sessionOverlay.addEventListener('click', function () {
-                    closePopover();
-                });
-            }
+            });
         }
 
+        // Check ?s= parameter for initial session
         var sParam = new URLSearchParams(location.search).get('s');
         if (sParam) {
-            var sIdx = parseInt(sParam) - 1;
+            var sIdx = parseInt(sParam) - 1; // 1-based for user
             if (sIdx >= 0 && sIdx < viewSessions.length) {
                 currentSessionIdx = sIdx;
             }
         }
 
+        // Render initial session
         renderSession(currentSessionIdx);
-        if (viewSessions.length > 1) updateSessionStepper(currentSessionIdx);
     }
 
     function renderSession(idx) {
         var session = viewSessions[idx];
         if (!session) return;
 
+        // Set page title
         if (session.title) {
             document.title = session.title + ' — 클래스노트';
         }
 
-        container.innerHTML = stripInteractive(session.html);
+        // Clean and inject HTML
+        var cleanHtml = stripInteractive(session.html);
+        container.innerHTML = cleanHtml;
 
+        // Apply theme to all pages
         container.querySelectorAll('.page').forEach(function (pg) {
             pg.setAttribute('data-theme', noteTheme);
+        });
+
+        // Apply layout class
+        container.querySelectorAll('.page').forEach(function (pg) {
             pg.classList.add('layout--' + noteLayout);
         });
 
+        // Apply font
         if (noteFont !== 'sans') {
             var fontFamily = noteFont === 'serif' ? 'var(--serif)' : 'var(--mono)';
             container.querySelectorAll('.page').forEach(function (pg) {
@@ -388,90 +344,32 @@
             });
         }
 
+        // Setup page navigation
         setupPageNav();
         requestAnimationFrame(scalePages);
-    }
-
-    // =========================================
-    // SESSION STEPPER + POPOVER
-    // =========================================
-
-    function updateSessionStepper(idx) {
-        var session = viewSessions[idx];
-        var label = (idx + 1) + '회차';
-        var title = session.title || ('Session ' + (idx + 1));
-        if (sessionTitleEl) sessionTitleEl.textContent = label + '  ·  ' + title;
-        if (sessionPrevBtn) sessionPrevBtn.disabled = idx === 0;
-        if (sessionNextBtn) sessionNextBtn.disabled = idx === viewSessions.length - 1;
-
-        if (sessionDropdownList) {
-            var items = sessionDropdownList.querySelectorAll('.vpop__item');
-            items.forEach(function (item, i) {
-                item.classList.toggle('vpop__item--active', i === idx);
-            });
-        }
-    }
-
-    function buildSessionPopover() {
-        if (!sessionDropdownList) return;
-        var html = '';
-        viewSessions.forEach(function (s, i) {
-            var isActive = i === currentSessionIdx;
-            html += '<button class="vpop__item' + (isActive ? ' vpop__item--active' : '') + '" data-session="' + i + '">';
-            html += '<span class="vpop__num">' + (i + 1) + '</span>';
-            html += '<div class="vpop__text">';
-            html += '<span class="vpop__title">' + (s.title || ('Session ' + (i + 1))) + '</span>';
-            if (s.subtitle) {
-                html += '<span class="vpop__sub">' + s.subtitle + '</span>';
-            }
-            html += '</div>';
-            html += '</button>';
-        });
-        sessionDropdownList.innerHTML = html;
-
-        sessionDropdownList.querySelectorAll('.vpop__item').forEach(function (item) {
-            item.addEventListener('click', function () {
-                var idx = parseInt(this.getAttribute('data-session'));
-                if (idx !== currentSessionIdx) switchSession(idx);
-                closePopover();
-            });
-        });
-    }
-
-    var popoverOpen = false;
-
-    function togglePopover() {
-        if (popoverOpen) closePopover();
-        else openPopover();
-    }
-
-    function openPopover() {
-        popoverOpen = true;
-        if (sessionPopover) sessionPopover.style.display = '';
-        if (sessionOverlay) sessionOverlay.style.display = '';
-        if (sessionSelector) sessionSelector.classList.add('vbar__session--open');
-    }
-
-    function closePopover() {
-        popoverOpen = false;
-        if (sessionPopover) sessionPopover.style.display = 'none';
-        if (sessionOverlay) sessionOverlay.style.display = 'none';
-        if (sessionSelector) sessionSelector.classList.remove('vbar__session--open');
     }
 
     function switchSession(idx) {
         currentSessionIdx = idx;
         renderSession(idx);
-        updateSessionStepper(idx);
+
+        // Update tab active state
+        if (sessionList) {
+            sessionList.querySelectorAll('.view-sessions__tab').forEach(function (tab, i) {
+                tab.classList.toggle('view-sessions__tab--active', i === idx);
+            });
+        }
+
+        // Update URL ?s= parameter
         var url = new URL(location.href);
         url.searchParams.set('s', idx + 1);
         history.replaceState(null, '', url.toString());
+
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // =========================================
-    // PAGE NAVIGATION
-    // =========================================
-
+    // --- Page navigation ---
     function setupPageNav() {
         var pages = Array.prototype.slice.call(container.querySelectorAll('.page'));
         viewState.pages = pages;
@@ -479,32 +377,13 @@
         viewState.current = 0;
 
         if (pages.length <= 1) {
-            if (viewPager) viewPager.style.display = 'none';
+            if (viewNav) viewNav.style.display = 'none';
             return;
         }
 
-        if (viewPager) viewPager.style.display = '';
-        buildDots();
+        if (viewNav) viewNav.style.display = '';
         updatePageNav();
         showCurrentPage();
-    }
-
-    function buildDots() {
-        if (!viewDots) return;
-        var html = '';
-        for (var i = 0; i < viewState.total; i++) {
-            html += '<div class="vpager__dot' + (i === 0 ? ' vpager__dot--active' : '') + '" data-page="' + i + '"></div>';
-        }
-        viewDots.innerHTML = html;
-        viewDots.querySelectorAll('.vpager__dot').forEach(function (dot) {
-            dot.addEventListener('click', function () {
-                var pg = parseInt(this.getAttribute('data-page'));
-                if (pg !== viewState.current) {
-                    viewState.current = pg;
-                    showCurrentPage();
-                }
-            });
-        });
     }
 
     function updatePageNav() {
@@ -512,11 +391,6 @@
         viewBadge.textContent = (viewState.current + 1) + ' / ' + viewState.total;
         if (viewPrev) viewPrev.disabled = viewState.current === 0;
         if (viewNext) viewNext.disabled = viewState.current === viewState.total - 1;
-        if (viewDots) {
-            viewDots.querySelectorAll('.vpager__dot').forEach(function (dot, i) {
-                dot.classList.toggle('vpager__dot--active', i === viewState.current);
-            });
-        }
     }
 
     function showCurrentPage() {
@@ -525,6 +399,7 @@
         });
         updatePageNav();
         requestAnimationFrame(scalePages);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function goPage(delta) {
@@ -534,27 +409,26 @@
         showCurrentPage();
     }
 
-    // Mobile swipe
+    // --- Mobile swipe support ---
     var touchStartX = 0;
     var touchStartY = 0;
     document.addEventListener('touchstart', function (e) {
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
     }, { passive: true });
+
     document.addEventListener('touchend', function (e) {
         if (viewState.total <= 1) return;
         var dx = touchStartX - e.changedTouches[0].clientX;
         var dy = touchStartY - e.changedTouches[0].clientY;
+        // Only horizontal swipe (dx > dy to avoid scroll conflicts)
         if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-            if (dx > 0) goPage(1);
-            else goPage(-1);
+            if (dx > 0) goPage(1);   // swipe left → next
+            else goPage(-1);          // swipe right → prev
         }
     }, { passive: true });
 
-    // =========================================
-    // SCALE PAGES — fill viewport
-    // =========================================
-
+    // --- B1: Scale pages (skip on mobile — use reading mode) ---
     function isMobileReading() {
         return window.innerWidth <= 600;
     }
@@ -562,7 +436,7 @@
     function scalePages() {
         var pages = container.querySelectorAll('.page');
         if (!pages.length) return;
-
+        // B1: mobile reading mode — no scaling
         if (isMobileReading()) {
             pages.forEach(function (pg) {
                 pg.style.transform = '';
@@ -570,26 +444,16 @@
             });
             return;
         }
-
-        // Only the single unified bar
-        var header = document.getElementById('viewHeader');
-        var headerH = header ? header.offsetHeight : 0;
-
-        var availW = window.innerWidth - 16;
-        var availH = window.innerHeight - headerH - 4;
-
-        var pageW = 794;
-        var pageH = 1123;
-
-        var scaleW = availW / pageW;
-        var scaleH = availH / pageH;
-        var scale = Math.min(scaleW, scaleH, 1);
-
+        var viewBody = document.querySelector('.view-body');
+        if (!viewBody) return;
+        var viewWidth = viewBody.clientWidth - 40;
         pages.forEach(function (pg) {
             if (pg.style.display === 'none') return;
-            if (scale < 0.99) {
+            var pageWidth = pg.offsetWidth || 794;
+            if (viewWidth < pageWidth) {
+                var scale = viewWidth / pageWidth;
                 pg.style.transform = 'scale(' + scale + ')';
-                pg.style.marginBottom = '-' + Math.round(pageH * (1 - scale)) + 'px';
+                pg.style.marginBottom = '-' + Math.round(pg.offsetHeight * (1 - scale)) + 'px';
             } else {
                 pg.style.transform = '';
                 pg.style.marginBottom = '';
@@ -597,36 +461,75 @@
         });
     }
 
-    // =========================================
-    // INIT
-    // =========================================
-
+    // --- Init ---
     loadNote(function (noteData, errorReason) {
         renderNote(noteData, errorReason);
         requestAnimationFrame(scalePages);
     });
 
+    // --- Resize debounce ---
     var resizeTimer;
     window.addEventListener('resize', function () {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(scalePages, 100);
+        resizeTimer = setTimeout(scalePages, 150);
     });
 
+    // --- Keyboard arrow navigation ---
     document.addEventListener('keydown', function (e) {
         if (viewState.total <= 1) return;
         if (e.key === 'ArrowLeft') goPage(-1);
         if (e.key === 'ArrowRight') goPage(1);
     });
 
+    // Print button
     if (printBtn) {
         printBtn.addEventListener('click', function () {
+            // Show all pages for print
             viewState.pages.forEach(function (pg) { pg.style.display = ''; });
             window.print();
+            // Restore current page view
             if (viewState.total > 1) showCurrentPage();
         });
     }
 
+    // Page nav buttons
     if (viewPrev) viewPrev.addEventListener('click', function () { goPage(-1); });
     if (viewNext) viewNext.addEventListener('click', function () { goPage(1); });
+
+    // =========================================
+    // A9: SCROLL HIDE HEADER
+    // =========================================
+
+    var lastScrollY = 0;
+    var scrollDelta = 0;
+    var headerHidden = false;
+    var SCROLL_THRESHOLD = 60;
+
+    window.addEventListener('scroll', function () {
+        var currentY = window.scrollY;
+        var diff = currentY - lastScrollY;
+
+        if (diff > 0) {
+            // Scrolling down
+            scrollDelta += diff;
+            if (scrollDelta > SCROLL_THRESHOLD && !headerHidden && currentY > 100) {
+                headerHidden = true;
+                var header = document.querySelector('.view-header');
+                if (header) header.classList.add('view-header--hidden');
+                if (viewNav) viewNav.classList.add('view-nav--hidden');
+            }
+        } else {
+            // Scrolling up
+            scrollDelta = 0;
+            if (headerHidden) {
+                headerHidden = false;
+                var header = document.querySelector('.view-header');
+                if (header) header.classList.remove('view-header--hidden');
+                if (viewNav) viewNav.classList.remove('view-nav--hidden');
+            }
+        }
+
+        lastScrollY = currentY;
+    }, { passive: true });
 
 })();
