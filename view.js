@@ -603,10 +603,10 @@
         var header = document.getElementById('viewHeader');
         var headerH = header ? header.offsetHeight : 0;
         var sessionsH = (sessionsBar && sessionsBar.style.display !== 'none') ? sessionsBar.offsetHeight : 0;
-        var pagerH = (viewPager && viewPager.style.display !== 'none') ? 48 : 0;
+        // Pager is position:absolute (floating), so it overlaps — don't reserve space
 
-        var availW = window.innerWidth - 32; // 16px padding each side
-        var availH = window.innerHeight - headerH - sessionsH - pagerH - 20; // 10px top + 10px bottom
+        var availW = window.innerWidth - 24;
+        var availH = window.innerHeight - headerH - sessionsH - 6;
 
         // Use FIXED A4 dimensions — never read from offsetHeight which can exceed A4
         var pageW = 794;
