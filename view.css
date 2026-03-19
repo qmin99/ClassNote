@@ -83,7 +83,7 @@ body{
 /* --- Body --- */
 .view-body{
     flex:1;
-    padding:32px 20px 48px;
+    padding:32px 20px 0;
     display:flex;flex-direction:column;align-items:center;
 }
 
@@ -156,8 +156,8 @@ body{
 /* --- Footer --- */
 .view-footer{
     text-align:center;
-    padding:20px;
-    font-size:12px;color:#aaa;
+    padding:12px 20px;
+    font-size:11px;color:#bbb;
 }
 .view-footer a{color:#888;text-decoration:none}
 .view-footer a:hover{color:#555;text-decoration:underline}
@@ -169,7 +169,7 @@ body{
         min-height:auto!important;
         padding:32px 24px!important;
     }
-    .view-body{padding:16px 8px 32px}
+    .view-body{padding:16px 8px 0}
     .view-header__inner{padding:10px 16px}
     .view-nav{top:48px}
 }
@@ -185,7 +185,7 @@ body{
         margin-bottom:0!important;
         font-size:15px;
     }
-    .view-body{padding:8px 4px 24px}
+    .view-body{padding:8px 4px 0}
     .view-header__inner{padding:8px 12px;gap:8px}
     .view-header__brand .view-header__name{display:none}
     .view-header__tool{width:32px;height:32px;font-size:11px;min-width:40px;min-height:40px}
