@@ -22,8 +22,18 @@
 
     // Tool buttons
     var darkBtn = document.getElementById('viewDark');
-    var fontUpBtn = document.getElementById('viewFontUp');
-    var fontDownBtn = document.getElementById('viewFontDown');
+    var shareBtn = document.getElementById('viewShare');
+    var fullscreenBtn = document.getElementById('viewFullscreen');
+    var pdfBtn = document.getElementById('viewPdf');
+
+    // Session stepper elements
+    var sessionPrevBtn = document.getElementById('sessionPrev');
+    var sessionNextBtn = document.getElementById('sessionNext');
+    var sessionTitleEl = document.getElementById('sessionTitle');
+    var sessionSelector = document.getElementById('sessionSelector');
+    var sessionPopover = document.getElementById('sessionPopover');
+    var sessionOverlay = document.getElementById('sessionOverlay');
+    var sessionDropdownList = document.getElementById('sessionDropdownList');
 
     var viewState = { pages: [], current: 0, total: 0 };
 
@@ -63,28 +73,66 @@
     initDarkMode();
 
     // =========================================
-    // B5: FONT SIZE CONTROL
+    // SHARE BUTTON
     // =========================================
 
-    var fontLevels = ['view-font--small', '', 'view-font--large'];
-    var fontLevel = parseInt(localStorage.getItem('classnote_fontlevel') || '1', 10);
-
-    function applyFontLevel() {
-        fontLevels.forEach(function (cls) { if (cls) document.body.classList.remove(cls); });
-        if (fontLevels[fontLevel]) document.body.classList.add(fontLevels[fontLevel]);
-        localStorage.setItem('classnote_fontlevel', fontLevel);
-    }
-
-    applyFontLevel();
-
-    if (fontUpBtn) {
-        fontUpBtn.addEventListener('click', function () {
-            if (fontLevel < 2) { fontLevel++; applyFontLevel(); }
+    if (shareBtn) {
+        shareBtn.addEventListener('click', function () {
+            var url = location.href;
+            if (navigator.share) {
+                navigator.share({ title: document.title, url: url }).catch(function () {});
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(function () {
+                    showToast('링크가 복사되었습니다');
+                });
+            }
         });
     }
-    if (fontDownBtn) {
-        fontDownBtn.addEventListener('click', function () {
-            if (fontLevel > 0) { fontLevel--; applyFontLevel(); }
+
+    function showToast(msg) {
+        var t = document.createElement('div');
+        t.textContent = msg;
+        t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s';
+        document.body.appendChild(t);
+        requestAnimationFrame(function () { t.style.opacity = '1'; });
+        setTimeout(function () {
+            t.style.opacity = '0';
+            setTimeout(function () { t.remove(); }, 300);
+        }, 2000);
+    }
+
+    // =========================================
+    // FULLSCREEN BUTTON
+    // =========================================
+
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', function () {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(function () {});
+            } else {
+                document.exitFullscreen();
+            }
+        });
+        document.addEventListener('fullscreenchange', function () {
+            var isFs = !!document.fullscreenElement;
+            fullscreenBtn.innerHTML = isFs
+                ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>'
+                : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+        });
+    }
+
+    // =========================================
+    // PDF BUTTON
+    // =========================================
+
+    if (pdfBtn) {
+        pdfBtn.addEventListener('click', function () {
+            viewState.pages.forEach(function (pg) { pg.style.display = ''; });
+            showToast('PDF로 저장하려면 인쇄 대화상자에서 "PDF로 저장"을 선택하세요');
+            setTimeout(function () {
+                window.print();
+                if (viewState.total > 1) showCurrentPage();
+            }, 300);
         });
     }
 
@@ -238,7 +286,6 @@
     var noteFont = 'sans';
 
     var sessionsBar = document.getElementById('viewSessions');
-    var sessionList = document.getElementById('viewSessionList');
 
     // --- Render note into container ---
     function renderNote(data, errorReason) {
@@ -280,24 +327,31 @@
             metaEl.textContent = metaParts.join(' · ');
         }
 
-        // Build session tabs (only if multiple sessions)
-        if (viewSessions.length > 1 && sessionsBar && sessionList) {
-            var tabsHtml = '';
-            viewSessions.forEach(function (s, i) {
-                tabsHtml += '<div class="view-sessions__tab' + (i === 0 ? ' view-sessions__tab--active' : '') + '" data-session="' + i + '">';
-                tabsHtml += s.title || ('Session ' + (i + 1));
-                tabsHtml += '</div>';
-            });
-            sessionList.innerHTML = tabsHtml;
+        // Build session stepper (only if multiple sessions)
+        if (viewSessions.length > 1 && sessionsBar) {
+            buildSessionPopover();
+            updateSessionStepper();
             sessionsBar.style.display = '';
 
-            // Bind tab clicks
-            sessionList.querySelectorAll('.view-sessions__tab').forEach(function (tab) {
-                tab.addEventListener('click', function () {
-                    var idx = parseInt(this.getAttribute('data-session'));
-                    if (idx !== currentSessionIdx) switchSession(idx);
+            // Arrow buttons
+            if (sessionPrevBtn) {
+                sessionPrevBtn.addEventListener('click', function () {
+                    if (currentSessionIdx > 0) switchSession(currentSessionIdx - 1);
                 });
-            });
+            }
+            if (sessionNextBtn) {
+                sessionNextBtn.addEventListener('click', function () {
+                    if (currentSessionIdx < viewSessions.length - 1) switchSession(currentSessionIdx + 1);
+                });
+            }
+            // Trigger click → toggle popover
+            if (sessionSelector) {
+                sessionSelector.addEventListener('click', function () { togglePopover(); });
+            }
+            // Overlay click → close popover
+            if (sessionOverlay) {
+                sessionOverlay.addEventListener('click', function () { closePopover(); });
+            }
         }
 
         // Check ?s= parameter for initial session
@@ -352,13 +406,8 @@
     function switchSession(idx) {
         currentSessionIdx = idx;
         renderSession(idx);
-
-        // Update tab active state
-        if (sessionList) {
-            sessionList.querySelectorAll('.view-sessions__tab').forEach(function (tab, i) {
-                tab.classList.toggle('view-sessions__tab--active', i === idx);
-            });
-        }
+        updateSessionStepper();
+        closePopover();
 
         // Update URL ?s= parameter
         var url = new URL(location.href);
@@ -367,6 +416,64 @@
 
         // Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // =========================================
+    // SESSION STEPPER + POPOVER
+    // =========================================
+
+    function updateSessionStepper() {
+        if (!sessionTitleEl) return;
+        var s = viewSessions[currentSessionIdx];
+        var title = s.title || ('Session ' + (currentSessionIdx + 1));
+        sessionTitleEl.textContent = (currentSessionIdx + 1) + '회차  \u00b7  ' + title;
+        if (sessionPrevBtn) sessionPrevBtn.disabled = currentSessionIdx === 0;
+        if (sessionNextBtn) sessionNextBtn.disabled = currentSessionIdx === viewSessions.length - 1;
+    }
+
+    function buildSessionPopover() {
+        if (!sessionDropdownList) return;
+        var html = '';
+        viewSessions.forEach(function (s, i) {
+            var title = s.title || ('Session ' + (i + 1));
+            var sub = s.subtitle || '';
+            var active = i === currentSessionIdx ? ' view-sessions__item--active' : '';
+            html += '<button class="view-sessions__item' + active + '" data-idx="' + i + '">'
+                + '<span class="view-sessions__item-num">' + (i + 1) + '</span>'
+                + '<span class="view-sessions__item-text">'
+                + '<span class="view-sessions__item-title">' + title + '</span>'
+                + (sub ? '<span class="view-sessions__item-sub">' + sub + '</span>' : '')
+                + '</span></button>';
+        });
+        sessionDropdownList.innerHTML = html;
+
+        sessionDropdownList.querySelectorAll('.view-sessions__item').forEach(function (item) {
+            item.addEventListener('click', function () {
+                var idx = parseInt(this.getAttribute('data-idx'));
+                if (idx !== currentSessionIdx) switchSession(idx);
+            });
+        });
+    }
+
+    function openPopover() {
+        if (!sessionPopover || !sessionOverlay) return;
+        // Rebuild to update active state
+        buildSessionPopover();
+        sessionPopover.style.display = '';
+        sessionOverlay.style.display = '';
+        if (sessionSelector) sessionSelector.classList.add('view-sessions__trigger--open');
+    }
+
+    function closePopover() {
+        if (sessionPopover) sessionPopover.style.display = 'none';
+        if (sessionOverlay) sessionOverlay.style.display = 'none';
+        if (sessionSelector) sessionSelector.classList.remove('view-sessions__trigger--open');
+    }
+
+    function togglePopover() {
+        var isOpen = sessionPopover && sessionPopover.style.display !== 'none';
+        if (isOpen) closePopover();
+        else openPopover();
     }
 
     // --- Page navigation ---

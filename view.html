@@ -26,10 +26,17 @@
             </div>
             <div class="view-header__meta" id="viewMeta"></div>
             <div class="view-header__tools">
-                <button class="view-header__tool" id="viewFontDown" aria-label="글씨 작게">A-</button>
-                <button class="view-header__tool" id="viewFontUp" aria-label="글씨 크게">A+</button>
-                <button class="view-header__tool" id="viewDark" aria-label="다크모드 전환">🌙</button>
-                <button class="view-header__tool" id="viewPrint" aria-label="인쇄">
+                <button class="view-header__tool" id="viewShare" aria-label="공유" title="공유">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                </button>
+                <button class="view-header__tool" id="viewFullscreen" aria-label="전체화면" title="전체화면">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                </button>
+                <button class="view-header__tool" id="viewDark" aria-label="다크모드 전환" title="다크모드">🌙</button>
+                <button class="view-header__tool" id="viewPdf" aria-label="PDF 저장" title="PDF 저장">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+                </button>
+                <button class="view-header__tool" id="viewPrint" aria-label="인쇄" title="인쇄">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                 </button>
             </div>
@@ -43,9 +50,24 @@
         <button class="view-nav__btn" id="viewNext" aria-label="다음 페이지">&#8594;</button>
     </div>
 
-    <!-- Session Tabs -->
+    <!-- Session Stepper -->
     <div class="view-sessions" id="viewSessions" style="display:none">
-        <div class="view-sessions__list" id="viewSessionList"></div>
+        <div class="view-sessions__stepper">
+            <button class="view-sessions__arrow" id="sessionPrev" aria-label="이전 세션">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <button class="view-sessions__trigger" id="sessionSelector">
+                <span class="view-sessions__label" id="sessionTitle"></span>
+                <svg class="view-sessions__caret" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button class="view-sessions__arrow" id="sessionNext" aria-label="다음 세션">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+        </div>
+        <div class="view-sessions__overlay" id="sessionOverlay" style="display:none"></div>
+        <div class="view-sessions__popover" id="sessionPopover" style="display:none">
+            <div class="view-sessions__popover-list" id="sessionDropdownList"></div>
+        </div>
     </div>
 
     <!-- Note Container -->
