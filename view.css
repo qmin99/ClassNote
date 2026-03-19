@@ -83,7 +83,7 @@ body{
 /* --- Body --- */
 .view-body{
     flex:1;
-    padding:32px 20px 0;
+    padding:32px 20px 48px;
     display:flex;flex-direction:column;align-items:center;
 }
 
@@ -153,16 +153,14 @@ body{
 .view-empty__title{font-size:18px;font-weight:700;color:#333;margin-bottom:8px}
 .view-empty__desc{font-size:14px;color:#888}
 
-/* --- In-page footer --- */
-.view-page-footer{
+/* --- Footer --- */
+.view-footer{
     text-align:center;
-    padding:16px 0 8px;
-    font-size:10px;color:#bbb;
-    letter-spacing:.02em;
-    margin-top:auto;
+    padding:20px;
+    font-size:12px;color:#aaa;
 }
-.view-page-footer a{color:#999;text-decoration:none}
-.view-page-footer a:hover{color:#555;text-decoration:underline}
+.view-footer a{color:#888;text-decoration:none}
+.view-footer a:hover{color:#555;text-decoration:underline}
 
 /* --- Responsive: tablet --- */
 @media(max-width:840px){
@@ -171,7 +169,7 @@ body{
         min-height:auto!important;
         padding:32px 24px!important;
     }
-    .view-body{padding:16px 8px 0}
+    .view-body{padding:16px 8px 32px}
     .view-header__inner{padding:10px 16px}
     .view-nav{top:48px}
 }
@@ -187,7 +185,7 @@ body{
         margin-bottom:0!important;
         font-size:15px;
     }
-    .view-body{padding:8px 4px 0}
+    .view-body{padding:8px 4px 24px}
     .view-header__inner{padding:8px 12px;gap:8px}
     .view-header__brand .view-header__name{display:none}
     .view-header__tool{width:32px;height:32px;font-size:11px;min-width:40px;min-height:40px}
@@ -229,8 +227,8 @@ body{
 [data-dark="true"] .view-empty__desc{color:#888}
 [data-dark="true"] .view-loading__text{color:#777}
 [data-dark="true"] .view-loading__spinner{border-color:#444;border-top-color:#aaa}
-[data-dark="true"] .view-page-footer{color:#555}
-[data-dark="true"] .view-page-footer a{color:#666}
+[data-dark="true"] .view-footer{color:#555}
+[data-dark="true"] .view-footer a{color:#777}
 [data-dark="true"] .view-offline{background:#3d3520;color:#ffc107;border-bottom-color:#665a2e}
 
 /* --- Session Stepper --- */
@@ -336,8 +334,7 @@ body{
 
 /* --- Print --- */
 @media print{
-    .view-header,.view-nav,.view-offline,.view-sessions{display:none!important}
-    .view-page-footer{display:none!important}
+    .view-header,.view-footer,.view-nav,.view-offline,.view-sessions{display:none!important}
     body{background:#fff}
     .view-body{padding:0}
     .view-pages{gap:0}
