@@ -1,7 +1,7 @@
 /* ============================================
-   클래스노트 — Student View (v2)
-   Viewport-fit A4, modern session pills,
-   share/fullscreen, light-mode default
+   클래스노트 — Student View (v3)
+   Viewport-fit A4, polished session stepper,
+   share/fullscreen/PDF, light-mode default
    ============================================ */
 
 (function () {
@@ -12,6 +12,7 @@
     var metaEl = document.getElementById('viewMeta');
     var printBtn = document.getElementById('viewPrint');
     var loadingEl = document.getElementById('viewLoading');
+
     // Page navigator elements
     var viewPager = document.getElementById('viewPager');
     var viewPrev = document.getElementById('viewPrev');
@@ -21,20 +22,20 @@
 
     // Tool buttons
     var darkBtn = document.getElementById('viewDark');
+    var shareBtn = document.getElementById('viewShare');
+    var fullscreenBtn = document.getElementById('viewFullscreen');
+    var pdfBtn = document.getElementById('viewPdf');
     var toastEl = document.getElementById('viewToast');
 
-    // Session stepper elements
+    // Session stepper elements (v3)
+    var sessionsBar = document.getElementById('viewSessions');
     var sessionPrevBtn = document.getElementById('sessionPrev');
     var sessionNextBtn = document.getElementById('sessionNext');
     var sessionTitleEl = document.getElementById('sessionTitle');
     var sessionSelector = document.getElementById('sessionSelector');
-    var sessionDropdown = document.getElementById('sessionDropdown');
+    var sessionPopover = document.getElementById('sessionPopover');
+    var sessionOverlay = document.getElementById('sessionOverlay');
     var sessionDropdownList = document.getElementById('sessionDropdownList');
-
-    // Extra tool buttons
-    var shareBtn = document.getElementById('viewShare');
-    var fullscreenBtn = document.getElementById('viewFullscreen');
-    var pdfBtn = document.getElementById('viewPdf');
 
     var viewState = { pages: [], current: 0, total: 0 };
 
@@ -66,7 +67,6 @@
 
     function initDarkMode() {
         var saved = localStorage.getItem('classnote_dark');
-        // Default to light mode — only dark if explicitly saved as true
         var isDark = saved === 'true';
         applyDark(isDark);
     }
@@ -81,7 +81,6 @@
         darkBtn.addEventListener('click', function () {
             var current = document.documentElement.getAttribute('data-dark') === 'true';
             applyDark(!current);
-            // Rescale pages after theme change
             requestAnimationFrame(scalePages);
         });
     }
@@ -285,8 +284,6 @@
     var noteLayout = 'classic';
     var noteFont = 'sans';
 
-    var sessionsBar = document.getElementById('viewSessions');
-
     // =========================================
     // RENDER NOTE
     // =========================================
@@ -312,7 +309,6 @@
         container.style.display = '';
 
         var settings = data.settings || {};
-        // settings used below for theme/layout/font/meta
 
         // Validate theme/layout
         var validThemes = ['ink', 'teal', 'forest', 'plum', 'ember', 'steel'];
@@ -322,7 +318,7 @@
         noteLayout = validLayouts.indexOf(settings.layout) !== -1 ? settings.layout : 'classic';
         noteFont = settings.font || 'sans';
 
-        // Show meta: student name + date (not teacher name)
+        // Show meta: student name + date
         var metaParts = [];
         if (settings.studentName) metaParts.push(settings.studentName);
         if (settings.date) metaParts.push(settings.date);
@@ -333,8 +329,8 @@
         // Show session stepper (only if multiple sessions)
         if (viewSessions.length > 1 && sessionsBar) {
             sessionsBar.style.display = '';
-            buildSessionDropdown();
-            // Bind stepper arrows (once)
+            buildSessionPopover();
+
             if (sessionPrevBtn && !sessionPrevBtn._bound) {
                 sessionPrevBtn._bound = true;
                 sessionPrevBtn.addEventListener('click', function () {
@@ -347,11 +343,16 @@
                     if (currentSessionIdx < viewSessions.length - 1) switchSession(currentSessionIdx + 1);
                 });
             }
-            // Bind selector click → toggle dropdown
             if (sessionSelector && !sessionSelector._bound) {
                 sessionSelector._bound = true;
                 sessionSelector.addEventListener('click', function () {
-                    toggleSessionDropdown();
+                    togglePopover();
+                });
+            }
+            if (sessionOverlay && !sessionOverlay._bound) {
+                sessionOverlay._bound = true;
+                sessionOverlay.addEventListener('click', function () {
+                    closePopover();
                 });
             }
         }
@@ -402,6 +403,10 @@
         requestAnimationFrame(scalePages);
     }
 
+    // =========================================
+    // SESSION STEPPER + POPOVER (v3)
+    // =========================================
+
     function updateSessionStepper(idx) {
         var session = viewSessions[idx];
         var label = (idx + 1) + '회차';
@@ -409,68 +414,71 @@
         if (sessionTitleEl) sessionTitleEl.textContent = label + '  ·  ' + title;
         if (sessionPrevBtn) sessionPrevBtn.disabled = idx === 0;
         if (sessionNextBtn) sessionNextBtn.disabled = idx === viewSessions.length - 1;
-        // Update dropdown active state
+
+        // Update popover active state
         if (sessionDropdownList) {
-            sessionDropdownList.querySelectorAll('.view-sessions__dropdown-item').forEach(function (item, i) {
-                item.classList.toggle('view-sessions__dropdown-item--active', i === idx);
+            var items = sessionDropdownList.querySelectorAll('.view-sessions__item');
+            items.forEach(function (item, i) {
+                item.classList.toggle('view-sessions__item--active', i === idx);
+                // Update number circle
+                var numEl = item.querySelector('.view-sessions__item-num');
+                if (numEl) {
+                    // active styling handled by CSS
+                }
             });
         }
     }
 
-    function buildSessionDropdown() {
+    function buildSessionPopover() {
         if (!sessionDropdownList) return;
         var html = '';
         viewSessions.forEach(function (s, i) {
             var isActive = i === currentSessionIdx;
-            html += '<button class="view-sessions__dropdown-item' + (isActive ? ' view-sessions__dropdown-item--active' : '') + '" data-session="' + i + '">';
-            html += '<span class="view-sessions__dropdown-num">' + (i + 1) + '</span>';
-            html += (s.title || ('Session ' + (i + 1)));
+            html += '<button class="view-sessions__item' + (isActive ? ' view-sessions__item--active' : '') + '" data-session="' + i + '">';
+            html += '<span class="view-sessions__item-num">' + (i + 1) + '</span>';
+            html += '<div class="view-sessions__item-text">';
+            html += '<span class="view-sessions__item-title">' + (s.title || ('Session ' + (i + 1))) + '</span>';
+            if (s.subtitle) {
+                html += '<span class="view-sessions__item-sub">' + s.subtitle + '</span>';
+            }
+            html += '</div>';
             html += '</button>';
         });
         sessionDropdownList.innerHTML = html;
 
         // Bind clicks
-        sessionDropdownList.querySelectorAll('.view-sessions__dropdown-item').forEach(function (item) {
+        sessionDropdownList.querySelectorAll('.view-sessions__item').forEach(function (item) {
             item.addEventListener('click', function () {
                 var idx = parseInt(this.getAttribute('data-session'));
                 if (idx !== currentSessionIdx) switchSession(idx);
-                closeSessionDropdown();
+                closePopover();
             });
         });
     }
 
-    var dropdownOpen = false;
+    var popoverOpen = false;
 
-    function toggleSessionDropdown() {
-        if (dropdownOpen) {
-            closeSessionDropdown();
+    function togglePopover() {
+        if (popoverOpen) {
+            closePopover();
         } else {
-            openSessionDropdown();
+            openPopover();
         }
     }
 
-    function openSessionDropdown() {
-        if (!sessionDropdown) return;
-        dropdownOpen = true;
-        sessionDropdown.style.display = '';
-        if (sessionSelector) sessionSelector.classList.add('view-sessions__selector--open');
+    function openPopover() {
+        popoverOpen = true;
+        if (sessionPopover) sessionPopover.style.display = '';
+        if (sessionOverlay) sessionOverlay.style.display = '';
+        if (sessionSelector) sessionSelector.classList.add('view-sessions__trigger--open');
     }
 
-    function closeSessionDropdown() {
-        if (!sessionDropdown) return;
-        dropdownOpen = false;
-        sessionDropdown.style.display = 'none';
-        if (sessionSelector) sessionSelector.classList.remove('view-sessions__selector--open');
+    function closePopover() {
+        popoverOpen = false;
+        if (sessionPopover) sessionPopover.style.display = 'none';
+        if (sessionOverlay) sessionOverlay.style.display = 'none';
+        if (sessionSelector) sessionSelector.classList.remove('view-sessions__trigger--open');
     }
-
-    // Close dropdown on outside click
-    document.addEventListener('click', function (e) {
-        if (!dropdownOpen) return;
-        var target = e.target;
-        if (sessionSelector && sessionSelector.contains(target)) return;
-        if (sessionDropdown && sessionDropdown.contains(target)) return;
-        closeSessionDropdown();
-    });
 
     function switchSession(idx) {
         currentSessionIdx = idx;
@@ -512,7 +520,6 @@
         }
         viewDots.innerHTML = html;
 
-        // Click on dots
         viewDots.querySelectorAll('.view-pager__dot').forEach(function (dot) {
             dot.addEventListener('click', function () {
                 var pg = parseInt(this.getAttribute('data-page'));
@@ -531,7 +538,6 @@
         if (viewPrev) viewPrev.disabled = viewState.current === 0;
         if (viewNext) viewNext.disabled = viewState.current === viewState.total - 1;
 
-        // Update dots
         if (viewDots) {
             viewDots.querySelectorAll('.view-pager__dot').forEach(function (dot, i) {
                 dot.classList.toggle('view-pager__dot--active', i === viewState.current);
@@ -573,7 +579,7 @@
     }, { passive: true });
 
     // =========================================
-    // SCALE PAGES — fit to viewport
+    // SCALE PAGES — fit A4 to viewport
     // =========================================
 
     function isMobileReading() {
@@ -597,19 +603,21 @@
         var header = document.getElementById('viewHeader');
         var headerH = header ? header.offsetHeight : 0;
         var sessionsH = (sessionsBar && sessionsBar.style.display !== 'none') ? sessionsBar.offsetHeight : 0;
-        var pagerH = (viewPager && viewPager.style.display !== 'none') ? 48 : 0; // reserve space for floating pager
+        var pagerH = (viewPager && viewPager.style.display !== 'none') ? 48 : 0;
 
-        var availW = window.innerWidth - 48; // 24px padding each side
-        var availH = window.innerHeight - headerH - sessionsH - pagerH - 32; // 16px top + 16px bottom
+        var availW = window.innerWidth - 32; // 16px padding each side
+        var availH = window.innerHeight - headerH - sessionsH - pagerH - 20; // 10px top + 10px bottom
+
+        // Use FIXED A4 dimensions — never read from offsetHeight which can exceed A4
+        var pageW = 794;
+        var pageH = 1123;
+
+        var scaleW = availW / pageW;
+        var scaleH = availH / pageH;
+        var scale = Math.min(scaleW, scaleH, 1); // Never scale up beyond 1
 
         pages.forEach(function (pg) {
             if (pg.style.display === 'none') return;
-            var pageW = pg.offsetWidth || 794;
-            var pageH = pg.offsetHeight || 1123;
-
-            var scaleW = availW / pageW;
-            var scaleH = availH / pageH;
-            var scale = Math.min(scaleW, scaleH, 1); // Never scale up
 
             if (scale < 0.99) {
                 pg.style.transform = 'scale(' + scale + ')';
