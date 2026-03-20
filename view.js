@@ -26,14 +26,6 @@
     var fullscreenBtn = document.getElementById('viewFullscreen');
     var pdfBtn = document.getElementById('viewPdf');
 
-    // Session stepper elements
-    var sessionPrevBtn = document.getElementById('sessionPrev');
-    var sessionNextBtn = document.getElementById('sessionNext');
-    var sessionTitleEl = document.getElementById('sessionTitle');
-    var sessionSelector = document.getElementById('sessionSelector');
-    var sessionPopover = document.getElementById('sessionPopover');
-    var sessionOverlay = document.getElementById('sessionOverlay');
-    var sessionDropdownList = document.getElementById('sessionDropdownList');
 
     var viewState = { pages: [], current: 0, total: 0 };
 
@@ -285,8 +277,6 @@
     var noteLayout = 'classic';
     var noteFont = 'sans';
 
-    var sessionsBar = document.getElementById('viewSessions');
-
     // --- Render note into container ---
     function renderNote(data, errorReason) {
         hideLoading();
@@ -320,51 +310,36 @@
         noteFont = settings.font || 'sans';
 
         // Show meta info in header
-        var metaParts = [];
-        if (settings.teacherName) metaParts.push(settings.teacherName + ' 선생님');
-        if (settings.brand) metaParts.push(settings.brand);
-        if (metaEl && metaParts.length) {
-            metaEl.textContent = metaParts.join(' · ');
+        if (metaEl && settings.studentName) {
+            metaEl.textContent = settings.studentName;
         }
 
         // Check ?s= parameter for initial session
         var sParam = new URLSearchParams(location.search).get('s');
         if (sParam) {
-            var sIdx = parseInt(sParam) - 1; // 1-based for user
+            var sIdx = parseInt(sParam) - 1;
             if (sIdx >= 0 && sIdx < viewSessions.length) {
                 currentSessionIdx = sIdx;
             }
         }
 
-        // Build session stepper (only if multiple sessions)
-        if (viewSessions.length > 1 && sessionsBar) {
-            sessionsBar.style.display = '';
-            buildSessionPopover();
-            updateSessionStepper();
-
-            // Arrow buttons
-            if (sessionPrevBtn) {
-                sessionPrevBtn.addEventListener('click', function () {
-                    if (currentSessionIdx > 0) switchSession(currentSessionIdx - 1);
-                });
-            }
-            if (sessionNextBtn) {
-                sessionNextBtn.addEventListener('click', function () {
-                    if (currentSessionIdx < viewSessions.length - 1) switchSession(currentSessionIdx + 1);
-                });
-            }
-            // Trigger click → toggle popover
-            if (sessionSelector) {
-                sessionSelector.addEventListener('click', function () { togglePopover(); });
-            }
-            // Overlay click → close popover
-            if (sessionOverlay) {
-                sessionOverlay.addEventListener('click', function () { closePopover(); });
-            }
-        }
-
         // Render initial session
         renderSession(currentSessionIdx);
+    }
+
+    function buildSessionTabs() {
+        if (viewSessions.length <= 1) return '';
+        var html = '<div class="view-session-tabs">';
+        viewSessions.forEach(function (s, i) {
+            var title = s.title || ('Session ' + (i + 1));
+            var active = i === currentSessionIdx ? ' view-session-tabs__tab--active' : '';
+            html += '<button class="view-session-tabs__tab' + active + '" data-session="' + i + '">'
+                + '<span class="view-session-tabs__num">' + (i + 1) + '</span>'
+                + '<span class="view-session-tabs__title">' + title + '</span>'
+                + '</button>';
+        });
+        html += '</div>';
+        return html;
     }
 
     function renderSession(idx) {
@@ -378,7 +353,15 @@
 
         // Clean and inject HTML
         var cleanHtml = stripInteractive(session.html);
-        container.innerHTML = cleanHtml;
+        container.innerHTML = buildSessionTabs() + cleanHtml;
+
+        // Bind session tab clicks
+        container.querySelectorAll('.view-session-tabs__tab').forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                var newIdx = parseInt(this.getAttribute('data-session'));
+                if (newIdx !== currentSessionIdx) switchSession(newIdx);
+            });
+        });
 
         // Apply theme to all pages
         container.querySelectorAll('.page').forEach(function (pg) {
@@ -414,8 +397,6 @@
     function switchSession(idx) {
         currentSessionIdx = idx;
         renderSession(idx);
-        updateSessionStepper();
-        closePopover();
 
         // Update URL ?s= parameter
         var url = new URL(location.href);
@@ -424,64 +405,6 @@
 
         // Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // =========================================
-    // SESSION STEPPER + POPOVER
-    // =========================================
-
-    function updateSessionStepper() {
-        if (!sessionTitleEl) return;
-        var s = viewSessions[currentSessionIdx];
-        var title = s.title || ('Session ' + (currentSessionIdx + 1));
-        sessionTitleEl.textContent = (currentSessionIdx + 1) + '회차  \u00b7  ' + title;
-        if (sessionPrevBtn) sessionPrevBtn.disabled = currentSessionIdx === 0;
-        if (sessionNextBtn) sessionNextBtn.disabled = currentSessionIdx === viewSessions.length - 1;
-    }
-
-    function buildSessionPopover() {
-        if (!sessionDropdownList) return;
-        var html = '';
-        viewSessions.forEach(function (s, i) {
-            var title = s.title || ('Session ' + (i + 1));
-            var sub = s.subtitle || '';
-            var active = i === currentSessionIdx ? ' view-sessions__item--active' : '';
-            html += '<button class="view-sessions__item' + active + '" data-idx="' + i + '">'
-                + '<span class="view-sessions__item-num">' + (i + 1) + '</span>'
-                + '<span class="view-sessions__item-text">'
-                + '<span class="view-sessions__item-title">' + title + '</span>'
-                + (sub ? '<span class="view-sessions__item-sub">' + sub + '</span>' : '')
-                + '</span></button>';
-        });
-        sessionDropdownList.innerHTML = html;
-
-        sessionDropdownList.querySelectorAll('.view-sessions__item').forEach(function (item) {
-            item.addEventListener('click', function () {
-                var idx = parseInt(this.getAttribute('data-idx'));
-                if (idx !== currentSessionIdx) switchSession(idx);
-            });
-        });
-    }
-
-    function openPopover() {
-        if (!sessionPopover || !sessionOverlay) return;
-        // Rebuild to update active state
-        buildSessionPopover();
-        sessionPopover.style.display = '';
-        sessionOverlay.style.display = '';
-        if (sessionSelector) sessionSelector.classList.add('view-sessions__trigger--open');
-    }
-
-    function closePopover() {
-        if (sessionPopover) sessionPopover.style.display = 'none';
-        if (sessionOverlay) sessionOverlay.style.display = 'none';
-        if (sessionSelector) sessionSelector.classList.remove('view-sessions__trigger--open');
-    }
-
-    function togglePopover() {
-        var isOpen = sessionPopover && sessionPopover.style.display !== 'none';
-        if (isOpen) closePopover();
-        else openPopover();
     }
 
     // --- Page navigation ---
