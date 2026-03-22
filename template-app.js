@@ -3270,15 +3270,13 @@
             bh += '</div></div>';
             // Tags
             var subjectLabels = { english: '영어', math: '수학', korean: '국어' };
-            var typeLabels = { conversation: '회화', daily: '일상', reading: '독해', grammar: '문법', basic: '기본', 'advanced-math': '심화', 'problem-solving': '문풀', literature: '문학', 'grammar-kr': '문법', 'writing-kr': '작문' };
-            if (cn.subject || cn.type) {
+            var levelLabels = { elementary: '초등', middle: '중등', high: '고등', adult: '성인' };
+            var diffLabels = { beginner: '초급', intermediate: '중급', advanced: '고급' };
+            if (cn.subject || cn.level || cn.difficulty) {
                 bh += '<div class="sb__brand-tags">';
                 if (cn.subject) bh += '<span class="sb__tag">' + (subjectLabels[cn.subject] || cn.subject) + '</span>';
-                if (cn.type) bh += '<span class="sb__tag">' + (typeLabels[cn.type] || cn.type) + '</span>';
-                if (cn.level) {
-                    var levelLabels = { elementary: '초등', middle: '중등', high: '고등', adult: '성인' };
-                    bh += '<span class="sb__tag">' + (levelLabels[cn.level] || cn.level) + '</span>';
-                }
+                if (cn.level) bh += '<span class="sb__tag">' + (levelLabels[cn.level] || cn.level) + '</span>';
+                if (cn.difficulty) bh += '<span class="sb__tag">' + (diffLabels[cn.difficulty] || cn.difficulty) + '</span>';
                 bh += '</div>';
             }
             brandEl.innerHTML = bh;

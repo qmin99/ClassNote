@@ -21,9 +21,35 @@
     <header class="view-header">
         <div class="view-header__inner">
             <div class="view-header__brand">
-                <span class="view-header__icon">📑</span>
-                <span class="view-header__name">클래스노트</span>
+                <img src="screenshots/classnote-logo.png" alt="ClassNote" class="view-header__logo">
             </div>
+
+            <!-- Center: Session selector + Page navigator -->
+            <div class="view-header__center">
+                <!-- Session dropdown (hidden if single session) -->
+                <div class="view-session-select" id="viewSessionSelect" style="display:none">
+                    <button class="view-session-select__trigger" id="viewSessionTrigger">
+                        <span id="viewSessionLabel">Session 1</span>
+                        <svg class="view-session-select__chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="view-session-select__dropdown" id="viewSessionDropdown"></div>
+                </div>
+
+                <!-- Divider -->
+                <div class="view-header__divider" id="viewDivider" style="display:none"></div>
+
+                <!-- Page navigator (hidden if single page) -->
+                <div class="view-page-nav" id="viewNav" style="display:none">
+                    <button class="view-page-nav__btn" id="viewPrev" aria-label="이전 페이지">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <span class="view-page-nav__badge" id="viewBadge">1 / 1</span>
+                    <button class="view-page-nav__btn" id="viewNext" aria-label="다음 페이지">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                </div>
+            </div>
+
             <div class="view-header__meta" id="viewMeta"></div>
             <div class="view-header__tools">
                 <button class="view-header__tool" id="viewShare" aria-label="공유" title="공유">
@@ -42,13 +68,6 @@
             </div>
         </div>
     </header>
-
-    <!-- Page Navigator -->
-    <div class="view-nav" id="viewNav" style="display:none">
-        <button class="view-nav__btn" id="viewPrev" aria-label="이전 페이지">&#8592;</button>
-        <span class="view-nav__badge" id="viewBadge"></span>
-        <button class="view-nav__btn" id="viewNext" aria-label="다음 페이지">&#8594;</button>
-    </div>
 
     <!-- Note Container -->
     <main class="view-body">

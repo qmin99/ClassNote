@@ -36,7 +36,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
     display:flex;align-items:center;justify-content:space-between;
     padding:0 20px;z-index:100;
 }
-.topbar__logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);font-weight:700;font-size:14px}
+.topbar__logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);font-weight:700;font-size:14px;padding-left:15px}
+.topbar__logo-img{height:30px;width:auto;mix-blend-mode:multiply}
 .topbar__logo-icon{width:32px;height:32px;background:var(--ac);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:11px;font-weight:700;font-style:italic;transition:background .3s}
 .topbar__logo-text{font-family:var(--kr)}
 .topbar__right{display:flex;gap:8px}
@@ -65,7 +66,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .sidebar::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
 
 /* Brand header */
-.sb__brand{padding:20px 20px 16px;border-bottom:1px solid var(--bd2)}
+.sb__brand{padding:20px 20px 16px 35px;border-bottom:1px solid var(--bd2)}
 .sb__brand-row{display:flex;align-items:center;gap:10px}
 .sb__brand-logo{width:32px;height:32px;border-radius:7px;object-fit:cover;flex-shrink:0}
 .sb__brand-info{min-width:0;flex:1}
