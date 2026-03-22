@@ -4447,33 +4447,8 @@
     // --- Main publish function ---
     var currentPublishedSlug = null;
 
-    // Capture a single session's HTML using offscreen rendering
-    function captureSessionHtml(session, course) {
-        var renderer = renderers[course.renderer];
-        if (!renderer) return '';
-
-        // Create offscreen container
-        var offscreen = document.createElement('div');
-        offscreen.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;visibility:hidden;';
-        document.body.appendChild(offscreen);
-
-        // Create page element matching the real one
-        var cn = window.__classnote || {};
-        var page = document.createElement('div');
-        page.className = 'page layout--' + ((cn.layout) || 'classic');
-        page.setAttribute('data-theme', state.theme);
-        var fontVal = cn.font || 'sans';
-        if (fontVal === 'serif') page.style.fontFamily = 'var(--serif)';
-        else if (fontVal === 'mono') page.style.fontFamily = 'var(--mono)';
-
-        page.innerHTML = renderer(session, course, getCtx());
-        offscreen.appendChild(page);
-
-        // Force layout calculation
-        void page.offsetHeight;
-
-        // Capture and clean HTML
-        var clone = page.cloneNode(true);
+    // Clean a page clone for publishing (remove editor artifacts)
+    function cleanPageClone(clone) {
         clone.querySelectorAll('[contenteditable]').forEach(function (el) {
             el.removeAttribute('contenteditable');
         });
@@ -4491,10 +4466,87 @@
         clone.querySelectorAll('.crud-solo').forEach(function (el) {
             el.classList.remove('crud-solo');
         });
+        // Remove page numbers (view.js doesn't need them)
+        clone.querySelectorAll('.p-page-num').forEach(function (el) {
+            el.remove();
+        });
+        return clone;
+    }
 
-        var html = clone.outerHTML;
+    // Capture a single session's HTML using offscreen rendering
+    // Now supports multi-page: runs countPages() to split into multiple .page divs
+    function captureSessionHtml(session, course) {
+        var renderer = renderers[course.renderer];
+        if (!renderer) return '';
+
+        var cn = window.__classnote || {};
+        var layoutCls = 'layout--' + ((cn.layout) || 'classic');
+        var theme = state.theme;
+        var fontVal = cn.font || 'sans';
+
+        // Create offscreen container
+        var offscreen = document.createElement('div');
+        offscreen.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;visibility:hidden;';
+        document.body.appendChild(offscreen);
+
+        // Create page element matching the real one
+        var page = document.createElement('div');
+        page.className = 'page ' + layoutCls;
+        page.setAttribute('data-theme', theme);
+        if (fontVal === 'serif') page.style.fontFamily = 'var(--serif)';
+        else if (fontVal === 'mono') page.style.fontFamily = 'var(--mono)';
+
+        page.innerHTML = renderer(session, course, getCtx());
+        offscreen.appendChild(page);
+
+        // Allow overflow for measurement
+        page.style.maxHeight = 'none';
+        page.style.overflow = 'visible';
+        void page.offsetHeight;
+
+        // Use countPages to detect multi-page
+        var result = countPages(page);
+
+        if (result.count <= 1) {
+            // Single page — capture as before
+            var clone = cleanPageClone(page.cloneNode(true));
+            var html = clone.outerHTML;
+            document.body.removeChild(offscreen);
+            return html;
+        }
+
+        // Multi-page: build separate .page divs
+        var pagesHtml = '';
+        var header = result.header;
+        var footer = result.footer;
+
+        for (var i = 0; i < result.pages.length; i++) {
+            var pgDiv = document.createElement('div');
+            pgDiv.className = 'page ' + layoutCls;
+            if (result.pageFitLevel[i] > 0) pgDiv.className += ' fit--' + result.pageFitLevel[i];
+            pgDiv.setAttribute('data-theme', theme);
+            if (fontVal === 'serif') pgDiv.style.fontFamily = 'var(--serif)';
+            else if (fontVal === 'mono') pgDiv.style.fontFamily = 'var(--mono)';
+
+            // First page gets the header
+            if (i === 0 && header) pgDiv.appendChild(header.cloneNode(true));
+
+            // Add sections for this page
+            result.pages[i].forEach(function (sec) {
+                pgDiv.appendChild(sec.cloneNode(true));
+            });
+
+            // Last page gets the footer
+            if (footer && i === result.pages.length - 1) {
+                pgDiv.appendChild(footer.cloneNode(true));
+            }
+
+            var cleanPg = cleanPageClone(pgDiv);
+            pagesHtml += cleanPg.outerHTML;
+        }
+
         document.body.removeChild(offscreen);
-        return html;
+        return pagesHtml;
     }
 
     function publishNote() {
