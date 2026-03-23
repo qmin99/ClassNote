@@ -1309,6 +1309,7 @@
 
         setTimeout(function () {
             obOverlay.classList.add('ob--hidden');
+            document.body.classList.remove('ob-active');
 
             // Apply to editor
             var teacherInput = document.getElementById('teacherName');
@@ -4817,6 +4818,7 @@
         var obOverlay = document.getElementById('onboarding');
         var loadingEl = document.getElementById('editorLoading');
         if (obOverlay) obOverlay.classList.add('ob--hidden');
+        document.body.classList.remove('ob-active');
         if (loadingEl) loadingEl.classList.add('editor-loading--visible');
 
         loadCourseFromFirestore(_courseParam, function (success) {
@@ -4836,6 +4838,7 @@
             } else {
                 // Load failed — fall back to onboarding
                 if (obOverlay) obOverlay.classList.remove('ob--hidden');
+                document.body.classList.add('ob-active');
                 if (loadingEl) loadingEl.classList.remove('editor-loading--visible');
                 renderNav();
                 renderPage();
