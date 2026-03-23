@@ -876,9 +876,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
     letter-spacing:.02em;
 }
 
-/* Hide editor UI while onboarding is active (prevents FOUC) */
+/* Hide editor UI completely while onboarding is active (prevents FOUC) */
 .ob-active .topbar,
-.ob-active .app{visibility:hidden;pointer-events:none}
+.ob-active .app,
+.ob-active .cbar{display:none!important}
 
 /* ================================================
    ONBOARDING WIZARD
