@@ -4412,10 +4412,23 @@
         var success = document.getElementById('deploySuccess');
         var error = document.getElementById('deployError');
 
+        // Reset animations by re-rendering celebration zone
+        var celeb = success.querySelector('.deploy-celebration');
+        if (celeb) {
+            var clone = celeb.cloneNode(true);
+            celeb.parentNode.replaceChild(clone, celeb);
+        }
+
         overlay.style.display = 'flex';
+        overlay.classList.remove('dmo--visible');
         loading.style.display = 'none';
         success.style.display = 'none';
         error.style.display = 'none';
+
+        // Trigger enter animation
+        requestAnimationFrame(function () {
+            overlay.classList.add('dmo--visible');
+        });
 
         if (stateName === 'loading') {
             loading.style.display = '';
@@ -4429,15 +4442,13 @@
             var tipEl = document.getElementById('deployTip');
 
             if (isFirstDeploy) {
-                // First deploy: full explanation
-                if (titleEl) titleEl.textContent = '학생 자료가 준비되었습니다!';
-                if (descEl) descEl.textContent = '학생 전용 페이지가 생성되었어요. 아래 링크를 공유하면 학생이 바로 확인할 수 있습니다.';
+                if (titleEl) titleEl.textContent = '공유 완료!';
+                if (descEl) descEl.textContent = '학생들이 수업 자료를 볼 수 있어요';
                 if (flowEl) flowEl.style.display = '';
                 if (tipEl) tipEl.style.display = '';
             } else {
-                // Re-deploy: concise update message
-                if (titleEl) titleEl.textContent = '학생 자료가 업데이트되었습니다!';
-                if (descEl) descEl.textContent = '수정 사항이 학생 페이지에 즉시 반영되었어요.';
+                if (titleEl) titleEl.textContent = '업데이트 완료!';
+                if (descEl) descEl.textContent = '수정 사항이 학생 페이지에 즉시 반영되었어요';
                 if (flowEl) flowEl.style.display = 'none';
                 if (tipEl) tipEl.style.display = 'none';
             }
@@ -4448,13 +4459,6 @@
             var editorLinkEl = document.getElementById('deployEditorLink');
             if (editorLinkEl && data.editorUrl) {
                 editorLinkEl.value = data.editorUrl;
-                var editorRow = document.getElementById('deployEditorRow');
-                if (editorRow) editorRow.style.display = '';
-            }
-            // QR code
-            var qrImg = document.getElementById('deployQR');
-            if (qrImg) {
-                qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(data.url);
             }
         } else if (stateName === 'error') {
             error.style.display = '';
@@ -4464,7 +4468,9 @@
     }
 
     function hideDeployModal() {
-        document.getElementById('deployOverlay').style.display = 'none';
+        var overlay = document.getElementById('deployOverlay');
+        overlay.classList.remove('dmo--visible');
+        setTimeout(function () { overlay.style.display = 'none'; }, 300);
     }
 
     // --- Main publish function ---
@@ -4749,6 +4755,15 @@
                 copied.style.display = '';
                 setTimeout(function () { copied.style.display = 'none'; }, 2500);
             });
+        });
+    }
+
+    // Editor link "접속" button
+    var deployEditorGo = document.getElementById('deployEditorGo');
+    if (deployEditorGo) {
+        deployEditorGo.addEventListener('click', function () {
+            var input = document.getElementById('deployEditorLink');
+            if (input && input.value) window.open(input.value, '_blank');
         });
     }
 
