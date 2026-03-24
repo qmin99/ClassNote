@@ -4421,7 +4421,29 @@
             loading.style.display = '';
         } else if (stateName === 'success') {
             success.style.display = '';
+
+            var isFirstDeploy = data.isFirst;
+            var titleEl = document.getElementById('deployTitleText');
+            var descEl = document.getElementById('deployDescText');
+            var flowEl = document.getElementById('deployFlow');
+            var tipEl = document.getElementById('deployTip');
+
+            if (isFirstDeploy) {
+                // First deploy: full explanation
+                if (titleEl) titleEl.textContent = '학생 자료가 준비되었습니다!';
+                if (descEl) descEl.textContent = '학생 전용 페이지가 생성되었어요. 아래 링크를 공유하면 학생이 바로 확인할 수 있습니다.';
+                if (flowEl) flowEl.style.display = '';
+                if (tipEl) tipEl.style.display = '';
+            } else {
+                // Re-deploy: concise update message
+                if (titleEl) titleEl.textContent = '학생 자료가 업데이트되었습니다!';
+                if (descEl) descEl.textContent = '수정 사항이 학생 페이지에 즉시 반영되었어요.';
+                if (flowEl) flowEl.style.display = 'none';
+                if (tipEl) tipEl.style.display = 'none';
+            }
+
             document.getElementById('deployLink').value = data.url;
+
             // Editor link
             var editorLinkEl = document.getElementById('deployEditorLink');
             if (editorLinkEl && data.editorUrl) {
@@ -4429,10 +4451,10 @@
                 var editorRow = document.getElementById('deployEditorRow');
                 if (editorRow) editorRow.style.display = '';
             }
-            // A6: QR code
+            // QR code
             var qrImg = document.getElementById('deployQR');
             if (qrImg) {
-                qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=' + encodeURIComponent(data.url);
+                qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(data.url);
             }
         } else if (stateName === 'error') {
             error.style.display = '';
@@ -4657,7 +4679,7 @@
 
         // Timeout: 30s 후 자동 에러 표시
         var deployTimeout = setTimeout(function () {
-            showDeployModal('error', { message: '배포 시간이 초과되었습니다. 네트워크를 확인 후 다시 시도해주세요.' });
+            showDeployModal('error', { message: '시간이 초과되었습니다. 네트워크를 확인 후 다시 시도해주세요.' });
         }, 30000);
 
         // Save both: published note + course data
@@ -4683,7 +4705,7 @@
 
             var shareUrl = 'https://class-note-material.netlify.app/view.html?id=' + slug;
             var editorUrl = 'https://class-note-material.netlify.app/templates.html?c=' + currentCourseDocId;
-            showDeployModal('success', { url: shareUrl, editorUrl: editorUrl });
+            showDeployModal('success', { url: shareUrl, editorUrl: editorUrl, isFirst: isFirstCourse });
         }).catch(function (err) {
             clearTimeout(deployTimeout);
             // Roll back courseDocId if first deploy failed

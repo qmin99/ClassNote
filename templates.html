@@ -322,7 +322,7 @@
             </button>
             <button class="topbar__btn topbar__btn--publish" id="btnPreview">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                배포
+                학생에게 공유
             </button>
         </div>
     </header>
@@ -427,39 +427,82 @@
     <!-- Deploy Modal -->
     <div class="deploy-overlay" id="deployOverlay" style="display:none">
         <div class="deploy-modal">
+            <!-- Loading -->
             <div class="deploy-state" id="deployLoading" style="display:none">
                 <div class="deploy-spinner"></div>
-                <p class="deploy-msg">배포 중...</p>
+                <p class="deploy-msg">학생 자료를 준비하는 중...</p>
             </div>
+
+            <!-- First Deploy Success -->
             <div class="deploy-state" id="deploySuccess" style="display:none">
                 <div class="deploy-icon deploy-icon--ok"></div>
-                <h3 class="deploy-title">배포 완료!</h3>
-                <p class="deploy-desc">학생에게 아래 링크를 공유하세요.</p>
-                <div class="deploy-link-box">
-                    <input class="deploy-link-input" id="deployLink" readonly>
-                    <button class="deploy-copy-btn" id="deployCopy">복사</button>
+                <h3 class="deploy-title" id="deployTitleText">학생 자료가 준비되었습니다!</h3>
+                <p class="deploy-desc" id="deployDescText">학생 전용 페이지가 생성되었어요. 아래 링크를 공유하면 학생이 바로 확인할 수 있습니다.</p>
+
+                <!-- Visual flow diagram -->
+                <div class="deploy-flow" id="deployFlow">
+                    <div class="deploy-flow__card">
+                        <div class="deploy-flow__icon">👨‍🏫</div>
+                        <div class="deploy-flow__label">선생님 작업 공간</div>
+                        <div class="deploy-flow__sub">자료 수정 · 세션 추가 · 업데이트</div>
+                    </div>
+                    <div class="deploy-flow__arrow">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-4-4l4 4-4 4"/></svg>
+                        <span>업데이트</span>
+                    </div>
+                    <div class="deploy-flow__card deploy-flow__card--student">
+                        <div class="deploy-flow__icon">👩‍🎓</div>
+                        <div class="deploy-flow__label">학생 전용 페이지</div>
+                        <div class="deploy-flow__sub">수업 자료 열람 · 복습</div>
+                    </div>
                 </div>
-                <p class="deploy-copied" id="deployCopied" style="display:none">링크가 복사되었습니다!</p>
-                <div class="deploy-link-section" id="deployEditorRow" style="display:none">
-                    <p class="deploy-desc" style="margin-top:16px;font-size:13px;color:#888">선생님 편집 링크 (북마크하세요)</p>
+
+                <!-- Student link (primary) -->
+                <div class="deploy-section">
+                    <div class="deploy-section__header">
+                        <span class="deploy-section__badge">학생 공유용</span>
+                        <span class="deploy-section__hint">이 링크를 학생에게 보내주세요</span>
+                    </div>
+                    <div class="deploy-link-box">
+                        <input class="deploy-link-input" id="deployLink" readonly>
+                        <button class="deploy-copy-btn" id="deployCopy">복사</button>
+                    </div>
+                    <p class="deploy-copied" id="deployCopied" style="display:none">링크가 복사되었습니다!</p>
+                </div>
+
+                <!-- QR -->
+                <div class="deploy-qr">
+                    <img id="deployQR" alt="QR코드" width="120" height="120">
+                    <p class="deploy-qr__hint">또는 QR코드를 보여주세요</p>
+                </div>
+
+                <!-- Teacher link (secondary, collapsible) -->
+                <div class="deploy-section deploy-section--teacher" id="deployEditorRow" style="display:none">
+                    <div class="deploy-section__header">
+                        <span class="deploy-section__badge deploy-section__badge--teacher">내 작업 공간</span>
+                        <span class="deploy-section__hint">이 링크를 북마크하면 언제든 돌아올 수 있어요</span>
+                    </div>
                     <div class="deploy-link-box">
                         <input class="deploy-link-input" id="deployEditorLink" readonly>
-                        <button class="deploy-copy-btn" id="deployEditorCopy">복사</button>
+                        <button class="deploy-copy-btn deploy-copy-btn--ghost" id="deployEditorCopy">복사</button>
                     </div>
                     <p class="deploy-copied" id="deployEditorCopied" style="display:none">편집 링크가 복사되었습니다!</p>
                 </div>
-                <div class="deploy-qr">
-                    <img id="deployQR" alt="QR코드" width="140" height="140">
-                    <p class="deploy-qr__hint">학생에게 QR코드를 보여주세요</p>
+
+                <div class="deploy-tip" id="deployTip">
+                    <strong>Tip</strong> 자료를 수정한 후 다시 '학생에게 공유'를 누르면 학생 페이지에 즉시 반영됩니다.
                 </div>
+
                 <div class="deploy-actions">
-                    <button class="deploy-btn deploy-btn--secondary" id="deployOpen">새 탭에서 열기</button>
-                    <button class="deploy-btn deploy-btn--primary" id="deployClose">닫기</button>
+                    <button class="deploy-btn deploy-btn--secondary" id="deployOpen">학생 페이지 미리보기</button>
+                    <button class="deploy-btn deploy-btn--primary" id="deployClose">확인</button>
                 </div>
             </div>
+
+            <!-- Error -->
             <div class="deploy-state" id="deployError" style="display:none">
                 <div class="deploy-icon deploy-icon--err"></div>
-                <h3 class="deploy-title">배포 실패</h3>
+                <h3 class="deploy-title">공유 실패</h3>
                 <p class="deploy-desc" id="deployErrorMsg">네트워크 오류가 발생했습니다.</p>
                 <div class="deploy-actions">
                     <button class="deploy-btn deploy-btn--secondary" id="deployRetry">다시 시도</button>
