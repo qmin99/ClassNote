@@ -4682,7 +4682,7 @@
             }
 
             var shareUrl = 'https://class-note-material.netlify.app/view.html?id=' + slug;
-            var editorUrl = location.origin + location.pathname + '?c=' + currentCourseDocId;
+            var editorUrl = 'https://class-note-material.netlify.app/templates.html?c=' + currentCourseDocId;
             showDeployModal('success', { url: shareUrl, editorUrl: editorUrl });
         }).catch(function (err) {
             clearTimeout(deployTimeout);
