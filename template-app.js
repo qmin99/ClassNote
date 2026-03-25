@@ -1299,17 +1299,37 @@
     function launchEditor() {
         collectStepData();
 
+        // Show Welcome Modal instead of going directly to editor
         var obOverlay = document.getElementById('onboarding');
-        var loadingEl = document.getElementById('editorLoading');
-
-        // Step 1: Fade out onboarding, show loading screen
         obOverlay.style.opacity = '0';
         obOverlay.style.transition = 'opacity .3s ease';
+        setTimeout(function () {
+            obOverlay.classList.add('ob--hidden');
+            showWelcomeModal();
+        }, 300);
+        return;
+    }
+
+    function _launchEditorReal(studentName, gender) {
+        var loadingEl = document.getElementById('editorLoading');
+
+        // Store student info
+        window.__classnote = window.__classnote || {};
+        window.__classnote.studentName = studentName || '';
+        window.__classnote.studentGender = gender || 'male';
+
+        // Show loading screen
         loadingEl.classList.add('editor-loading--visible');
 
         setTimeout(function () {
-            obOverlay.classList.add('ob--hidden');
             document.body.classList.remove('ob-active');
+
+            // Apply student name
+            var studentInput = document.getElementById('studentName');
+            if (studentInput && studentName) {
+                studentInput.value = studentName;
+                studentInput.dispatchEvent(new Event('input'));
+            }
 
             // Apply to editor
             var teacherInput = document.getElementById('teacherName');
@@ -4730,15 +4750,18 @@
     }
 
     // --- Deploy modal events ---
-    document.getElementById('deployCopy').addEventListener('click', function () {
-        var input = document.getElementById('deployLink');
-        input.select();
-        navigator.clipboard.writeText(input.value).then(function () {
-            var copied = document.getElementById('deployCopied');
-            copied.style.display = '';
-            setTimeout(function () { copied.style.display = 'none'; }, 2500);
+    var deployCopyBtn = document.getElementById('deployCopy');
+    if (deployCopyBtn) {
+        deployCopyBtn.addEventListener('click', function () {
+            var input = document.getElementById('deployLink');
+            input.select();
+            navigator.clipboard.writeText(input.value).then(function () {
+                var copied = document.getElementById('deployCopied');
+                copied.style.display = '';
+                setTimeout(function () { copied.style.display = 'none'; }, 2500);
+            });
         });
-    });
+    }
 
     document.getElementById('deployOpen').addEventListener('click', function () {
         window.open(document.getElementById('deployLink').value, '_blank');
@@ -4953,5 +4976,189 @@
     }
     // Run check now (in case editor is already visible)
     checkAutosave();
+
+    // =========================================
+    // WELCOME MODAL (2-step flow)
+    // =========================================
+    var wmGender = 'male';
+
+    function showWelcomeModal() {
+        var modal = document.getElementById('welcomeModal');
+        if (!modal) return;
+        modal.style.display = '';
+        // Reset to step 1
+        document.getElementById('wmStepInput').classList.add('wm__step--active');
+        document.getElementById('wmStepReveal').classList.remove('wm__step--active');
+    }
+
+    // Gender card toggle
+    var wmGenderWrap = document.getElementById('wmGender');
+    if (wmGenderWrap) {
+        wmGenderWrap.addEventListener('click', function (e) {
+            var card = e.target.closest('.wm__gender-card');
+            if (!card) return;
+            wmGender = card.getAttribute('data-gender');
+            wmGenderWrap.querySelectorAll('.wm__gender-card').forEach(function (c) {
+                var isActive = c.getAttribute('data-gender') === wmGender;
+                c.classList.toggle('wm__gender-card--active', isActive);
+                // Update check dots
+                var dot = c.querySelector('.wm__check-dot');
+                if (dot) dot.classList.toggle('wm__check-dot--active', isActive);
+                // Update label
+                var lbl = c.querySelector('.wm__gender-label');
+                if (lbl) lbl.classList.toggle('wm__gender-label--active', isActive);
+            });
+        });
+    }
+
+    // Next button → go to profile reveal
+    var wmNextBtn = document.getElementById('wmNext');
+    if (wmNextBtn) {
+        wmNextBtn.addEventListener('click', function () {
+            var nameVal = (document.getElementById('wmName').value || '').trim();
+            if (!nameVal) {
+                var inp = document.getElementById('wmName');
+                inp.style.borderColor = '#ef4444';
+                inp.focus();
+                setTimeout(function () { inp.style.borderColor = ''; }, 1500);
+                return;
+            }
+
+            // Populate profile reveal with data
+            var isFemale = wmGender === 'female';
+            var profileCard = document.getElementById('wmProfileCard');
+            var avatarImg = document.getElementById('wmAvatarImg');
+            var profileName = document.getElementById('wmProfileName');
+            var badge = document.getElementById('wmBadge');
+            var badgeText = document.getElementById('wmBadgeText');
+            var greeting = document.getElementById('wmGreeting');
+            var revealSub = document.getElementById('wmRevealSub');
+
+            profileName.textContent = nameVal;
+            badgeText.textContent = isFemale ? '여학생' : '남학생';
+            greeting.textContent = '"오늘부터 ' + nameVal + ' 학생의 여정이 시작돼요"';
+            avatarImg.src = isFemale
+                ? 'images/generated-1774419137742.png'
+                : 'images/generated-1774417632961.png';
+
+            if (isFemale) {
+                profileCard.classList.add('wm__profile-card--female');
+                badge.style.background = '#FDF2F8';
+                badge.style.color = '#EC4899';
+                revealSub.textContent = '멋진 학생 카드가 생성되었어요';
+            } else {
+                profileCard.classList.remove('wm__profile-card--female');
+                badge.style.background = '#EFF6FF';
+                badge.style.color = '#3B82F6';
+                revealSub.textContent = '학생 카드가 등록되었어요';
+            }
+
+            // Transition to step 2
+            document.getElementById('wmStepInput').classList.remove('wm__step--active');
+            document.getElementById('wmStepReveal').classList.add('wm__step--active');
+
+            // Scroll card to top
+            document.getElementById('wmCard').scrollTop = 0;
+        });
+    }
+
+    // Start button → launch editor
+    var wmStartBtn = document.getElementById('wmStart');
+    if (wmStartBtn) {
+        wmStartBtn.addEventListener('click', function () {
+            var nameVal = (document.getElementById('wmName').value || '').trim();
+            var modal = document.getElementById('welcomeModal');
+            modal.style.opacity = '0';
+            modal.style.transition = 'opacity .3s ease';
+            setTimeout(function () {
+                modal.style.display = 'none';
+                modal.style.opacity = '';
+                modal.style.transition = '';
+                _launchEditorReal(nameVal, wmGender);
+            }, 300);
+        });
+    }
+
+    // Enter key on name input → trigger next
+    var wmNameInput = document.getElementById('wmName');
+    if (wmNameInput) {
+        wmNameInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('wmNext').click();
+            }
+        });
+    }
+
+    // =========================================
+    // ADD STUDENT MODAL
+    // =========================================
+    var asmOverlay = document.getElementById('addStudentOverlay');
+
+    // Type card toggle
+    var asmTypeGrid = document.getElementById('asmTypeGrid');
+    if (asmTypeGrid) {
+        asmTypeGrid.addEventListener('click', function (e) {
+            var card = e.target.closest('.asm__type-card');
+            if (!card) return;
+            asmTypeGrid.querySelectorAll('.asm__type-card').forEach(function (c) {
+                c.classList.toggle('asm__type-card--active', c === card);
+            });
+        });
+    }
+
+    // Pill toggles (level & difficulty)
+    document.querySelectorAll('.asm__pills').forEach(function (row) {
+        row.addEventListener('click', function (e) {
+            var pill = e.target.closest('.asm__pill');
+            if (!pill) return;
+            row.querySelectorAll('.asm__pill').forEach(function (p) {
+                p.classList.toggle('asm__pill--active', p === pill);
+            });
+        });
+    });
+
+    // Cancel
+    var asmCancel = document.getElementById('asmCancel');
+    if (asmCancel) {
+        asmCancel.addEventListener('click', function () {
+            if (asmOverlay) asmOverlay.style.display = 'none';
+        });
+    }
+
+    // Confirm (placeholder — just close for now)
+    var asmConfirm = document.getElementById('asmConfirm');
+    if (asmConfirm) {
+        asmConfirm.addEventListener('click', function () {
+            var name = (document.getElementById('asmName').value || '').trim();
+            if (!name) {
+                var inp = document.getElementById('asmName');
+                inp.style.borderColor = '#ef4444';
+                inp.focus();
+                setTimeout(function () { inp.style.borderColor = ''; }, 1500);
+                return;
+            }
+            // Apply student name to editor
+            var studentInput = document.getElementById('studentName');
+            if (studentInput) {
+                studentInput.value = name;
+                studentInput.dispatchEvent(new Event('input'));
+            }
+            asmOverlay.style.display = 'none';
+            document.getElementById('asmName').value = '';
+        });
+    }
+
+    // Close on overlay click
+    if (asmOverlay) {
+        asmOverlay.addEventListener('click', function (e) {
+            if (e.target === asmOverlay) asmOverlay.style.display = 'none';
+        });
+    }
+
+    // Expose for sidebar button
+    window.showAddStudentModal = function () {
+        if (asmOverlay) asmOverlay.style.display = '';
+    };
 
 })();

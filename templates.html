@@ -424,6 +424,195 @@
         <button class="restore-toast__btn restore-toast__btn--no" id="restoreNo">무시</button>
     </div>
 
+    <!-- ===================== WELCOME MODAL (2-step) ===================== -->
+    <div class="wm" id="welcomeModal" style="display:none">
+        <div class="wm__card" id="wmCard">
+            <!-- Step 1: Student Input -->
+            <div class="wm__step wm__step--active" id="wmStepInput">
+                <div class="wm__top">
+                    <div class="wm__icon-wrap">
+                        <img src="images/generated-1774417526857.png" alt="" draggable="false">
+                    </div>
+                    <div class="wm__spacer"></div>
+                    <h2 class="wm__title">첫 번째 학생을 등록해주세요</h2>
+                    <p class="wm__sub">학생 정보를 입력하면 바로 수업 자료를 만들 수 있어요</p>
+                </div>
+                <div class="wm__body">
+                    <div class="wm__field">
+                        <label class="wm__label">학생 이름 <span class="wm__req">*</span></label>
+                        <input class="wm__input" id="wmName" placeholder="이름을 입력해주세요" autocomplete="off">
+                    </div>
+                    <div class="wm__field">
+                        <label class="wm__label">성별</label>
+                        <div class="wm__gender" id="wmGender">
+                            <button class="wm__gender-card wm__gender-card--active" data-gender="male" type="button">
+                                <div class="wm__avatar-circle">
+                                    <img src="images/generated-1774417583534.png" alt="">
+                                </div>
+                                <div class="wm__gender-row">
+                                    <span class="wm__check-dot wm__check-dot--active">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                                    </span>
+                                    <span class="wm__gender-label wm__gender-label--active">남학생</span>
+                                </div>
+                            </button>
+                            <button class="wm__gender-card" data-gender="female" type="button">
+                                <div class="wm__avatar-circle">
+                                    <img src="images/generated-1774417596896.png" alt="">
+                                </div>
+                                <div class="wm__gender-row">
+                                    <span class="wm__check-dot"></span>
+                                    <span class="wm__gender-label">여학생</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                    <button class="wm__cta" id="wmNext" type="button">
+                        <span>다음</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                    <div class="wm__tip">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <span>나중에 학생을 더 추가할 수 있어요</span>
+                    </div>
+                    <div class="wm__dots">
+                        <span class="wm__dot wm__dot--active"></span>
+                        <span class="wm__dot"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Profile Reveal -->
+            <div class="wm__step" id="wmStepReveal">
+                <div class="wm__top wm__top--reveal">
+                    <div class="wm__celeb-wrap">
+                        <img src="images/generated-1774417616032.png" alt="" draggable="false">
+                    </div>
+                    <div class="wm__spacer--sm"></div>
+                    <h2 class="wm__title">프로필이 완성됐어요!</h2>
+                    <p class="wm__sub" id="wmRevealSub">학생 카드가 등록되었어요</p>
+                    <div class="wm__sparkles">
+                        <svg class="wm__sp" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2ABFBF" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                        <svg class="wm__sp" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg class="wm__sp" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                        <svg class="wm__sp" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#EC4899" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <svg class="wm__sp" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                    </div>
+                </div>
+                <div class="wm__body wm__body--reveal">
+                    <div class="wm__profile-card" id="wmProfileCard">
+                        <div class="wm__avatar-container">
+                            <div class="wm__avatar-big" id="wmAvatarBig">
+                                <img id="wmAvatarImg" src="images/generated-1774417632961.png" alt="">
+                            </div>
+                            <div class="wm__check-badge">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                            </div>
+                        </div>
+                        <span class="wm__profile-name" id="wmProfileName">민수</span>
+                        <div class="wm__badge" id="wmBadge">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <span id="wmBadgeText">남학생</span>
+                        </div>
+                        <div class="wm__divider"></div>
+                        <p class="wm__greeting" id="wmGreeting">"오늘부터 민수 학생의 여정이 시작돼요"</p>
+                        <div class="wm__stats">
+                            <div class="wm__stat">
+                                <span class="wm__stat-val wm__stat-val--teal" id="wmStatNum">#001</span>
+                                <span class="wm__stat-label">학생 번호</span>
+                            </div>
+                            <div class="wm__stat-div"></div>
+                            <div class="wm__stat">
+                                <span class="wm__stat-val">오늘</span>
+                                <span class="wm__stat-label">가입일</span>
+                            </div>
+                            <div class="wm__stat-div"></div>
+                            <div class="wm__stat">
+                                <div class="wm__stat-val-row">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#FBBF24" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                                    <span class="wm__stat-val--sm">준비 완료</span>
+                                </div>
+                                <span class="wm__stat-label">수업 상태</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="wm__cta" id="wmStart" type="button">
+                        <span>수업 자료 만들기</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m0 0l-7-7m7 7l-7 7"/></svg>
+                    </button>
+                    <div class="wm__dots">
+                        <span class="wm__dot"></span>
+                        <span class="wm__dot wm__dot--active"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== ADD STUDENT MODAL ===================== -->
+    <div class="asm" id="addStudentOverlay" style="display:none">
+        <div class="asm__card">
+            <div class="asm__header">
+                <div class="asm__icon">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#2ABFBF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                </div>
+                <div class="asm__spacer"></div>
+                <h2 class="asm__title">새 학생 추가</h2>
+                <p class="asm__sub">학생 이름과 수업 유형을 선택해주세요</p>
+            </div>
+            <div class="asm__body">
+                <div class="asm__field">
+                    <label class="asm__label">학생 이름</label>
+                    <input class="asm__input" id="asmName" placeholder="이름을 입력해주세요" autocomplete="off">
+                </div>
+                <div class="asm__field">
+                    <label class="asm__label">수업 유형</label>
+                    <div class="asm__type-grid" id="asmTypeGrid">
+                        <button class="asm__type-card asm__type-card--active" data-type="conversation" type="button">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M12 12v4"/><path d="M2 12h20"/></svg>
+                            <span>비즈니스 회화</span>
+                        </button>
+                        <button class="asm__type-card" data-type="daily" type="button">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+                            <span>일상 회화</span>
+                        </button>
+                        <button class="asm__type-card" data-type="grammar" type="button">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+                            <span>문법</span>
+                        </button>
+                        <button class="asm__type-card" data-type="reading" type="button">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                            <span>독해</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="asm__field">
+                    <label class="asm__label">대상</label>
+                    <div class="asm__pills" id="asmLevel">
+                        <button class="asm__pill" data-val="elementary" type="button">초등</button>
+                        <button class="asm__pill" data-val="middle" type="button">중등</button>
+                        <button class="asm__pill" data-val="high" type="button">고등</button>
+                        <button class="asm__pill asm__pill--active" data-val="adult" type="button">성인</button>
+                    </div>
+                </div>
+                <div class="asm__field">
+                    <label class="asm__label">난이도</label>
+                    <div class="asm__pills" id="asmDiff">
+                        <button class="asm__pill" data-val="beginner" type="button">초급</button>
+                        <button class="asm__pill asm__pill--active" data-val="intermediate" type="button">중급</button>
+                        <button class="asm__pill" data-val="advanced" type="button">고급</button>
+                    </div>
+                </div>
+                <div class="asm__hr"></div>
+                <div class="asm__spacer--sm"></div>
+                <div class="asm__actions">
+                    <button class="asm__btn-cancel" id="asmCancel" type="button">취소</button>
+                    <button class="asm__btn-confirm" id="asmConfirm" type="button">추가하기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Deploy Modal -->
     <div class="deploy-overlay" id="deployOverlay" style="display:none">
         <div class="deploy-modal">
@@ -437,38 +626,43 @@
             <div class="deploy-state" id="deploySuccess" style="display:none">
                 <!-- Celebration zone -->
                 <div class="deploy-celebration">
-                    <!-- Confetti particles -->
+                    <!-- Confetti 12 particles — exact Pencil positions -->
                     <i class="dconf dconf--1"></i><i class="dconf dconf--2"></i>
                     <i class="dconf dconf--3"></i><i class="dconf dconf--4"></i>
                     <i class="dconf dconf--5"></i><i class="dconf dconf--6"></i>
                     <i class="dconf dconf--7"></i><i class="dconf dconf--8"></i>
                     <i class="dconf dconf--9"></i><i class="dconf dconf--10"></i>
-                    <!-- Sparkles -->
+                    <i class="dconf dconf--11"></i><i class="dconf dconf--12"></i>
+                    <!-- Sparkles 4 -->
                     <i class="dspk dspk--1"></i><i class="dspk dspk--2"></i>
                     <i class="dspk dspk--3"></i><i class="dspk dspk--4"></i>
                     <!-- Document icon -->
                     <div class="deploy-doc">
-                        <div class="deploy-doc__hdr">
-                            <span class="deploy-doc__hdr-title"></span>
-                            <span class="deploy-doc__hdr-sub"></span>
-                            <span class="deploy-doc__hdr-sub2"></span>
-                        </div>
-                        <div class="deploy-doc__body">
-                            <div class="deploy-doc__sec">
-                                <span class="deploy-doc__dot"></span><span class="deploy-doc__sh"></span>
+                        <div class="deploy-doc__inner">
+                            <div class="deploy-doc__hdr">
+                                <span class="deploy-doc__hdr-bar"></span>
+                                <div class="deploy-doc__hdr-row">
+                                    <span class="deploy-doc__hdr-sub"></span>
+                                    <span class="deploy-doc__hdr-sub2"></span>
+                                </div>
                             </div>
-                            <span class="deploy-doc__ln"></span><span class="deploy-doc__ln deploy-doc__ln--b"></span><span class="deploy-doc__ln deploy-doc__ln--s"></span>
-                            <div class="deploy-doc__sec">
-                                <span class="deploy-doc__dot"></span><span class="deploy-doc__sh deploy-doc__sh--s"></span>
+                            <div class="deploy-doc__body">
+                                <div class="deploy-doc__sec">
+                                    <span class="deploy-doc__dot"></span><span class="deploy-doc__sh"></span>
+                                </div>
+                                <span class="deploy-doc__ln"></span><span class="deploy-doc__ln deploy-doc__ln--b"></span><span class="deploy-doc__ln deploy-doc__ln--s"></span>
+                                <div class="deploy-doc__sec">
+                                    <span class="deploy-doc__dot"></span><span class="deploy-doc__sh deploy-doc__sh--s"></span>
+                                </div>
+                                <span class="deploy-doc__ln"></span><span class="deploy-doc__ln deploy-doc__ln--m"></span>
+                                <hr class="deploy-doc__hr">
+                                <div class="deploy-doc__tbl">
+                                    <div class="deploy-doc__tbl-hd"><span></span><span></span></div>
+                                    <div class="deploy-doc__tbl-r"><span></span><span></span></div>
+                                    <div class="deploy-doc__tbl-r"><span></span><span></span></div>
+                                </div>
+                                <div class="deploy-doc__ft"><span></span><span></span></div>
                             </div>
-                            <span class="deploy-doc__ln"></span><span class="deploy-doc__ln deploy-doc__ln--m"></span>
-                            <hr class="deploy-doc__hr">
-                            <div class="deploy-doc__tbl">
-                                <div class="deploy-doc__tbl-hd"><span></span><span></span></div>
-                                <div class="deploy-doc__tbl-r"><span></span><span></span></div>
-                                <div class="deploy-doc__tbl-r"><span></span><span></span></div>
-                            </div>
-                            <div class="deploy-doc__ft"><span></span><span></span></div>
                         </div>
                         <!-- Check badge -->
                         <div class="deploy-doc__check">
@@ -483,16 +677,16 @@
                 <!-- Flow diagram -->
                 <div class="deploy-flow" id="deployFlow">
                     <div class="deploy-flow__card">
-                        <div class="deploy-flow__icon">👨‍🏫</div>
+                        <img class="deploy-flow__illust" src="images/qaZTj.png" alt="">
                         <div class="deploy-flow__label">선생님 작업 공간</div>
                         <div class="deploy-flow__sub">자료 수정 · 세션 추가 · 업데이트</div>
                     </div>
                     <div class="deploy-flow__arrow">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-4-4l4 4-4 4"/></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                         <span>업데이트</span>
                     </div>
                     <div class="deploy-flow__card deploy-flow__card--student">
-                        <div class="deploy-flow__icon">👩‍🎓</div>
+                        <img class="deploy-flow__illust" src="images/2eli7.png" alt="">
                         <div class="deploy-flow__label">학생 전용 페이지</div>
                         <div class="deploy-flow__sub">수업 자료 열람 · 복습</div>
                     </div>
@@ -502,7 +696,7 @@
                 <div class="deploy-link-section" id="deployEditorRow">
                     <div class="deploy-link-label">
                         <div class="deploy-link-label__left">
-                            <svg class="deploy-link-label__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                            <svg class="deploy-link-label__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2ABFBF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                             <span class="deploy-link-label__title">선생님 작업 공간</span>
                             <span class="deploy-link-label__hint">북마크 해두세요!</span>
                         </div>
@@ -517,33 +711,20 @@
                     <p class="deploy-copied" id="deployEditorCopied" style="display:none">편집 링크가 복사되었습니다!</p>
                 </div>
 
-                <!-- Student link -->
-                <div class="deploy-link-section deploy-link-section--student">
-                    <div class="deploy-link-label">
-                        <div class="deploy-link-label__left">
-                            <svg class="deploy-link-label__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                            <span class="deploy-link-label__title">학생 공유 링크</span>
-                        </div>
-                        <div class="deploy-link-label__btns">
-                            <button class="deploy-pill" id="deployCopy"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> 복사</button>
-                        </div>
-                    </div>
-                    <div class="deploy-link-url">
-                        <input class="deploy-link-input" id="deployLink" readonly>
-                    </div>
-                    <p class="deploy-copied" id="deployCopied" style="display:none">링크가 복사되었습니다!</p>
-                </div>
+                <!-- Hidden student link for JS -->
+                <input type="hidden" id="deployLink">
+                <p class="deploy-copied" id="deployCopied" style="display:none">링크가 복사되었습니다!</p>
 
                 <!-- Tip -->
                 <div class="deploy-tip" id="deployTip">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1A9F9F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1A9F9F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
                     <span>자료 수정 후 재공유하면 같은 링크에 바로 반영돼요</span>
                 </div>
 
                 <!-- Actions -->
                 <hr class="deploy-divider">
                 <div class="deploy-actions">
-                    <button class="deploy-btn deploy-btn--secondary" id="deployOpen">학생 페이지 미리보기</button>
+                    <button class="deploy-btn deploy-btn--secondary" id="deployOpen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> 학생 페이지 미리보기</button>
                     <button class="deploy-btn deploy-btn--primary" id="deployClose">확인</button>
                 </div>
             </div>
