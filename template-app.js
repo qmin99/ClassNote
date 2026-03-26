@@ -2923,7 +2923,7 @@
     }
 
     function pageFooter(ctx) {
-        var left = ctx.brand ? esc(ctx.brand) : '클래스노트 Classnote';
+        var left = ctx.brand ? esc(ctx.brand) : 'Class Note';
         var r = ctx.teacherName ? esc(ctx.teacherName) + ' 선생님' : '';
         return '<div class="pf"><span>' + left + '</span><span>' + r + '</span></div>';
     }

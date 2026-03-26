@@ -402,7 +402,7 @@
         container.querySelectorAll('.pf').forEach(function (pf) {
             var firstSpan = pf.querySelector('span');
             if (firstSpan) {
-                firstSpan.innerHTML = 'Made with 클래스노트';
+                firstSpan.innerHTML = 'Class Note';
             }
         });
 
