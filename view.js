@@ -77,16 +77,91 @@
     // FULLSCREEN BUTTON
     // =========================================
 
+    // --- Fullscreen: immersive mode ---
+    var fsExitBtn = null;
+
+    function enterFullscreen() {
+        document.documentElement.requestFullscreen().catch(function () {});
+    }
+
+    function exitFullscreen() {
+        if (document.fullscreenElement) document.exitFullscreen();
+    }
+
+    function applyFullscreenUI(isFs) {
+        var header = document.querySelector('.view-header');
+        var body = document.querySelector('.view-body');
+        if (isFs) {
+            // Hide header
+            if (header) header.style.display = 'none';
+            // Dark bg, center content
+            document.body.style.background = '#111';
+            if (body) { body.style.padding = '0'; body.style.justifyContent = 'center'; body.style.minHeight = '100vh'; }
+            // Create floating exit button
+            if (!fsExitBtn) {
+                fsExitBtn = document.createElement('button');
+                fsExitBtn.className = 'fs-exit-btn';
+                fsExitBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+                fsExitBtn.title = '전체화면 종료';
+                fsExitBtn.addEventListener('click', exitFullscreen);
+                document.body.appendChild(fsExitBtn);
+            }
+            fsExitBtn.style.display = '';
+            // Show floating page nav if multi-page
+            var navEl = document.getElementById('viewNav');
+            if (navEl && viewState.total > 1) {
+                navEl.classList.add('fs-nav-float');
+            }
+            // Scale page to fit viewport
+            scalePagesFullscreen();
+        } else {
+            // Restore header
+            if (header) header.style.display = '';
+            document.body.style.background = '';
+            if (body) { body.style.padding = ''; body.style.justifyContent = ''; body.style.minHeight = ''; }
+            if (fsExitBtn) fsExitBtn.style.display = 'none';
+            var navEl = document.getElementById('viewNav');
+            if (navEl) navEl.classList.remove('fs-nav-float');
+            // Restore normal scaling
+            var pages = container.querySelectorAll('.page');
+            pages.forEach(function (pg) {
+                pg.style.transform = '';
+                pg.style.marginBottom = '';
+                pg.style.transformOrigin = '';
+            });
+            requestAnimationFrame(scalePages);
+        }
+    }
+
+    function scalePagesFullscreen() {
+        var pages = container.querySelectorAll('.page');
+        if (!pages.length) return;
+        var vh = window.innerHeight;
+        var vw = window.innerWidth;
+        pages.forEach(function (pg) {
+            if (pg.style.display === 'none') return;
+            var pw = pg.offsetWidth || 794;
+            var ph = pg.offsetHeight || 1123;
+            var scaleH = vh / ph;
+            var scaleW = vw / pw;
+            var scale = Math.min(scaleH, scaleW);
+            pg.style.transformOrigin = 'top center';
+            pg.style.transform = 'scale(' + scale + ')';
+            pg.style.marginBottom = '-' + Math.round(ph * (1 - scale)) + 'px';
+        });
+    }
+
     if (fullscreenBtn) {
         fullscreenBtn.addEventListener('click', function () {
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(function () {});
+                enterFullscreen();
             } else {
-                document.exitFullscreen();
+                exitFullscreen();
             }
         });
         document.addEventListener('fullscreenchange', function () {
             var isFs = !!document.fullscreenElement;
+            applyFullscreenUI(isFs);
             fullscreenBtn.innerHTML = isFs
                 ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>'
                 : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
@@ -446,7 +521,7 @@
             }
         });
         updatePageNav();
-        requestAnimationFrame(scalePages);
+        requestAnimationFrame(document.fullscreenElement ? scalePagesFullscreen : scalePages);
     }
 
     function goPage(delta) {
@@ -516,7 +591,7 @@
     var resizeTimer;
     window.addEventListener('resize', function () {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(scalePages, 150);
+        resizeTimer = setTimeout(document.fullscreenElement ? scalePagesFullscreen : scalePages, 150);
     });
 
     // --- Keyboard arrow navigation ---

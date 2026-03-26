@@ -391,6 +391,33 @@ body{
 [data-dark="true"] .view-footer a{color:#555}
 [data-dark="true"] .view-offline{background:#3d3520;color:#ffc107;border-bottom-color:#665a2e}
 
+/* --- Fullscreen exit button --- */
+.fs-exit-btn{
+    position:fixed;top:16px;right:16px;z-index:9999;
+    width:40px;height:40px;border-radius:50%;
+    border:none;background:rgba(255,255,255,.12);
+    color:rgba(255,255,255,.7);
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    transition:all .2s;
+    opacity:0;animation:fsExitIn .4s .3s ease forwards;
+}
+.fs-exit-btn:hover{background:rgba(255,255,255,.25);color:#fff;transform:scale(1.08)}
+.fs-exit-btn:active{transform:scale(.95)}
+@keyframes fsExitIn{to{opacity:1}}
+
+/* Floating page nav in fullscreen */
+.fs-nav-float{
+    position:fixed!important;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;
+    background:rgba(255,255,255,.12);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border-radius:12px;padding:4px 8px;
+    display:flex!important;
+}
+.fs-nav-float .view-page-nav__btn{color:rgba(255,255,255,.6)}
+.fs-nav-float .view-page-nav__btn:hover{color:#fff;background:rgba(255,255,255,.15)}
+.fs-nav-float .view-page-nav__badge{color:rgba(255,255,255,.5)}
+
 /* --- Print --- */
 @media print{
     .view-header,.view-footer,.view-offline{display:none!important}
