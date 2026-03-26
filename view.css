@@ -402,6 +402,7 @@ body{
         box-shadow:none;
         page-break-after:always;
         border-radius:0;
+        height:1123px;min-height:1123px;max-height:1123px;overflow:hidden;
     }
     .view-pages .page:last-child{page-break-after:auto}
 }

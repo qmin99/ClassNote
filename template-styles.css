@@ -378,6 +378,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .prb__a{margin-left:29px;margin-top:6px;padding:10px 12px;border:1.5px dashed var(--bd);border-radius:4px;min-height:44px;font-size:10px;color:var(--t4)}
 .prb__sub{margin-left:29px;margin-top:4px;font-size:11px;color:var(--t3)}
 
+/* Preserve newlines in user-editable text fields */
+.vi__t,.vi__d,.sc__t,.sc__p,.hw__t,.hw__d,.cb__b,.prb__q,.prb__a,.pl li span,.psg div[contenteditable]{white-space:pre-line}
+
 /* passage */
 .psg{padding:14px 16px;border-left:3px solid var(--ac);background:var(--ac-l);border-radius:0 4px 4px 0;margin-bottom:10px;font-size:12.5px;line-height:1.95}
 .psg mark{background:rgba(0,0,0,.06);color:inherit;padding:1px 3px;border-radius:2px}
@@ -1033,7 +1036,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
     .app{display:block;height:auto}
     .main{display:block;overflow:visible}
     .preview{padding:0;display:block;overflow:visible}
-    .page{background:#fff;padding:48px 60px;min-height:unset;max-height:1123px;overflow:hidden;box-shadow:none;width:794px;zoom:1}
+    .page{background:#fff;padding:48px 60px;height:1123px;min-height:1123px;max-height:1123px;overflow:hidden;box-shadow:none;width:794px;zoom:1}
     .page--extra{page-break-before:always;margin-top:0;max-height:1123px;overflow:hidden}
     .page-wrap{display:block}
     .p-nav{display:none}

@@ -2958,9 +2958,15 @@
     // ITEM CRUD — RUNTIME LOGIC
     // =========================================
 
+    function _ctEl(el) {
+        if (!el) return '';
+        var clone = el.cloneNode(true);
+        clone.querySelectorAll('br').forEach(function (br) { br.replaceWith('\n'); });
+        clone.querySelectorAll('div,p').forEach(function (d) { d.before('\n'); });
+        return clone.textContent.trim();
+    }
     function _ct(parent, sel) {
-        var el = parent.querySelector(sel);
-        return el ? el.textContent.trim() : '';
+        return _ctEl(parent.querySelector(sel));
     }
 
     function resolveArray(session, type, secIdx) {
@@ -2984,7 +2990,7 @@
     }
 
     var SYNC_HANDLERS = {
-        phrases: function (el) { var span = el.querySelector('[contenteditable]'); return span ? span.textContent.trim() : el.textContent.trim(); },
+        phrases: function (el) { var span = el.querySelector('[contenteditable]'); return span ? _ctEl(span) : el.textContent.trim(); },
         vocab: function (el) { return { term: _ct(el, '.vi__t'), def: _ct(el, '.vi__d') }; },
         scenarios: function (el, ex) { return { num: ex.num || '', title: _ct(el, '.sc__t'), prompt: _ct(el, '.sc__p') }; },
         homework: function (el) { return { title: _ct(el, '.hw__t'), desc: _ct(el, '.hw__d') }; },
@@ -4537,6 +4543,10 @@
     function cleanPageClone(clone) {
         clone.querySelectorAll('[contenteditable]').forEach(function (el) {
             el.removeAttribute('contenteditable');
+            // Preserve newlines: convert \n in text to <br> for student view
+            if (el.innerHTML.indexOf('\n') !== -1) {
+                el.innerHTML = el.innerHTML.replace(/\n/g, '<br>');
+            }
         });
         clone.querySelectorAll('.p-nav, .p-header__nav').forEach(function (el) {
             el.remove();
