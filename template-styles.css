@@ -1029,7 +1029,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 @page{margin:0;size:A4}
 @media print{
     body{background:#fff}
-    .topbar,.sidebar,.cbar,.page-nav{display:none!important}
+    .topbar,.sidebar,.cbar,.page-nav,.deploy-overlay,.wm,.asm-overlay,.undo-toast,.restore-toast{display:none!important}
     .app{display:block;height:auto}
     .main{display:block;overflow:visible}
     .preview{padding:0;display:block;overflow:visible}
@@ -1040,6 +1040,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
     [contenteditable="true"]:hover,[contenteditable="true"]:focus{background:none;box-shadow:none}
     body{orphans:2;widows:2}
     .pl,.vi,.sc,.hwl li,.cb,.ptb{box-shadow:none}
+    /* Preserve screen layout in print — override responsive breakpoint */
+    .vg{grid-template-columns:repeat(3,1fr)!important;gap:6px!important}
+    .scs{grid-template-columns:1fr 1fr!important;gap:8px!important}
+    .hwl{grid-template-columns:repeat(3,1fr)!important;gap:6px!important}
+    .prb__ch{grid-template-columns:1fr 1fr!important}
+    .layout--compact .vg{grid-template-columns:1fr 1fr!important}
+    .layout--compact .scs{grid-template-columns:1fr!important}
+    .layout--compact .hwl{grid-template-columns:1fr!important}
+    .layout--modern .hwl{grid-template-columns:repeat(3,1fr)!important}
 }
 
 /* ================================================
