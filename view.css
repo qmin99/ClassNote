@@ -391,32 +391,87 @@ body{
 [data-dark="true"] .view-footer a{color:#555}
 [data-dark="true"] .view-offline{background:#3d3520;color:#ffc107;border-bottom-color:#665a2e}
 
-/* --- Fullscreen exit button --- */
+/* --- Fullscreen overlay --- */
+.fs-overlay{
+    position:fixed;inset:0;z-index:10000;
+    background:#0a0a0a;
+    display:none;flex-direction:column;align-items:center;justify-content:center;
+}
+.fs-overlay--active{display:flex}
+
+/* Stage: holds the framed page */
+.fs-stage{
+    flex:1;display:flex;align-items:center;justify-content:center;
+    width:100%;padding:24px;
+}
+
+/* Frame: subtle border + glow around the page */
+.fs-frame{
+    position:relative;
+    border-radius:12px;
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.06);
+    box-shadow:
+        0 0 0 1px rgba(255,255,255,.04),
+        0 4px 30px rgba(0,0,0,.4),
+        0 0 80px rgba(255,255,255,.015);
+    overflow:hidden;
+    animation:fsFrameIn .4s cubic-bezier(.16,1,.3,1);
+}
+@keyframes fsFrameIn{
+    from{opacity:0;transform:scale(.94)}
+    to{opacity:1;transform:scale(1)}
+}
+
+/* Page inside frame */
+.fs-frame .page{
+    display:block!important;
+    box-shadow:none!important;
+    border-radius:0!important;
+    margin:0!important;
+}
+
+/* Exit button */
 .fs-exit-btn{
-    position:fixed;top:16px;right:16px;z-index:9999;
+    position:fixed;top:20px;right:20px;z-index:10001;
     width:40px;height:40px;border-radius:50%;
-    border:none;background:rgba(255,255,255,.12);
-    color:rgba(255,255,255,.7);
+    border:none;background:rgba(255,255,255,.08);
+    color:rgba(255,255,255,.5);
     cursor:pointer;
     display:flex;align-items:center;justify-content:center;
-    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-    transition:all .2s;
-    opacity:0;animation:fsExitIn .4s .3s ease forwards;
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    transition:all .25s;
+    opacity:0;animation:fsCtrlIn .4s .5s ease forwards;
 }
-.fs-exit-btn:hover{background:rgba(255,255,255,.25);color:#fff;transform:scale(1.08)}
-.fs-exit-btn:active{transform:scale(.95)}
-@keyframes fsExitIn{to{opacity:1}}
+.fs-exit-btn:hover{background:rgba(255,255,255,.18);color:#fff;transform:scale(1.1)}
+.fs-exit-btn:active{transform:scale(.92)}
+@keyframes fsCtrlIn{to{opacity:1}}
 
-/* Floating page nav in fullscreen */
-.fs-nav-float{
-    position:fixed!important;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;
-    background:rgba(255,255,255,.12);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-    border-radius:12px;padding:4px 8px;
-    display:flex!important;
+/* Floating page nav */
+.fs-nav{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:10001;
+    display:flex;align-items:center;gap:2px;
+    background:rgba(255,255,255,.08);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border-radius:14px;padding:6px 10px;
+    border:1px solid rgba(255,255,255,.06);
+    opacity:0;animation:fsCtrlIn .4s .6s ease forwards;
 }
-.fs-nav-float .view-page-nav__btn{color:rgba(255,255,255,.6)}
-.fs-nav-float .view-page-nav__btn:hover{color:#fff;background:rgba(255,255,255,.15)}
-.fs-nav-float .view-page-nav__badge{color:rgba(255,255,255,.5)}
+.fs-nav__btn{
+    width:32px;height:32px;border-radius:8px;
+    border:none;background:transparent;cursor:pointer;
+    color:rgba(255,255,255,.45);
+    display:flex;align-items:center;justify-content:center;
+    transition:all .15s;
+}
+.fs-nav__btn:hover{color:#fff;background:rgba(255,255,255,.12)}
+.fs-nav__btn:active{transform:scale(.9)}
+.fs-nav__btn:disabled{opacity:.2;cursor:default}
+.fs-nav__btn:disabled:hover{background:transparent;color:rgba(255,255,255,.45)}
+.fs-nav__badge{
+    font-family:'Inter',sans-serif;font-size:12px;font-weight:600;
+    color:rgba(255,255,255,.35);padding:0 10px;min-width:50px;text-align:center;
+    letter-spacing:.04em;
+}
 
 /* --- Print --- */
 @media print{

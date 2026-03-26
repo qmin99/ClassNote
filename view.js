@@ -78,90 +78,103 @@
     // =========================================
 
     // --- Fullscreen: immersive mode ---
-    var fsExitBtn = null;
+    var fsOverlay = null;
 
-    function enterFullscreen() {
-        document.documentElement.requestFullscreen().catch(function () {});
+    function createFsOverlay() {
+        if (fsOverlay) return;
+        fsOverlay = document.createElement('div');
+        fsOverlay.className = 'fs-overlay';
+        fsOverlay.innerHTML =
+            '<div class="fs-stage">' +
+                '<div class="fs-frame"><div class="fs-page-wrap" id="fsPageWrap"></div></div>' +
+            '</div>' +
+            '<button class="fs-exit-btn" title="전체화면 종료">' +
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' +
+            '</button>' +
+            '<div class="fs-nav" id="fsNav" style="display:none">' +
+                '<button class="fs-nav__btn" id="fsPrev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>' +
+                '<span class="fs-nav__badge" id="fsBadge">1 / 1</span>' +
+                '<button class="fs-nav__btn" id="fsNext"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>' +
+            '</div>';
+        document.body.appendChild(fsOverlay);
+
+        fsOverlay.querySelector('.fs-exit-btn').addEventListener('click', function () {
+            if (document.fullscreenElement) document.exitFullscreen();
+        });
+        document.getElementById('fsPrev').addEventListener('click', function () { goPage(-1); renderFsPage(); });
+        document.getElementById('fsNext').addEventListener('click', function () { goPage(1); renderFsPage(); });
     }
 
-    function exitFullscreen() {
-        if (document.fullscreenElement) document.exitFullscreen();
-    }
+    function renderFsPage() {
+        if (!fsOverlay) return;
+        var wrap = document.getElementById('fsPageWrap');
+        var nav = document.getElementById('fsNav');
+        if (!wrap) return;
 
-    function applyFullscreenUI(isFs) {
-        var header = document.querySelector('.view-header');
-        var body = document.querySelector('.view-body');
-        if (isFs) {
-            // Hide header
-            if (header) header.style.display = 'none';
-            // Dark bg, center content
-            document.body.style.background = '#111';
-            if (body) { body.style.padding = '0'; body.style.justifyContent = 'center'; body.style.minHeight = '100vh'; }
-            // Create floating exit button
-            if (!fsExitBtn) {
-                fsExitBtn = document.createElement('button');
-                fsExitBtn.className = 'fs-exit-btn';
-                fsExitBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
-                fsExitBtn.title = '전체화면 종료';
-                fsExitBtn.addEventListener('click', exitFullscreen);
-                document.body.appendChild(fsExitBtn);
-            }
-            fsExitBtn.style.display = '';
-            // Show floating page nav if multi-page
-            var navEl = document.getElementById('viewNav');
-            if (navEl && viewState.total > 1) {
-                navEl.classList.add('fs-nav-float');
-            }
-            // Scale page to fit viewport
-            scalePagesFullscreen();
+        // Clone current visible page into the fullscreen frame
+        var currentPage = viewState.pages[viewState.current];
+        if (!currentPage) return;
+        wrap.innerHTML = '';
+        var clone = currentPage.cloneNode(true);
+        clone.style.display = '';
+        clone.classList.remove('page--enter');
+        clone.style.transform = '';
+        clone.style.marginBottom = '';
+        wrap.appendChild(clone);
+
+        // Update nav
+        if (viewState.total > 1) {
+            nav.style.display = '';
+            document.getElementById('fsBadge').textContent = (viewState.current + 1) + ' / ' + viewState.total;
+            document.getElementById('fsPrev').disabled = viewState.current === 0;
+            document.getElementById('fsNext').disabled = viewState.current === viewState.total - 1;
         } else {
-            // Restore header
-            if (header) header.style.display = '';
-            document.body.style.background = '';
-            if (body) { body.style.padding = ''; body.style.justifyContent = ''; body.style.minHeight = ''; }
-            if (fsExitBtn) fsExitBtn.style.display = 'none';
-            var navEl = document.getElementById('viewNav');
-            if (navEl) navEl.classList.remove('fs-nav-float');
-            // Restore normal scaling
-            var pages = container.querySelectorAll('.page');
-            pages.forEach(function (pg) {
-                pg.style.transform = '';
-                pg.style.marginBottom = '';
-                pg.style.transformOrigin = '';
-            });
-            requestAnimationFrame(scalePages);
+            nav.style.display = 'none';
         }
+
+        // Scale to fit viewport with padding
+        requestAnimationFrame(function () { scaleFsPage(clone); });
     }
 
-    function scalePagesFullscreen() {
-        var pages = container.querySelectorAll('.page');
-        if (!pages.length) return;
+    function scaleFsPage(pageEl) {
+        if (!pageEl) return;
         var vh = window.innerHeight;
         var vw = window.innerWidth;
-        pages.forEach(function (pg) {
-            if (pg.style.display === 'none') return;
-            var pw = pg.offsetWidth || 794;
-            var ph = pg.offsetHeight || 1123;
-            var scaleH = vh / ph;
-            var scaleW = vw / pw;
-            var scale = Math.min(scaleH, scaleW);
-            pg.style.transformOrigin = 'top center';
-            pg.style.transform = 'scale(' + scale + ')';
-            pg.style.marginBottom = '-' + Math.round(ph * (1 - scale)) + 'px';
-        });
+        var pad = 48; // breathing room around page
+        var pw = 794;
+        var ph = pageEl.scrollHeight || 1123;
+        var scaleH = (vh - pad * 2) / ph;
+        var scaleW = (vw - pad * 2) / pw;
+        var scale = Math.min(scaleH, scaleW, 1.35); // cap at 1.35x to avoid over-zoom
+        pageEl.style.transformOrigin = 'top center';
+        pageEl.style.transform = 'scale(' + scale + ')';
+        // Collapse negative space from scale
+        var scaledH = Math.round(ph * scale);
+        pageEl.style.marginBottom = '-' + (ph - scaledH) + 'px';
+    }
+
+    function enterFs() {
+        createFsOverlay();
+        document.documentElement.requestFullscreen().catch(function () {});
     }
 
     if (fullscreenBtn) {
         fullscreenBtn.addEventListener('click', function () {
             if (!document.fullscreenElement) {
-                enterFullscreen();
+                enterFs();
             } else {
-                exitFullscreen();
+                document.exitFullscreen();
             }
         });
         document.addEventListener('fullscreenchange', function () {
             var isFs = !!document.fullscreenElement;
-            applyFullscreenUI(isFs);
+            if (isFs) {
+                if (fsOverlay) fsOverlay.classList.add('fs-overlay--active');
+                // Delay to let viewport settle
+                setTimeout(function () { renderFsPage(); }, 80);
+            } else {
+                if (fsOverlay) fsOverlay.classList.remove('fs-overlay--active');
+            }
             fullscreenBtn.innerHTML = isFs
                 ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>'
                 : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
@@ -521,7 +534,11 @@
             }
         });
         updatePageNav();
-        requestAnimationFrame(document.fullscreenElement ? scalePagesFullscreen : scalePages);
+        if (document.fullscreenElement && fsOverlay) {
+            renderFsPage();
+        } else {
+            requestAnimationFrame(scalePages);
+        }
     }
 
     function goPage(delta) {
@@ -591,14 +608,25 @@
     var resizeTimer;
     window.addEventListener('resize', function () {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(document.fullscreenElement ? scalePagesFullscreen : scalePages, 150);
+        resizeTimer = setTimeout(function () {
+            if (document.fullscreenElement && fsOverlay) {
+                var pg = document.querySelector('#fsPageWrap .page');
+                if (pg) scaleFsPage(pg);
+            } else {
+                scalePages();
+            }
+        }, 150);
     });
 
-    // --- Keyboard arrow navigation ---
+    // --- Keyboard navigation ---
     document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && document.fullscreenElement) {
+            document.exitFullscreen();
+            return;
+        }
         if (viewState.total <= 1) return;
-        if (e.key === 'ArrowLeft') goPage(-1);
-        if (e.key === 'ArrowRight') goPage(1);
+        if (e.key === 'ArrowLeft') { goPage(-1); if (document.fullscreenElement) renderFsPage(); }
+        if (e.key === 'ArrowRight') { goPage(1); if (document.fullscreenElement) renderFsPage(); }
     });
 
     // Print button
