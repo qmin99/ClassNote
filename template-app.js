@@ -1930,7 +1930,7 @@
         if (secOn('phrases')) {
             s.sections.forEach(function (sec, si) {
                 var solo = sec.phrases.length <= 1 ? ' crud-solo' : '';
-                h += '<div class="ps">' + secH(sec.num, sec.name, 'phrases');
+                h += '<div class="ps">' + secH(sec.num, sec.name, 'phrases', si);
                 h += '<ul class="pl">';
                 sec.phrases.forEach(function (p, pi) {
                     h += '<li' + solo + ' data-crud-type="phrases" data-crud-sec="' + si + '" data-crud-idx="' + pi + '"><span' + E + '>' + p + '</span>';
@@ -2928,10 +2928,13 @@
         return '<div class="pf"><span>' + left + '</span><span>' + r + '</span></div>';
     }
 
-    function secH(num, name, key) {
+    function secH(num, name, key, secIdx) {
         var cn = window.__classnote;
-        var display = (key && cn && cn.sectionNames && cn.sectionNames[key]) ? cn.sectionNames[key] : name;
-        return '<div class="psh">' + (num ? '<span class="psh__n">' + num + '</span>' : '') + '<span class="psh__t"' + E + '>' + display + '</span></div>';
+        // Individual phrase sections use their own name directly, not sectionNames
+        var display = (secIdx === undefined && key && cn && cn.sectionNames && cn.sectionNames[key]) ? cn.sectionNames[key] : name;
+        var keyAttr = key ? ' data-sec-key="' + key + '"' : '';
+        var secIdxAttr = (secIdx !== undefined) ? ' data-sec-idx="' + secIdx + '"' : '';
+        return '<div class="psh"' + keyAttr + secIdxAttr + '>' + (num ? '<span class="psh__n">' + num + '</span>' : '') + '<span class="psh__t"' + E + '>' + display + '</span></div>';
     }
 
     function renderQ(num, item) {
@@ -3096,6 +3099,40 @@
                 arr[idx] = syncer(el, arr[idx]);
             }
         });
+
+        // Sync page header editables (title, subtitle, series)
+        var titleEl = document.querySelector('.p-title[contenteditable]');
+        if (titleEl) session.title = titleEl.textContent.trim();
+        var subtitleEl = document.querySelector('.p-subtitle[contenteditable]');
+        if (subtitleEl) session.subtitle = subtitleEl.textContent.trim();
+        var seriesEl = document.querySelector('.p-series[contenteditable]');
+        if (seriesEl) {
+            var course = getCourse();
+            if (course) course.series = seriesEl.textContent.trim();
+        }
+
+        // Sync section header editables (sectionNames + individual phrase section names)
+        var cn = window.__classnote;
+        if (cn) {
+            if (!cn.sectionNames) cn.sectionNames = {};
+            document.querySelectorAll('.psh[data-sec-key]').forEach(function (psh) {
+                var tEl = psh.querySelector('.psh__t[contenteditable]');
+                if (!tEl) return;
+                var key = psh.getAttribute('data-sec-key');
+                var secIdxStr = psh.getAttribute('data-sec-idx');
+                var val = tEl.textContent.trim();
+
+                // Individual phrase section names → session.sections[i].name
+                if (key === 'phrases' && secIdxStr !== null) {
+                    var si = parseInt(secIdxStr, 10);
+                    if (session.sections && session.sections[si]) {
+                        session.sections[si].name = val;
+                    }
+                } else if (key) {
+                    cn.sectionNames[key] = val;
+                }
+            });
+        }
     }
 
     function _scrollContainer() { return document.querySelector('.preview') || document.documentElement; }
