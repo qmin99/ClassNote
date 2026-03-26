@@ -28,7 +28,6 @@
     var viewDivider = document.getElementById('viewDivider');
 
     // Tool buttons
-    var darkBtn = document.getElementById('viewDark');
     var shareBtn = document.getElementById('viewShare');
     var fullscreenBtn = document.getElementById('viewFullscreen');
     var pdfBtn = document.getElementById('viewPdf');
@@ -44,31 +43,6 @@
     function hideLoading() {
         if (loadingEl) loadingEl.style.display = 'none';
     }
-
-    // =========================================
-    // A8: DARK MODE
-    // =========================================
-
-    function initDarkMode() {
-        var saved = localStorage.getItem('classnote_dark');
-        var isDark = saved !== null ? saved === 'true' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-        applyDark(isDark);
-    }
-
-    function applyDark(isDark) {
-        document.documentElement.setAttribute('data-dark', isDark ? 'true' : 'false');
-        if (darkBtn) darkBtn.textContent = isDark ? '☀️' : '🌙';
-        localStorage.setItem('classnote_dark', isDark);
-    }
-
-    if (darkBtn) {
-        darkBtn.addEventListener('click', function () {
-            var current = document.documentElement.getAttribute('data-dark') === 'true';
-            applyDark(!current);
-        });
-    }
-
-    initDarkMode();
 
     // =========================================
     // SHARE BUTTON
