@@ -2016,7 +2016,7 @@
         if (secOn('homework')) {
             var solo = s.homework.length <= 1 ? ' crud-solo' : '';
             h += '<div class="ps">' + secH('', '숙제', 'homework');
-            h += '<ul class="hwl">';
+            h += '<ul class="hwl' + (s.homework.length <= 2 ? ' hwl--few' : '') + '">';
             s.homework.forEach(function (hw, i) {
                 h += '<li' + solo + ' data-crud-type="homework" data-crud-idx="' + i + '"><div class="hw__n">' + (i + 1) + '</div><div><div class="hw__t"' + E + '>' + hw.title + '</div><div class="hw__d"' + E + '>' + hw.desc + '</div></div>';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></li>';
@@ -2265,7 +2265,7 @@
             var hw = ensureArray(s, '_homework', 3, ITEM_FACTORIES.homework);
             var solo = hw.length <= 1 ? ' crud-solo' : '';
             h += '<div class="ps">' + secH('', '숙제', 'homework');
-            h += '<ul class="hwl">';
+            h += '<ul class="hwl' + (hw.length <= 2 ? ' hwl--few' : '') + '">';
             hw.forEach(function (item, i) {
                 h += '<li' + solo + ' data-crud-type="homework" data-crud-idx="' + i + '"><div class="hw__n">' + (i + 1) + '</div><div><div class="hw__t"' + E + '>' + item.title + '</div><div class="hw__d"' + E + '>' + item.desc + '</div></div>';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></li>';
@@ -2424,7 +2424,7 @@
             var hw = ensureArray(s, '_homework', 3, ITEM_FACTORIES.homework);
             var solo = hw.length <= 1 ? ' crud-solo' : '';
             h += '<div class="ps">' + secH('', '숙제', 'homework');
-            h += '<ul class="hwl">';
+            h += '<ul class="hwl' + (hw.length <= 2 ? ' hwl--few' : '') + '">';
             hw.forEach(function (item, i) {
                 h += '<li' + solo + ' data-crud-type="homework" data-crud-idx="' + i + '"><div class="hw__n">' + (i + 1) + '</div><div><div class="hw__t"' + E + '>' + item.title + '</div><div class="hw__d"' + E + '>' + item.desc + '</div></div>';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></li>';
@@ -2608,7 +2608,7 @@
             var hw = ensureArray(s, '_homework', 3, ITEM_FACTORIES.homework);
             var solo = hw.length <= 1 ? ' crud-solo' : '';
             h += '<div class="ps">' + secH('', '숙제', 'homework');
-            h += '<ul class="hwl">';
+            h += '<ul class="hwl' + (hw.length <= 2 ? ' hwl--few' : '') + '">';
             hw.forEach(function (item, i) {
                 h += '<li' + solo + ' data-crud-type="homework" data-crud-idx="' + i + '"><div class="hw__n">' + (i + 1) + '</div><div><div class="hw__t"' + E + '>' + item.title + '</div><div class="hw__d"' + E + '>' + item.desc + '</div></div>';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></li>';
@@ -2912,7 +2912,7 @@
             var hw = ensureArray(s, '_homework', 3, ITEM_FACTORIES.homework);
             var solo = hw.length <= 1 ? ' crud-solo' : '';
             h += '<div class="ps">' + secH('', '숙제', 'homework');
-            h += '<ul class="hwl">';
+            h += '<ul class="hwl' + (hw.length <= 2 ? ' hwl--few' : '') + '">';
             hw.forEach(function (item, i) {
                 h += '<li' + solo + ' data-crud-type="homework" data-crud-idx="' + i + '"><div class="hw__n">' + (i + 1) + '</div><div><div class="hw__t"' + E + '>' + item.title + '</div><div class="hw__d"' + E + '>' + item.desc + '</div></div>';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></li>';
