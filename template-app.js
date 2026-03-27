@@ -1348,6 +1348,7 @@
             window.__classnote.logoData = obState.logoData;
             window.__classnote.sections = obState.sections;
             window.__classnote.sectionNames = obState.sectionNames || {};
+            window.__classnote.sectionOrder = obState.sectionOrder || null;
             window.__classnote.layout = obState.layout;
             window.__classnote.font = obState.font;
             window.__classnote.subject = obState.subject;
@@ -1819,6 +1820,56 @@
         var cn = window.__classnote;
         if (!cn || !cn.sections) return true; // no onboarding → show all
         return cn.sections[key] === true; // only show if explicitly enabled
+    }
+
+    // Reorder .ps elements in the page based on sectionOrder
+    function reorderSections(pageEl) {
+        var cn = window.__classnote;
+        if (!cn || !cn.sectionOrder || !cn.sectionOrder.length) return;
+
+        // Build map: secKey → parent .ps element
+        var psMap = {};
+        pageEl.querySelectorAll('.psh[data-sec-key]').forEach(function (psh) {
+            var key = psh.getAttribute('data-sec-key');
+            var ps = psh.closest('.ps');
+            if (ps && key) {
+                if (!psMap[key]) psMap[key] = [];
+                psMap[key].push(ps);
+            }
+        });
+
+        // Find the insertion anchor: the element AFTER the last header element (before first .ps)
+        var allPS = pageEl.querySelectorAll('.ps');
+        if (!allPS.length) return;
+        var firstPS = allPS[0];
+        var parent = firstPS.parentNode;
+
+        // Collect all .ps elements and remove them from DOM
+        var allPSArr = Array.prototype.slice.call(allPS);
+        allPSArr.forEach(function (ps) { parent.removeChild(ps); });
+
+        // Re-insert in sectionOrder, then append any remaining
+        var inserted = {};
+        var anchor = pageEl.querySelector('.p-footer');
+        cn.sectionOrder.forEach(function (key) {
+            var elems = psMap[key];
+            if (elems) {
+                elems.forEach(function (ps) {
+                    if (anchor) parent.insertBefore(ps, anchor);
+                    else parent.appendChild(ps);
+                });
+                inserted[key] = true;
+            }
+        });
+        // Append any sections not in sectionOrder (newly added)
+        allPSArr.forEach(function (ps) {
+            var psh = ps.querySelector('.psh[data-sec-key]');
+            var key = psh ? psh.getAttribute('data-sec-key') : null;
+            if (!key || !inserted[key]) {
+                if (anchor) parent.insertBefore(ps, anchor);
+                else parent.appendChild(ps);
+            }
+        });
     }
 
     // =========================================
@@ -3528,10 +3579,25 @@
                 if (cn) {
                     ob.sections = cn.sections;
                     ob.sectionNames = cn.sectionNames || {};
+                    ob.sectionOrder = cn.sectionOrder || null;
                     localStorage.setItem('classnote_onboarding', JSON.stringify(ob));
                 }
             }
         } catch (e) {}
+    }
+
+    // Get ordered list of enabled section keys
+    function getEffectiveOrder(allSections, cn) {
+        var enabledKeys = allSections.filter(function (s) { return cn.sections[s.key] === true; }).map(function (s) { return s.key; });
+        if (!cn.sectionOrder || !cn.sectionOrder.length) return enabledKeys;
+        // sectionOrder first (only enabled ones), then any enabled not in order
+        var ordered = [];
+        var inOrder = {};
+        cn.sectionOrder.forEach(function (k) {
+            if (cn.sections[k] === true) { ordered.push(k); inOrder[k] = true; }
+        });
+        enabledKeys.forEach(function (k) { if (!inOrder[k]) ordered.push(k); });
+        return ordered;
     }
 
     function renderSectionPanel() {
@@ -3551,84 +3617,216 @@
         var allSections = subjSections[type];
         if (!allSections) return;
 
-        // Ensure sectionNames map exists
         if (!cn.sectionNames) cn.sectionNames = {};
 
-        var catLabels = { learn: '학습', practice: '연습', wrap: '마무리' };
-        var catOrder = ['learn', 'practice', 'wrap'];
-        var groups = { learn: [], practice: [], wrap: [] };
+        // Build section lookup
+        var secByKey = {};
+        allSections.forEach(function (s) { secByKey[s.key] = s; });
 
-        allSections.forEach(function (s) {
-            var g = groups[s.cat];
-            if (g) g.push(s);
-        });
+        // Ordered enabled sections
+        var orderedKeys = getEffectiveOrder(allSections, cn);
 
         var h = '';
-        catOrder.forEach(function (cat) {
-            var items = groups[cat];
-            if (!items.length) return;
-            h += '<div class="sp__cat">';
-            h += '<div class="sp__cat-label">' + catLabels[cat] + '</div>';
-            items.forEach(function (s) {
-                var isOn = cn.sections[s.key] === true;
-                var displayName = cn.sectionNames[s.key] || s.name;
-                h += '<div class="sp__item' + (isOn ? '' : ' sp__item--off') + '" data-sec-key="' + s.key + '">';
-                h += '<span class="sp__dot sp__dot--' + s.cat + '"></span>';
-                h += '<input class="sp__name" value="' + esc(displayName) + '" data-sec-rename="' + s.key + '" title="' + esc(s.desc) + '">';
-                h += '<span class="sp__actions">';
-                h += '<button class="sp__btn" data-sec-toggle="' + s.key + '" title="' + (isOn ? '숨기기' : '표시하기') + '">';
-                if (isOn) {
-                    h += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-                } else {
-                    h += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
-                }
-                h += '</button>';
-                if (isOn) {
-                    h += '<button class="sp__btn sp__btn--danger" data-sec-del="' + s.key + '" title="삭제">';
-                    h += '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-                    h += '</button>';
-                }
-                h += '</span>';
-                h += '</div>';
-            });
+        // Draggable list of enabled sections
+        h += '<div class="sp__list" id="spList">';
+        orderedKeys.forEach(function (key, idx) {
+            var s = secByKey[key];
+            if (!s) return;
+            var displayName = cn.sectionNames[key] || s.name;
+            h += '<div class="sp__item sp__item--draggable" data-sec-key="' + key + '" data-sp-idx="' + idx + '" draggable="true">';
+            h += '<span class="sp__grip" title="드래그하여 순서 변경">';
+            h += '<svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>';
+            h += '</span>';
+            h += '<span class="sp__dot sp__dot--' + s.cat + '" title="' + ({ learn:'학습', practice:'연습', wrap:'마무리' }[s.cat] || '') + '"></span>';
+            h += '<input class="sp__name" value="' + esc(displayName) + '" data-sec-rename="' + key + '" title="' + esc(s.desc) + '">';
+            h += '<span class="sp__actions">';
+            h += '<button class="sp__btn" data-sec-toggle="' + key + '" title="숨기기">';
+            h += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+            h += '</button>';
+            h += '</span>';
             h += '</div>';
         });
+        h += '</div>';
 
-        // Add section button (show available off sections)
+        // Hidden sections
         var offSections = allSections.filter(function (s) { return cn.sections[s.key] !== true; });
         if (offSections.length > 0) {
-            h += '<div style="position:relative" id="spAddWrap">';
-            h += '<button class="sp__add" id="spAddBtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 섹션 추가</button>';
+            h += '<div class="sp__hidden-group">';
+            h += '<div class="sp__hidden-label">숨겨진 섹션</div>';
+            offSections.forEach(function (s) {
+                h += '<div class="sp__item sp__item--off" data-sec-key="' + s.key + '">';
+                h += '<span class="sp__dot sp__dot--' + s.cat + '"></span>';
+                h += '<span class="sp__name-static">' + esc(s.name) + '</span>';
+                h += '<button class="sp__btn sp__btn--restore" data-sec-toggle="' + s.key + '" title="다시 표시">';
+                h += '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+                h += '</button>';
+                h += '</div>';
+            });
             h += '</div>';
         }
 
         panel.innerHTML = h;
 
-        // Bind toggle clicks
+        // --- Drag and drop ---
+        var spList = document.getElementById('spList');
+        var dragItem = null;
+        var dragIdx = -1;
+        var placeholder = document.createElement('div');
+        placeholder.className = 'sp__placeholder';
+
+        if (spList) {
+            spList.addEventListener('dragstart', function (e) {
+                var item = e.target.closest('.sp__item--draggable');
+                if (!item) return;
+                dragItem = item;
+                dragIdx = parseInt(item.getAttribute('data-sp-idx'), 10);
+                item.classList.add('sp__item--dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', '');
+            });
+
+            spList.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                var target = e.target.closest('.sp__item--draggable');
+                if (!target || target === dragItem) {
+                    // If hovering past the last item, put placeholder at end
+                    if (spList.contains(placeholder)) return;
+                    return;
+                }
+                var rect = target.getBoundingClientRect();
+                var midY = rect.top + rect.height / 2;
+                if (e.clientY < midY) {
+                    spList.insertBefore(placeholder, target);
+                } else {
+                    spList.insertBefore(placeholder, target.nextSibling);
+                }
+            });
+
+            spList.addEventListener('dragend', function () {
+                if (dragItem) dragItem.classList.remove('sp__item--dragging');
+                if (placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
+                dragItem = null;
+                dragIdx = -1;
+            });
+
+            spList.addEventListener('drop', function (e) {
+                e.preventDefault();
+                if (!dragItem) return;
+                // Insert dragItem at placeholder position
+                if (placeholder.parentNode === spList) {
+                    spList.insertBefore(dragItem, placeholder);
+                    placeholder.parentNode.removeChild(placeholder);
+                }
+                dragItem.classList.remove('sp__item--dragging');
+                // Read new order from DOM
+                var newOrder = [];
+                spList.querySelectorAll('.sp__item--draggable').forEach(function (el) {
+                    newOrder.push(el.getAttribute('data-sec-key'));
+                });
+                cn.sectionOrder = newOrder;
+                persistSections();
+                renderPage();
+                // Re-render panel to update indices
+                renderSectionPanel();
+            });
+        }
+
+        // --- Touch drag support ---
+        (function () {
+            var touchItem = null;
+            var touchClone = null;
+            var touchStartY = 0;
+            var touchOffsetY = 0;
+
+            if (!spList) return;
+
+            spList.addEventListener('touchstart', function (e) {
+                var grip = e.target.closest('.sp__grip');
+                if (!grip) return;
+                var item = grip.closest('.sp__item--draggable');
+                if (!item) return;
+                touchItem = item;
+                var touch = e.touches[0];
+                var rect = item.getBoundingClientRect();
+                touchStartY = touch.clientY;
+                touchOffsetY = touch.clientY - rect.top;
+                // Create floating clone
+                touchClone = item.cloneNode(true);
+                touchClone.className = 'sp__item sp__item--ghost';
+                touchClone.style.cssText = 'position:fixed;left:' + rect.left + 'px;top:' + rect.top + 'px;width:' + rect.width + 'px;z-index:999;pointer-events:none;';
+                document.body.appendChild(touchClone);
+                item.classList.add('sp__item--dragging');
+                e.preventDefault();
+            }, { passive: false });
+
+            spList.addEventListener('touchmove', function (e) {
+                if (!touchItem || !touchClone) return;
+                var touch = e.touches[0];
+                touchClone.style.top = (touch.clientY - touchOffsetY) + 'px';
+                // Find item under touch
+                touchClone.style.display = 'none';
+                var under = document.elementFromPoint(touch.clientX, touch.clientY);
+                touchClone.style.display = '';
+                if (under) {
+                    var target = under.closest('.sp__item--draggable');
+                    if (target && target !== touchItem) {
+                        var rect = target.getBoundingClientRect();
+                        var mid = rect.top + rect.height / 2;
+                        if (touch.clientY < mid) {
+                            spList.insertBefore(placeholder, target);
+                        } else {
+                            spList.insertBefore(placeholder, target.nextSibling);
+                        }
+                    }
+                }
+                e.preventDefault();
+            }, { passive: false });
+
+            spList.addEventListener('touchend', function () {
+                if (!touchItem) return;
+                if (placeholder.parentNode === spList) {
+                    spList.insertBefore(touchItem, placeholder);
+                    placeholder.parentNode.removeChild(placeholder);
+                }
+                touchItem.classList.remove('sp__item--dragging');
+                if (touchClone && touchClone.parentNode) touchClone.parentNode.removeChild(touchClone);
+                // Save new order
+                var newOrder = [];
+                spList.querySelectorAll('.sp__item--draggable').forEach(function (el) {
+                    newOrder.push(el.getAttribute('data-sec-key'));
+                });
+                cn.sectionOrder = newOrder;
+                persistSections();
+                renderPage();
+                renderSectionPanel();
+                touchItem = null;
+                touchClone = null;
+            });
+        })();
+
+        // --- Bind toggle (hide) ---
         panel.querySelectorAll('[data-sec-toggle]').forEach(function (btn) {
             btn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 var key = this.getAttribute('data-sec-toggle');
-                cn.sections[key] = !cn.sections[key];
+                var wasOn = cn.sections[key] === true;
+                cn.sections[key] = !wasOn;
+                // If toggling on, add to end of order
+                if (!wasOn && cn.sectionOrder) {
+                    if (cn.sectionOrder.indexOf(key) === -1) cn.sectionOrder.push(key);
+                }
+                // If toggling off, remove from order
+                if (wasOn && cn.sectionOrder) {
+                    cn.sectionOrder = cn.sectionOrder.filter(function (k) { return k !== key; });
+                }
                 persistSections();
                 renderSectionPanel();
                 renderPage();
             });
         });
 
-        // Bind delete (same as toggle off)
-        panel.querySelectorAll('[data-sec-del]').forEach(function (btn) {
-            btn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                var key = this.getAttribute('data-sec-del');
-                cn.sections[key] = false;
-                persistSections();
-                renderSectionPanel();
-                renderPage();
-            });
-        });
-
-        // Bind rename (blur saves)
+        // --- Bind rename ---
         panel.querySelectorAll('[data-sec-rename]').forEach(function (input) {
             input.addEventListener('blur', function () {
                 var key = this.getAttribute('data-sec-rename');
@@ -3654,44 +3852,6 @@
                 }
             });
         });
-
-        // Bind add section button
-        var addBtn = document.getElementById('spAddBtn');
-        var addWrap = document.getElementById('spAddWrap');
-        if (addBtn && addWrap) {
-            addBtn.addEventListener('click', function () {
-                // Check if dropdown already open
-                var existing = addWrap.querySelector('.sp__dropdown');
-                if (existing) { existing.remove(); return; }
-
-                var dd = document.createElement('div');
-                dd.className = 'sp__dropdown';
-                offSections.forEach(function (s) {
-                    var item = document.createElement('button');
-                    item.className = 'sp__dropdown-item';
-                    item.innerHTML = '<span class="sp__dropdown-item__name">' + esc(s.name) + '</span><span class="sp__dropdown-item__desc">' + esc(s.desc) + '</span>';
-                    item.addEventListener('click', function () {
-                        cn.sections[s.key] = true;
-                        dd.remove();
-                        persistSections();
-                        renderSectionPanel();
-                        renderPage();
-                    });
-                    dd.appendChild(item);
-                });
-                addWrap.appendChild(dd);
-
-                // Close on outside click
-                setTimeout(function () {
-                    document.addEventListener('click', function closeDD(e) {
-                        if (!dd.contains(e.target) && e.target !== addBtn) {
-                            dd.remove();
-                            document.removeEventListener('click', closeDD);
-                        }
-                    });
-                }, 0);
-            });
-        }
     }
 
     // Clear editable content from a session (keep section structure)
@@ -4002,6 +4162,7 @@
         if (wrap) wrap.querySelectorAll('.page--extra').forEach(function (p) { p.remove(); });
 
         els.page.innerHTML = renderer(session, course, getCtx());
+        reorderSections(els.page);
         els.page.setAttribute('data-theme', state.theme);
         els.page.classList.remove('page--single');
 
@@ -4269,6 +4430,7 @@
                     brand: cn.brand || '',
                     sections: cn.sections || {},
                     sectionNames: cn.sectionNames || {},
+                    sectionOrder: cn.sectionOrder || null,
                     layout: cn.layout || 'classic',
                     font: cn.font || 'sans',
                     subject: cn.subject || '',
@@ -4341,6 +4503,7 @@
                 window.__classnote.brand = cn.brand || '';
                 window.__classnote.sections = cn.sections || {};
                 window.__classnote.sectionNames = cn.sectionNames || {};
+                window.__classnote.sectionOrder = cn.sectionOrder || null;
                 window.__classnote.layout = cn.layout || 'classic';
                 window.__classnote.font = cn.font || 'sans';
                 window.__classnote.subject = cn.subject || '';
@@ -4593,6 +4756,7 @@
         else if (fontVal === 'mono') page.style.fontFamily = 'var(--mono)';
 
         page.innerHTML = renderer(session, course, getCtx());
+        reorderSections(page);
         offscreen.appendChild(page);
 
         // Allow overflow for measurement

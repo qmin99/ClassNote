@@ -156,20 +156,35 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .theme-dots{display:flex;gap:6px}
 
 /* Section panel */
-.sp__cat{margin-bottom:8px}
-.sp__cat-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t5);margin-bottom:3px;padding-left:4px}
+/* Section panel — draggable list */
+.sp__list{display:flex;flex-direction:column;gap:1px}
 .sp__item{
-    display:flex;align-items:center;gap:6px;
-    padding:4px 6px;border-radius:5px;
-    transition:background .1s;position:relative;
+    display:flex;align-items:center;gap:5px;
+    padding:5px 6px;border-radius:6px;
+    transition:background .15s,box-shadow .15s,opacity .15s;
+    position:relative;
+    background:transparent;
 }
 .sp__item:hover{background:var(--white)}
-.sp__item--off{opacity:.35}
-.sp__item--off:hover{opacity:.6}
+.sp__item--draggable{cursor:default}
+
+/* Drag grip handle */
+.sp__grip{
+    display:flex;align-items:center;justify-content:center;
+    width:14px;height:18px;flex-shrink:0;
+    color:var(--bd);cursor:grab;
+    border-radius:3px;transition:color .15s;
+}
+.sp__grip:active{cursor:grabbing}
+.sp__item:hover .sp__grip{color:var(--t4)}
+
+/* Category dot */
 .sp__dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 .sp__dot--learn{background:#3b82f6}
 .sp__dot--practice{background:#f59e0b}
 .sp__dot--wrap{background:#10b981}
+
+/* Editable name */
 .sp__name{
     flex:1;min-width:0;
     font-size:11.5px;font-weight:500;color:var(--t2);
@@ -178,7 +193,17 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
     text-overflow:ellipsis;overflow:hidden;white-space:nowrap;
 }
 .sp__name:focus{background:var(--white);box-shadow:0 0 0 1.5px var(--ac);white-space:normal}
-.sp__item--off .sp__name{color:var(--t4);text-decoration:line-through}
+
+/* Static name (for hidden sections) */
+.sp__name-static{
+    flex:1;min-width:0;
+    font-size:10.5px;font-weight:400;color:var(--t4);
+    padding:2px 4px;
+    text-overflow:ellipsis;overflow:hidden;white-space:nowrap;
+    font-family:var(--kr);
+}
+
+/* Action buttons */
 .sp__actions{display:flex;gap:1px;align-items:center;flex-shrink:0;opacity:0;transition:opacity .1s}
 .sp__item:hover .sp__actions{opacity:1}
 .sp__btn{
@@ -188,30 +213,31 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 }
 .sp__btn:hover{background:var(--bd2);color:var(--text)}
 .sp__btn--danger:hover{background:#fef2f2;color:#dc2626}
-.sp__add{
-    display:flex;align-items:center;gap:5px;
-    width:100%;padding:5px 6px;margin-top:3px;
-    border:1px dashed var(--bd2);border-radius:5px;
-    background:none;font-size:10.5px;font-weight:500;color:var(--t4);
-    cursor:pointer;font-family:var(--kr);transition:all .1s;
+.sp__btn--restore{color:var(--t5);width:18px;height:18px}
+.sp__btn--restore:hover{color:var(--ac);background:var(--ac-l)}
+
+/* Drag states */
+.sp__item--dragging{
+    opacity:.25;
 }
-.sp__add:hover{border-color:var(--ac);color:var(--ac);background:var(--ac-l)}
-.sp__add svg{flex-shrink:0}
-.sp__dropdown{
-    position:absolute;left:0;right:0;top:100%;z-index:20;
-    background:var(--white);border:1px solid var(--bd);border-radius:7px;
-    box-shadow:0 4px 12px rgba(0,0,0,.08);padding:3px;
-    max-height:200px;overflow-y:auto;
+.sp__placeholder{
+    height:4px;border-radius:2px;
+    background:var(--ac);
+    margin:1px 6px;
+    transition:opacity .1s;
 }
-.sp__dropdown-item{
-    display:flex;align-items:center;gap:6px;
-    padding:6px 8px;border-radius:5px;cursor:pointer;
-    font-size:11px;color:var(--t2);transition:background .1s;
-    border:none;background:none;width:100%;text-align:left;font-family:var(--kr);
+.sp__item--ghost{
+    background:var(--white)!important;
+    box-shadow:0 4px 16px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.04);
+    border-radius:6px;
+    opacity:.9;
 }
-.sp__dropdown-item:hover{background:var(--surface)}
-.sp__dropdown-item__name{font-weight:500}
-.sp__dropdown-item__desc{font-size:9.5px;color:var(--t4);margin-left:auto}
+
+/* Hidden sections group */
+.sp__hidden-group{margin-top:8px;padding-top:8px;border-top:1px solid var(--bd2)}
+.sp__hidden-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--t5);margin-bottom:3px;padding-left:4px}
+.sp__item--off{opacity:.5}
+.sp__item--off:hover{opacity:.75}
 
 /* === CUSTOMIZE BAR === */
 .cbar{
