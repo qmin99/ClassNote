@@ -1979,9 +1979,14 @@
         var h = pageHeader(c.series, s.title, s.subtitle, s.num, ctx);
 
         if (secOn('phrases')) {
+            var secSolo = s.sections.length <= 1 ? ' crud-solo' : '';
             s.sections.forEach(function (sec, si) {
                 var solo = sec.phrases.length <= 1 ? ' crud-solo' : '';
-                h += '<div class="ps">' + secH(sec.num, sec.name, 'phrases', si);
+                h += '<div class="ps' + secSolo + '" data-crud-sec-wrap="' + si + '">';
+                h += secH(sec.num, sec.name, 'phrases', si);
+                if (s.sections.length > 1) {
+                    h += '<button class="crud-sec-x" data-crud-action="remove-sec" data-crud-sec="' + si + '" title="이 번호 삭제">&times;</button>';
+                }
                 h += '<ul class="pl">';
                 sec.phrases.forEach(function (p, pi) {
                     h += '<li' + solo + ' data-crud-type="phrases" data-crud-sec="' + si + '" data-crud-idx="' + pi + '"><span' + E + '>' + p + '</span>';
@@ -1989,6 +1994,7 @@
                 });
                 h += '</ul>' + crudAdd('phrases', sec.phrases.length, si) + '</div>';
             });
+            h += '<button class="crud-sec-add" data-crud-action="add-sec">+ 번호 추가</button>';
         }
 
         if (secOn('vocab')) {
@@ -3258,7 +3264,13 @@
                     clearTimeout(_undoTimer);
                     var session = getSession();
                     if (!session) { _undoData = null; return; }
-                    if (_undoData.lineKey) {
+                    if (_undoData.type === '_section') {
+                        // Restore removed phrase section
+                        if (session.sections) {
+                            session.sections.splice(_undoData.secIdx, 0, _undoData.item);
+                            session.sections.forEach(function (sec, i) { sec.num = String(i + 1); });
+                        }
+                    } else if (_undoData.lineKey) {
                         session[_undoData.lineKey] = _undoData.oldVal;
                     } else {
                         var arr = resolveArray(session, _undoData.type, _undoData.secIdx);
@@ -4357,6 +4369,32 @@
         }
         var secIdx = secAttr !== null ? parseInt(secAttr, 10) : undefined;
 
+        if (action === 'add-sec') {
+            // Add a new phrase section
+            syncEditablesToSession();
+            var sess = getSession();
+            if (sess && sess.sections) {
+                var newNum = sess.sections.length + 1;
+                sess.sections.push({ num: String(newNum), name: '번호 ' + newNum, phrases: [''] });
+                renderPage();
+            }
+            return;
+        }
+        if (action === 'remove-sec') {
+            // Remove an entire phrase section
+            syncEditablesToSession();
+            var sess2 = getSession();
+            var si2 = parseInt(btn.getAttribute('data-crud-sec'), 10);
+            if (sess2 && sess2.sections && sess2.sections.length > 1 && sess2.sections[si2]) {
+                var removedSec = sess2.sections.splice(si2, 1)[0];
+                // Re-number remaining sections
+                sess2.sections.forEach(function (sec, i) { sec.num = String(i + 1); });
+                _undoData = { type: '_section', secIdx: si2, item: removedSec };
+                renderPage();
+                _showUndoToast();
+            }
+            return;
+        }
         if (action === 'add' || action === 'add-line') {
             addItem(type, secIdx);
         } else if (action === 'remove' || action === 'remove-line') {
@@ -4714,7 +4752,7 @@
         clone.querySelectorAll('.p-nav, .p-header__nav').forEach(function (el) {
             el.remove();
         });
-        clone.querySelectorAll('.crud-x, .crud-add, .crud-lines').forEach(function (el) {
+        clone.querySelectorAll('.crud-x, .crud-add, .crud-lines, .crud-sec-x, .crud-sec-add').forEach(function (el) {
             el.remove();
         });
         clone.querySelectorAll('[data-crud-type]').forEach(function (el) {

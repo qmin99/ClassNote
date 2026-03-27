@@ -751,9 +751,27 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .vg [data-crud-type] .crud-x,.scs [data-crud-type] .crud-x{top:2px;right:2px}
 .hwl [data-crud-type] .crud-x{top:4px;right:0}
 
+/* Section-level CRUD (phrase sections) */
+.crud-sec-x{
+    position:absolute;top:4px;right:4px;
+    width:18px;height:18px;border:none;border-radius:4px;
+    background:none;cursor:pointer;display:none;align-items:center;justify-content:center;
+    color:var(--t4);font-size:12px;transition:all .1s;padding:0;z-index:2;
+}
+.ps:hover .crud-sec-x{display:flex}
+.crud-sec-x:hover{background:#fef2f2;color:#dc2626}
+.crud-sec-add{
+    display:flex;align-items:center;justify-content:center;gap:4px;
+    width:calc(100% - 24px);margin:2px 12px 8px;padding:5px 0;
+    border:1px dashed var(--bd2);border-radius:5px;
+    background:none;font-size:10.5px;font-weight:500;color:var(--t4);
+    cursor:pointer;font-family:var(--kr);transition:all .15s;
+}
+.crud-sec-add:hover{border-color:var(--ac);color:var(--ac);background:var(--ac-l)}
+
 /* Print — hide all CRUD buttons */
 @media print{
-    .crud-x,.crud-add,.crud-lines{display:none!important}
+    .crud-x,.crud-add,.crud-lines,.crud-sec-x,.crud-sec-add{display:none!important}
 }
 
 /* ================================================
