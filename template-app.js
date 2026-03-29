@@ -3965,7 +3965,7 @@
                     if (trueHeight <= A4_HEIGHT) {
                         // Check: does fit leave too much whitespace (>8%)?
                         var wastedPct = (A4_HEIGHT - trueHeight) / A4_HEIGHT;
-                        if (wastedPct > 0.08) {
+                        if (wastedPct > 0.20) {
                             // Fit shrinks too aggressively — reject it, go multi-page
                             pageEl.classList.remove(fitLevels[fi]);
                             trueHeight = pageEl.scrollHeight;
@@ -4249,11 +4249,22 @@
         if (prev) prev.disabled = state.sessionIdx === 0;
         if (next) next.disabled = state.sessionIdx >= course.sessions.length - 1;
 
-        // Paginate if needed (after DOM is fully painted — double rAF)
+        // Paginate if needed (after DOM is painted + fonts loaded)
+        // Must: 1) rAF so browser discovers which fonts the new content needs,
+        //        2) fonts.ready so those fonts are loaded,
+        //        3) another rAF to ensure layout is stable.
         requestAnimationFrame(function () {
-            requestAnimationFrame(function () {
-                paginateContent();
-            });
+            void els.page.offsetHeight; // force reflow → triggers font loading
+            var afterFonts = function () {
+                requestAnimationFrame(function () {
+                    paginateContent();
+                });
+            };
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(afterFonts);
+            } else {
+                afterFonts();
+            }
         });
 
         // Animate

@@ -363,6 +363,9 @@
             if (sIdx >= 0 && sIdx < viewSessions.length) {
                 currentSessionIdx = sIdx;
             }
+        } else {
+            // Default to latest (last) session
+            currentSessionIdx = viewSessions.length - 1;
         }
 
         renderSession(currentSessionIdx);
