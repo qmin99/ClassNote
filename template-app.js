@@ -4917,7 +4917,28 @@
         var result = countPages(page);
 
         if (result.count <= 1) {
-            // Single page — capture as before
+            // Single page — apply fit class + margin distribution (match editor)
+            page.classList.remove('fit--1', 'fit--2', 'fit--3');
+            if (result.globalFit) page.classList.add(result.globalFit);
+            page.classList.add('page--single');
+
+            // Distribute spare space as extra margin among sections
+            var psSecs = page.querySelectorAll('.ps');
+            psSecs.forEach(function (ps) { ps.style.marginBottom = ''; });
+            page.style.minHeight = '0';
+            var contentH = page.scrollHeight;
+            page.style.minHeight = '';
+            var spare = A4_HEIGHT - contentH;
+            if (spare > 20 && psSecs.length > 1) {
+                var extraPerSec = Math.min(Math.floor(spare / psSecs.length), 40);
+                if (extraPerSec > 2) {
+                    psSecs.forEach(function (ps) {
+                        var cur = parseInt(window.getComputedStyle(ps).marginBottom, 10) || 0;
+                        ps.style.marginBottom = (cur + extraPerSec) + 'px';
+                    });
+                }
+            }
+
             var clone = cleanPageClone(page.cloneNode(true));
             var html = clone.outerHTML;
             document.body.removeChild(offscreen);
