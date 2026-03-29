@@ -1993,6 +1993,7 @@
         var h = pageHeader(c.series, s.title, s.subtitle, s.num, ctx);
 
         if (secOn('phrases')) {
+            h += '<div class="psh"><span class="psh__t">핵심 문장</span></div>';
             var secSolo = s.sections.length <= 1 ? ' crud-solo' : '';
             s.sections.forEach(function (sec, si) {
                 var solo = sec.phrases.length <= 1 ? ' crud-solo' : '';
@@ -2992,7 +2993,7 @@
     }
 
     function pageFooter(ctx) {
-        var left = ctx.brand ? esc(ctx.brand) : '핵심 문장';
+        var left = ctx.brand ? esc(ctx.brand) : '';
         var r = ctx.teacherName ? esc(ctx.teacherName) + ' 선생님' : '';
         return '<div class="pf"><span>' + left + '</span><span>' + r + '</span></div>';
     }
