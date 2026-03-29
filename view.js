@@ -450,7 +450,7 @@
         container.querySelectorAll('.pf').forEach(function (pf) {
             var firstSpan = pf.querySelector('span');
             if (firstSpan) {
-                firstSpan.innerHTML = 'Class Note';
+                firstSpan.innerHTML = '핵심 문장';
             }
         });
 
