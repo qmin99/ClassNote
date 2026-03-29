@@ -3956,8 +3956,8 @@
 
         if (trueHeight > A4_HEIGHT) {
             var overflowPct = (trueHeight - A4_HEIGHT) / A4_HEIGHT;
-            // Only try global fit if overflow is modest (≤10%)
-            if (overflowPct <= 0.10) {
+            // Only try global fit if overflow is modest (≤15%)
+            if (overflowPct <= 0.15) {
                 var fitLevels = ['fit--1', 'fit--2', 'fit--3'];
                 for (var fi = 0; fi < fitLevels.length; fi++) {
                     pageEl.classList.add(fitLevels[fi]);
