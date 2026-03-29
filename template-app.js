@@ -1863,7 +1863,7 @@
 
         // Re-insert in sectionOrder, then append any remaining
         var inserted = {};
-        var anchor = pageEl.querySelector('.p-footer');
+        var anchor = pageEl.querySelector('.pf');
         cn.sectionOrder.forEach(function (key) {
             var elems = psMap[key];
             if (elems) {
@@ -1993,11 +1993,11 @@
         var h = pageHeader(c.series, s.title, s.subtitle, s.num, ctx);
 
         if (secOn('phrases')) {
-            h += '<div class="psh"><span class="psh__t">핵심 문장</span></div>';
             var secSolo = s.sections.length <= 1 ? ' crud-solo' : '';
             s.sections.forEach(function (sec, si) {
                 var solo = sec.phrases.length <= 1 ? ' crud-solo' : '';
                 h += '<div class="ps' + secSolo + '" data-crud-sec-wrap="' + si + '">';
+                if (si === 0) h += '<div class="psh"><span class="psh__t">핵심 문장</span></div>';
                 var secXBtn = (s.sections.length > 1) ? '<button class="crud-sec-x" data-crud-action="remove-sec" data-crud-sec="' + si + '" title="이 번호 삭제">&times;</button>' : '';
                 h += secH(sec.num, sec.name, 'phrases', si).replace('</div>', secXBtn + '</div>');
                 h += '<ul class="pl">';
