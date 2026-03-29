@@ -1816,10 +1816,23 @@
     var renderers = {};
 
     // Section visibility helper
+    // Merge course-level sections with per-session overrides
+    function getEffectiveSections() {
+        var cn = window.__classnote;
+        if (!cn || !cn.sections) return {};
+        var merged = {};
+        for (var k in cn.sections) merged[k] = cn.sections[k];
+        var sess = typeof getSession === 'function' ? getSession() : null;
+        if (sess && sess._sections) {
+            for (var sk in sess._sections) merged[sk] = sess._sections[sk];
+        }
+        return merged;
+    }
+
     function secOn(key) {
         var cn = window.__classnote;
-        if (!cn || !cn.sections) return true; // no onboarding → show all
-        return cn.sections[key] === true; // only show if explicitly enabled
+        if (!cn || !cn.sections) return true;
+        return getEffectiveSections()[key] === true;
     }
 
     // Reorder .ps elements in the page based on sectionOrder
@@ -1937,7 +1950,8 @@
         'review-rows': '_review', 'examples-kr': '_examplesKr',
         'classify-rows': '_classify', 'compare-rows': '_compareRows',
         'outline-rows': '_outline', 'revise-rows': '_revise',
-        'structure-q': '_structure', 'writing-lines': '_writingLines'
+        'structure-q': '_structure', 'writing-lines': '_writingLines',
+        'eng-compare': '_compare'
     };
 
     function ensureArray(session, key, defaultCount, factory) {
@@ -1983,10 +1997,8 @@
             s.sections.forEach(function (sec, si) {
                 var solo = sec.phrases.length <= 1 ? ' crud-solo' : '';
                 h += '<div class="ps' + secSolo + '" data-crud-sec-wrap="' + si + '">';
-                h += secH(sec.num, sec.name, 'phrases', si);
-                if (s.sections.length > 1) {
-                    h += '<button class="crud-sec-x" data-crud-action="remove-sec" data-crud-sec="' + si + '" title="이 번호 삭제">&times;</button>';
-                }
+                var secXBtn = (s.sections.length > 1) ? '<button class="crud-sec-x" data-crud-action="remove-sec" data-crud-sec="' + si + '" title="이 번호 삭제">&times;</button>' : '';
+                h += secH(sec.num, sec.name, 'phrases', si).replace('</div>', secXBtn + '</div>');
                 h += '<ul class="pl">';
                 sec.phrases.forEach(function (p, pi) {
                     h += '<li' + solo + ' data-crud-type="phrases" data-crud-sec="' + si + '" data-crud-idx="' + pi + '"><span' + E + '>' + p + '</span>';
@@ -1994,7 +2006,6 @@
                 });
                 h += '</ul>' + crudAdd('phrases', sec.phrases.length, si) + '</div>';
             });
-            h += '<button class="crud-sec-add" data-crud-action="add-sec">+ 번호 추가</button>';
         }
 
         if (secOn('vocab')) {
@@ -2022,7 +2033,7 @@
         if (secOn('homework')) {
             var solo = s.homework.length <= 1 ? ' crud-solo' : '';
             h += '<div class="ps">' + secH('', '숙제', 'homework');
-            h += '<ul class="hwl' + (s.homework.length <= 2 ? ' hwl--few' : '') + '">';
+            h += '<ul class="hwl">';
             s.homework.forEach(function (hw, i) {
                 h += '<li' + solo + ' data-crud-type="homework" data-crud-idx="' + i + '"><div class="hw__n">' + (i + 1) + '</div><div><div class="hw__t"' + E + '>' + hw.title + '</div><div class="hw__d"' + E + '>' + hw.desc + '</div></div>';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></li>';
@@ -2059,10 +2070,11 @@
         }
 
         if (secOn('compare')) {
+            var cmp = ensureArray(s, '_compare', 2, function () { return { title: '표현', desc: '뉘앙스 설명' }; });
             h += '<div class="ps">' + secH('', '유사 표현 비교', 'compare');
             h += '<div class="scs">';
-            h += '<div class="sc"><div class="sc__n">A</div><div class="sc__t"' + E + '>표현 A</div><div class="sc__p"' + E + '>뉘앙스 설명</div></div>';
-            h += '<div class="sc"><div class="sc__n">B</div><div class="sc__t"' + E + '>표현 B</div><div class="sc__p"' + E + '>뉘앙스 설명</div></div>';
+            h += '<div class="sc" data-crud-type="eng-compare" data-crud-idx="0"><div class="sc__n">A</div><div class="sc__t"' + E + '>' + cmp[0].title + '</div><div class="sc__p"' + E + '>' + cmp[0].desc + '</div></div>';
+            h += '<div class="sc" data-crud-type="eng-compare" data-crud-idx="1"><div class="sc__n">B</div><div class="sc__t"' + E + '>' + cmp[1].title + '</div><div class="sc__p"' + E + '>' + cmp[1].desc + '</div></div>';
             h += '</div></div>';
         }
 
@@ -2271,7 +2283,7 @@
             var hw = ensureArray(s, '_homework', 3, ITEM_FACTORIES.homework);
             var solo = hw.length <= 1 ? ' crud-solo' : '';
             h += '<div class="ps">' + secH('', '숙제', 'homework');
-            h += '<ul class="hwl' + (hw.length <= 2 ? ' hwl--few' : '') + '">';
+            h += '<ul class="hwl">';
             hw.forEach(function (item, i) {
                 h += '<li' + solo + ' data-crud-type="homework" data-crud-idx="' + i + '"><div class="hw__n">' + (i + 1) + '</div><div><div class="hw__t"' + E + '>' + item.title + '</div><div class="hw__d"' + E + '>' + item.desc + '</div></div>';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></li>';
@@ -2430,7 +2442,7 @@
             var hw = ensureArray(s, '_homework', 3, ITEM_FACTORIES.homework);
             var solo = hw.length <= 1 ? ' crud-solo' : '';
             h += '<div class="ps">' + secH('', '숙제', 'homework');
-            h += '<ul class="hwl' + (hw.length <= 2 ? ' hwl--few' : '') + '">';
+            h += '<ul class="hwl">';
             hw.forEach(function (item, i) {
                 h += '<li' + solo + ' data-crud-type="homework" data-crud-idx="' + i + '"><div class="hw__n">' + (i + 1) + '</div><div><div class="hw__t"' + E + '>' + item.title + '</div><div class="hw__d"' + E + '>' + item.desc + '</div></div>';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></li>';
@@ -2614,7 +2626,7 @@
             var hw = ensureArray(s, '_homework', 3, ITEM_FACTORIES.homework);
             var solo = hw.length <= 1 ? ' crud-solo' : '';
             h += '<div class="ps">' + secH('', '숙제', 'homework');
-            h += '<ul class="hwl' + (hw.length <= 2 ? ' hwl--few' : '') + '">';
+            h += '<ul class="hwl">';
             hw.forEach(function (item, i) {
                 h += '<li' + solo + ' data-crud-type="homework" data-crud-idx="' + i + '"><div class="hw__n">' + (i + 1) + '</div><div><div class="hw__t"' + E + '>' + item.title + '</div><div class="hw__d"' + E + '>' + item.desc + '</div></div>';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></li>';
@@ -2918,7 +2930,7 @@
             var hw = ensureArray(s, '_homework', 3, ITEM_FACTORIES.homework);
             var solo = hw.length <= 1 ? ' crud-solo' : '';
             h += '<div class="ps">' + secH('', '숙제', 'homework');
-            h += '<ul class="hwl' + (hw.length <= 2 ? ' hwl--few' : '') + '">';
+            h += '<ul class="hwl">';
             hw.forEach(function (item, i) {
                 h += '<li' + solo + ' data-crud-type="homework" data-crud-idx="' + i + '"><div class="hw__n">' + (i + 1) + '</div><div><div class="hw__t"' + E + '>' + item.title + '</div><div class="hw__d"' + E + '>' + item.desc + '</div></div>';
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></li>';
@@ -3051,6 +3063,7 @@
         vocab: function (el) { return { term: _ct(el, '.vi__t'), def: _ct(el, '.vi__d') }; },
         scenarios: function (el, ex) { return { num: ex.num || '', title: _ct(el, '.sc__t'), prompt: _ct(el, '.sc__p') }; },
         homework: function (el) { return { title: _ct(el, '.hw__t'), desc: _ct(el, '.hw__d') }; },
+        'eng-compare': function (el) { return { title: _ct(el, '.sc__t'), desc: _ct(el, '.sc__p') }; },
         fillblank: function (el) { return { q: _ct(el, '.prb__q') }; },
         'writing-prb': function (el) { return { q: _ct(el, '.prb__q') }; },
         translate: function (el) { return { q: _ct(el, '.prb__q') }; },
@@ -3367,10 +3380,12 @@
     }
     function getCtx() {
         var cn = window.__classnote || {};
+        var sess = getSession();
+        var dateVal = (sess && sess._date) ? sess._date : state.date;
         return {
             teacherName: state.teacherName,
             studentName: state.studentName,
-            date: state.date,
+            date: dateVal,
             brand: cn.brand || '',
             logoData: cn.logoData || null
         };
@@ -3600,13 +3615,13 @@
 
     // Get ordered list of enabled section keys
     function getEffectiveOrder(allSections, cn) {
-        var enabledKeys = allSections.filter(function (s) { return cn.sections[s.key] === true; }).map(function (s) { return s.key; });
+        var effSec = getEffectiveSections();
+        var enabledKeys = allSections.filter(function (s) { return effSec[s.key] === true; }).map(function (s) { return s.key; });
         if (!cn.sectionOrder || !cn.sectionOrder.length) return enabledKeys;
-        // sectionOrder first (only enabled ones), then any enabled not in order
         var ordered = [];
         var inOrder = {};
         cn.sectionOrder.forEach(function (k) {
-            if (cn.sections[k] === true) { ordered.push(k); inOrder[k] = true; }
+            if (effSec[k] === true) { ordered.push(k); inOrder[k] = true; }
         });
         enabledKeys.forEach(function (k) { if (!inOrder[k]) ordered.push(k); });
         return ordered;
@@ -3661,7 +3676,8 @@
         h += '</div>';
 
         // Hidden sections
-        var offSections = allSections.filter(function (s) { return cn.sections[s.key] !== true; });
+        var effSec = getEffectiveSections();
+        var offSections = allSections.filter(function (s) { return effSec[s.key] !== true; });
         if (offSections.length > 0) {
             h += '<div class="sp__hidden-group">';
             h += '<div class="sp__hidden-label">숨겨진 섹션</div>';
@@ -3822,8 +3838,14 @@
             btn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 var key = this.getAttribute('data-sec-toggle');
-                var wasOn = cn.sections[key] === true;
-                cn.sections[key] = !wasOn;
+                var effSec = getEffectiveSections();
+                var wasOn = effSec[key] === true;
+                // Save toggle to per-session _sections only (not course-level)
+                var sess = getSession();
+                if (sess) {
+                    if (!sess._sections) sess._sections = {};
+                    sess._sections[key] = !wasOn;
+                }
                 // If toggling on, add to end of order
                 if (!wasOn && cn.sectionOrder) {
                     if (cn.sectionOrder.indexOf(key) === -1) cn.sectionOrder.push(key);
@@ -3833,6 +3855,7 @@
                     cn.sectionOrder = cn.sectionOrder.filter(function (k) { return k !== key; });
                 }
                 persistSections();
+                saveCourseToFirestore();
                 renderSectionPanel();
                 renderPage();
             });
@@ -4034,6 +4057,7 @@
 
     var pageState = { pages: [], current: 0, total: 1 };
 
+
     // Splits rendered content across multiple A4 pages if needed
     function paginateContent() {
         var wrap = document.getElementById('pageWrap');
@@ -4067,6 +4091,30 @@
             firstPage.classList.add('page--single');
             nav.classList.remove('page-nav--show');
             pageState = { pages: [firstPage], current: 0, total: 1 };
+
+            // Distribute spare space as extra margin among sections
+            var psSections = firstPage.querySelectorAll('.ps');
+            // Reset any previously added extra margins
+            psSections.forEach(function (ps) { ps.style.marginBottom = ''; });
+            // Measure true content height (temporarily remove min-height)
+            firstPage.style.maxHeight = 'none';
+            firstPage.style.overflow = 'visible';
+            firstPage.style.minHeight = '0';
+            var contentH = firstPage.scrollHeight;
+            firstPage.style.maxHeight = '';
+            firstPage.style.overflow = '';
+            firstPage.style.minHeight = '';
+            var spare = A4_HEIGHT - contentH;
+            if (spare > 20 && psSections.length > 1) {
+                // Distribute spare evenly, cap at 40px each to avoid over-spacing
+                var extraPerSection = Math.min(Math.floor(spare / psSections.length), 40);
+                if (extraPerSection > 2) {
+                    psSections.forEach(function (ps) {
+                        var current = parseInt(window.getComputedStyle(ps).marginBottom, 10) || 0;
+                        ps.style.marginBottom = (current + extraPerSection) + 'px';
+                    });
+                }
+            }
             return;
         }
 
@@ -4176,7 +4224,7 @@
         els.page.innerHTML = renderer(session, course, getCtx());
         reorderSections(els.page);
         els.page.setAttribute('data-theme', state.theme);
-        els.page.classList.remove('page--single');
+        els.page.classList.remove('page--single', 'fit--1', 'fit--2', 'fit--3');
 
         // Apply layout class
         els.page.classList.remove('layout--classic', 'layout--modern', 'layout--compact');
@@ -4200,9 +4248,11 @@
         if (prev) prev.disabled = state.sessionIdx === 0;
         if (next) next.disabled = state.sessionIdx >= course.sessions.length - 1;
 
-        // Paginate if needed (after DOM is painted)
+        // Paginate if needed (after DOM is fully painted — double rAF)
         requestAnimationFrame(function () {
-            paginateContent();
+            requestAnimationFrame(function () {
+                paginateContent();
+            });
         });
 
         // Animate
@@ -4223,7 +4273,36 @@
         if (!c) return;
         var n = state.sessionIdx + dir;
         if (n < 0 || n >= c.sessions.length) return;
+        // Save current date to current session before switching
+        var currSess = getSession();
+        if (currSess) currSess._date = state.date;
+        syncEditablesToSession();
         state.sessionIdx = n;
+        // Load date from new session
+        var newSess = getSession();
+        if (newSess && newSess._date) {
+            state.date = newSess._date;
+        } else if (newSess) {
+            // First time visiting this session - use today's date
+            var today = new Date();
+            state.date = formatDate(today.toISOString().split('T')[0]);
+            newSess._date = state.date;
+        }
+        // Update date picker
+        if (els.sessionDate && state.date) {
+            var m = state.date.match(/(\d+)년\s*(\d+)월\s*(\d+)일/);
+            if (m) {
+                var mm = m[2].length < 2 ? '0' + m[2] : m[2];
+                var dd = m[3].length < 2 ? '0' + m[3] : m[3];
+                els.sessionDate.value = m[1] + '-' + mm + '-' + dd;
+            }
+        }
+        // Reset page state
+        var wrap = document.getElementById('pageWrap');
+        if (wrap) wrap.querySelectorAll('.page--extra').forEach(function (p) { p.remove(); });
+        var nav = document.getElementById('pageNav');
+        if (nav) nav.classList.remove('page-nav--show');
+        pageState = { pages: [], current: 0, total: 1 };
         renderNav();
         renderPage();
     };
@@ -4264,7 +4343,11 @@
         debounce = setTimeout(function () {
             state.teacherName = els.teacherName.value;
             state.studentName = els.studentName.value;
-            state.date = formatDate(els.sessionDate.value);
+            var formatted = formatDate(els.sessionDate.value);
+            state.date = formatted;
+            // Save date per-session
+            var sess = getSession();
+            if (sess) sess._date = formatted;
             renderPage();
         }, 300);
     }
@@ -4359,16 +4442,8 @@
         if (!btn) return;
 
         var action = btn.getAttribute('data-crud-action');
-        var type = btn.getAttribute('data-crud-type')
-                 || (btn.closest('[data-crud-type]') ? btn.closest('[data-crud-type]').getAttribute('data-crud-type') : null);
-        if (!type) return;
-        var secAttr = btn.getAttribute('data-crud-sec');
-        if (secAttr === null) {
-            var parentItem = btn.closest('[data-crud-sec]');
-            if (parentItem) secAttr = parentItem.getAttribute('data-crud-sec');
-        }
-        var secIdx = secAttr !== null ? parseInt(secAttr, 10) : undefined;
 
+        // Handle section-level actions first (no data-crud-type needed)
         if (action === 'add-sec') {
             // Add a new phrase section
             syncEditablesToSession();
@@ -4395,6 +4470,18 @@
             }
             return;
         }
+
+        // For other CRUD actions, type is required
+        var type = btn.getAttribute('data-crud-type')
+                 || (btn.closest('[data-crud-type]') ? btn.closest('[data-crud-type]').getAttribute('data-crud-type') : null);
+        if (!type) return;
+        var secAttr = btn.getAttribute('data-crud-sec');
+        if (secAttr === null) {
+            var parentItem = btn.closest('[data-crud-sec]');
+            if (parentItem) secAttr = parentItem.getAttribute('data-crud-sec');
+        }
+        var secIdx = secAttr !== null ? parseInt(secAttr, 10) : undefined;
+
         if (action === 'add' || action === 'add-line') {
             addItem(type, secIdx);
         } else if (action === 'remove' || action === 'remove-line') {
@@ -4558,7 +4645,6 @@
                 // Restore state
                 var savedState = data.state || {};
                 state.courseId = data.courseId || ALL_COURSES[0].id;
-                state.sessionIdx = 0;
                 state.theme = savedState.theme || 'ink';
                 state.teacherName = savedState.teacherName || '';
                 state.studentName = savedState.studentName || '';
@@ -4569,10 +4655,18 @@
                 if (course && data.sessions && data.sessions.length) {
                     course.sessions = data.sessions;
                 }
+                // Show the latest session by default
+                state.sessionIdx = course && course.sessions ? Math.max(0, course.sessions.length - 1) : 0;
 
                 // Restore published slug
                 if (data.publishedSlug) {
                     currentPublishedSlug = data.publishedSlug;
+                }
+
+                // Use per-session date if available, else fall back to global
+                var sess = getSession();
+                if (sess && sess._date) {
+                    state.date = sess._date;
                 }
 
                 // Sync UI inputs
@@ -4776,6 +4870,11 @@
         var renderer = renderers[course.renderer];
         if (!renderer) return '';
 
+        // Temporarily set sessionIdx so secOn/getEffectiveSections use this session's _sections
+        var savedIdx = state.sessionIdx;
+        var sessIdx = course.sessions.indexOf(session);
+        if (sessIdx >= 0) state.sessionIdx = sessIdx;
+
         var cn = window.__classnote || {};
         var layoutCls = 'layout--' + ((cn.layout) || 'classic');
         var theme = state.theme;
@@ -4810,6 +4909,7 @@
             var clone = cleanPageClone(page.cloneNode(true));
             var html = clone.outerHTML;
             document.body.removeChild(offscreen);
+            state.sessionIdx = savedIdx;
             return html;
         }
 
@@ -4844,6 +4944,7 @@
         }
 
         document.body.removeChild(offscreen);
+        state.sessionIdx = savedIdx;
         return pagesHtml;
     }
 

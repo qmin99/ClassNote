@@ -169,10 +169,10 @@ body{
     width:100%;
 }
 
-/* Page: A4 card with modern shadow */
+/* Page: A4 card with modern shadow — match editor sizing */
 .view-pages .page{
     min-height:1123px;
-    max-height:none;overflow:visible;
+    max-height:1123px;overflow:hidden;
     box-shadow:
         0 0 0 1px rgba(0,0,0,.03),
         0 1px 2px rgba(0,0,0,.04),

@@ -381,9 +381,8 @@
 
         sessionSelect.style.display = '';
 
-        var current = viewSessions[currentSessionIdx];
         if (sessionLabel) {
-            sessionLabel.textContent = current.title || ('Session ' + (currentSessionIdx + 1));
+            sessionLabel.textContent = 'Session ' + (currentSessionIdx + 1);
         }
 
         var html = '';
@@ -559,25 +558,29 @@
         if (!pages.length) return;
         if (isMobileReading()) {
             pages.forEach(function (pg) {
+                pg.style.zoom = '';
                 pg.style.transform = '';
                 pg.style.marginBottom = '';
             });
             return;
         }
+        // Match editor's zoom approach: fit A4 page within viewport
+        var header = document.querySelector('.view-header');
+        var headerH = header ? header.offsetHeight : 50;
+        var availH = window.innerHeight - headerH - 64; // 64px padding
         var viewBody = document.querySelector('.view-body');
-        if (!viewBody) return;
-        var viewWidth = viewBody.clientWidth - 40;
+        var availW = viewBody ? viewBody.clientWidth - 40 : window.innerWidth - 40;
+        var pageW = 794;
+        var pageH = 1123;
+        var scaleH = availH / pageH;
+        var scaleW = availW / pageW;
+        var zoom = Math.min(scaleH, scaleW, 1); // never exceed 100%
+        zoom = Math.max(zoom, 0.4); // never go below 40%
         pages.forEach(function (pg) {
             if (pg.style.display === 'none') return;
-            var pageWidth = pg.offsetWidth || 794;
-            if (viewWidth < pageWidth) {
-                var scale = viewWidth / pageWidth;
-                pg.style.transform = 'scale(' + scale + ')';
-                pg.style.marginBottom = '-' + Math.round(pg.offsetHeight * (1 - scale)) + 'px';
-            } else {
-                pg.style.transform = '';
-                pg.style.marginBottom = '';
-            }
+            pg.style.zoom = zoom;
+            pg.style.transform = '';
+            pg.style.marginBottom = '';
         });
     }
 
