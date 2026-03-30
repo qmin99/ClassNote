@@ -3883,6 +3883,14 @@
                 }
                 persistSections();
                 saveCourseToFirestore();
+                // Remember page position after re-render
+                // Toggling ON → go to last page (new section appended at end)
+                // Toggling OFF → stay on current page
+                if (!wasOn) {
+                    pendingScrollToSection = 'last';
+                } else {
+                    pendingScrollToSection = pageState.current;
+                }
                 renderSectionPanel();
                 renderPage();
             });
@@ -4084,6 +4092,7 @@
 
     var pageState = { pages: [], current: 0, total: 1 };
     var renderGen = 0; // incremented each renderPage to cancel stale paginateContent calls
+    var pendingScrollToSection = null; // 'last' to go to last page, or page index to restore
 
 
     // Splits rendered content across multiple A4 pages if needed
@@ -4143,6 +4152,8 @@
                     });
                 }
             }
+            // Single page — just clear pending (no page navigation needed)
+            pendingScrollToSection = null;
             return;
         }
 
@@ -4196,6 +4207,18 @@
 
         // Set up page state & navigation
         pageState = { pages: allPages, current: 0, total: allPages.length };
+
+        // If a section toggle triggered this, restore page position
+        if (pendingScrollToSection != null) {
+            if (pendingScrollToSection === 'last') {
+                pageState.current = allPages.length - 1;
+            } else {
+                // Restore to same page index, clamped to valid range
+                var wanted = typeof pendingScrollToSection === 'number' ? pendingScrollToSection : 0;
+                pageState.current = Math.min(wanted, allPages.length - 1);
+            }
+            pendingScrollToSection = null;
+        }
 
         // Show all pages vertically (scrollable)
         nav.classList.add('page-nav--show');
