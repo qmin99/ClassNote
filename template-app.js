@@ -3458,7 +3458,33 @@
                 if (hasEdited && !confirm('저장하지 않은 변경사항이 있습니다. 이동하시겠습니까?')) return;
                 syncEditablesToSession();
                 hasEdited = false;
+                // Save current date before switching
+                var currSess = getSession();
+                if (currSess) currSess._date = state.date;
                 state.sessionIdx = newIdx;
+                // Load date from new session
+                var newSess = getSession();
+                if (newSess && newSess._date) {
+                    state.date = newSess._date;
+                } else if (newSess) {
+                    var today = new Date();
+                    state.date = formatDate(today.toISOString().split('T')[0]);
+                    newSess._date = state.date;
+                }
+                if (els.sessionDate && state.date) {
+                    var m = state.date.match(/(\d+)년\s*(\d+)월\s*(\d+)일/);
+                    if (m) {
+                        var mm = m[2].length < 2 ? '0' + m[2] : m[2];
+                        var dd = m[3].length < 2 ? '0' + m[3] : m[3];
+                        els.sessionDate.value = m[1] + '-' + mm + '-' + dd;
+                    }
+                }
+                // Reset page state (same as __go)
+                var wrap = document.getElementById('pageWrap');
+                if (wrap) wrap.querySelectorAll('.page--extra').forEach(function (p) { p.remove(); });
+                var nav = document.getElementById('pageNav');
+                if (nav) nav.classList.remove('page-nav--show');
+                pageState = { pages: [], current: 0, total: 1 };
                 renderNav();
                 renderPage();
             });
