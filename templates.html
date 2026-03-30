@@ -12,8 +12,10 @@
     <link rel="stylesheet" href="template-styles.css">
 </head>
 <body class="ob-active">
+    <script>if(/[?&]c=/.test(location.search)){document.body.classList.remove('ob-active')}</script>
     <!-- ===================== ONBOARDING WIZARD ===================== -->
-    <div class="ob" id="onboarding">
+    <div class="ob" id="onboarding" style="display:none">
+    <script>if(!/[?&]c=/.test(location.search))document.getElementById('onboarding').style.display=''</script>
         <!-- Progress bar -->
         <div class="ob__progress">
             <div class="ob__bar" id="obBar"></div>

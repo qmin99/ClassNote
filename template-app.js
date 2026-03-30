@@ -5310,7 +5310,7 @@
                 }, 500);
             } else {
                 // Load failed — fall back to onboarding
-                if (obOverlay) obOverlay.classList.remove('ob--hidden');
+                if (obOverlay) { obOverlay.classList.remove('ob--hidden'); obOverlay.style.display = ''; }
                 document.body.classList.add('ob-active');
                 if (loadingEl) loadingEl.classList.remove('editor-loading--visible');
                 renderNav();
