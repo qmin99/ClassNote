@@ -4083,6 +4083,7 @@
     }
 
     var pageState = { pages: [], current: 0, total: 1 };
+    var renderGen = 0; // incremented each renderPage to cancel stale paginateContent calls
 
 
     // Splits rendered content across multiple A4 pages if needed
@@ -4279,10 +4280,13 @@
         // Must: 1) rAF so browser discovers which fonts the new content needs,
         //        2) fonts.ready so those fonts are loaded,
         //        3) another rAF to ensure layout is stable.
+        var thisGen = ++renderGen;
         requestAnimationFrame(function () {
+            if (thisGen !== renderGen) return; // stale — newer render superseded us
             void els.page.offsetHeight; // force reflow → triggers font loading
             var afterFonts = function () {
                 requestAnimationFrame(function () {
+                    if (thisGen !== renderGen) return; // stale
                     paginateContent();
                 });
             };
