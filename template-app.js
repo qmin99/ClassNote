@@ -4171,6 +4171,7 @@
             }
             // Single page — just clear pending (no page navigation needed)
             pendingScrollToSection = null;
+            updateSidebarPageBreaks(result);
             return;
         }
 
@@ -4240,6 +4241,39 @@
         // Show all pages vertically (scrollable)
         nav.classList.add('page-nav--show');
         updatePageNav();
+        updateSidebarPageBreaks(result);
+    }
+
+    // Update sidebar section panel with page-break dividers
+    function updateSidebarPageBreaks(result) {
+        var panel = document.getElementById('spList');
+        if (!panel) return;
+        // Remove existing page-break markers
+        panel.querySelectorAll('.sp__page-break').forEach(function (el) { el.remove(); });
+        if (!result || result.count <= 1) return;
+        // Build a map: sectionKey → pageIndex
+        var keyToPage = {};
+        result.pages.forEach(function (pageSections, pageIdx) {
+            pageSections.forEach(function (secEl) {
+                var psh = secEl.querySelector('.psh[data-sec-key]');
+                if (psh) keyToPage[psh.getAttribute('data-sec-key')] = pageIdx;
+            });
+        });
+        // Walk sidebar items and insert dividers between page transitions
+        var items = panel.querySelectorAll('.sp__item');
+        var prevPage = -1;
+        items.forEach(function (item) {
+            var key = item.getAttribute('data-sec-key');
+            var pg = keyToPage[key];
+            if (pg === undefined) return;
+            if (prevPage >= 0 && pg !== prevPage) {
+                var divider = document.createElement('div');
+                divider.className = 'sp__page-break';
+                divider.textContent = (pg + 1) + '페이지';
+                panel.insertBefore(divider, item);
+            }
+            prevPage = pg;
+        });
     }
 
     function updatePageNav() {
