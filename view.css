@@ -447,3 +447,6 @@ body{
 .ko-toggle:hover{opacity:.55}
 .ko-toggle--on{opacity:.55;color:var(--ac,#2ABFBF)}
 .ko-toggle svg{display:block}
+
+/* Student writing box — blank for print */
+.prb__a--student{min-height:44px}

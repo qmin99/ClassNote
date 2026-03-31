@@ -4977,8 +4977,12 @@
                 el.remove();
             });
             // Remove CRUD buttons from published output
-            clone.querySelectorAll('.crud-x, .crud-add, .crud-lines').forEach(function (el) {
+            clone.querySelectorAll('.crud-x, .crud-add, .crud-lines, .crud-row, .crud-add--sec-sib').forEach(function (el) {
                 el.remove();
+            });
+            // Clear "영어로 작성" placeholder for student print
+            clone.querySelectorAll('.prb__a').forEach(function (el) {
+                if (el.textContent.trim() === '영어로 작성') el.textContent = '';
             });
             // Strip CRUD data attributes
             clone.querySelectorAll('[data-crud-type]').forEach(function (el) {

@@ -274,7 +274,10 @@
 
     // --- Strip interactive/dangerous elements from HTML ---
     function stripInteractive(html) {
+        html = html.replace(/<div class="prb__a"[^>]*>영어로 작성<\/div>/g, '<div class="prb__a prb__a--student"></div>');
         html = html.replace(/ contenteditable="true"/g, '');
+        html = html.replace(/<button[^>]*class="crud-[^"]*"[^>]*>.*?<\/button>/gs, '');
+        html = html.replace(/<div[^>]*class="crud-row"[^>]*>[\s\S]*?<\/div>/g, '');
         html = html.replace(/<button[^>]*id="(?:prevBtn|nextBtn)"[^>]*>.*?<\/button>/gs, '');
         html = html.replace(/<div[^>]*class="p-header__nav"[^>]*>[\s\S]*?<\/div>/g, '');
         html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
