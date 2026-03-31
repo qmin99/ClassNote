@@ -1934,7 +1934,8 @@
         'classify-rows': function () { return { word: '', type: '', note: '' }; },
         'compare-rows': function () { return { aspect: '', a: '', b: '' }; },
         'outline-rows': function () { return { part: '', content: '' }; },
-        'revise-rows': function () { return { original: '', revised: '' }; }
+        'revise-rows': function () { return { original: '', revised: '' }; },
+        'eng-compare': function () { return { title: '표현', desc: '뉘앙스 설명' }; }
     };
 
     var LINE_DEFAULTS = {
@@ -2007,6 +2008,7 @@
                 });
                 h += '</ul>' + crudAdd('phrases', sec.phrases.length, si) + '</div>';
             });
+            h += '<button class="crud-add crud-add--sec" data-crud-action="add-sec">+ 번호 추가</button>';
         }
 
         if (secOn('vocab')) {
@@ -2072,11 +2074,15 @@
 
         if (secOn('compare')) {
             var cmp = ensureArray(s, '_compare', 2, function () { return { title: '표현', desc: '뉘앙스 설명' }; });
+            var cmpSolo = cmp.length <= 1 ? ' crud-solo' : '';
+            var cmpLabels = ['A','B','C','D','E','F','G','H'];
             h += '<div class="ps">' + secH('', '유사 표현 비교', 'compare');
             h += '<div class="scs">';
-            h += '<div class="sc" data-crud-type="eng-compare" data-crud-idx="0"><div class="sc__n">A</div><div class="sc__t"' + E + '>' + cmp[0].title + '</div><div class="sc__p"' + E + '>' + cmp[0].desc + '</div></div>';
-            h += '<div class="sc" data-crud-type="eng-compare" data-crud-idx="1"><div class="sc__n">B</div><div class="sc__t"' + E + '>' + cmp[1].title + '</div><div class="sc__p"' + E + '>' + cmp[1].desc + '</div></div>';
-            h += '</div></div>';
+            cmp.forEach(function (item, i) {
+                h += '<div class="sc' + cmpSolo + '" data-crud-type="eng-compare" data-crud-idx="' + i + '"><div class="sc__n">' + (cmpLabels[i] || String(i + 1)) + '</div><div class="sc__t"' + E + '>' + item.title + '</div><div class="sc__p"' + E + '>' + item.desc + '</div>';
+                h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></div>';
+            });
+            h += '</div>' + crudAdd('eng-compare', cmp.length) + '</div>';
         }
 
         if (secOn('mistakes')) {

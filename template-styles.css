@@ -699,7 +699,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
     background:var(--surface);border:1px solid var(--bd2);
     color:var(--t4);font-size:9px;line-height:1;
     cursor:pointer;display:flex;align-items:center;justify-content:center;
-    opacity:0.18;transition:opacity 150ms ease,background 100ms ease,border-color 100ms ease,color 100ms ease;
+    opacity:0.35;transition:opacity 150ms ease,background 100ms ease,border-color 100ms ease,color 100ms ease;
     z-index:2;padding:0;font-family:inherit;
 }
 [data-crud-type]:hover>.crud-x{opacity:0.7}
@@ -713,9 +713,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
     background:var(--surface);color:var(--t4);font-size:11px;font-weight:400;line-height:1;
     cursor:pointer;display:flex;align-items:center;justify-content:center;
     transition:all 150ms ease;font-family:inherit;
-    opacity:.3;
+    opacity:.5;
 }
 .crud-add:hover{color:var(--ac);border-color:var(--ac);opacity:1;background:var(--ac-l)}
+.crud-add--sec{
+    position:relative;left:auto;bottom:auto;
+    width:auto;height:auto;border-radius:4px;
+    padding:3px 10px;font-size:11px;
+    margin:4px 0 0;opacity:.4;
+}
 
 /* Line count +/- buttons */
 .crud-lines{display:flex;justify-content:center;gap:4px;margin-top:4px}
