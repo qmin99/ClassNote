@@ -691,6 +691,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 
 /* Phrases: contenteditable span inside li must fill the cell */
 .pl li>span[contenteditable]{display:block}
+.pl__duo{display:flex;align-items:baseline;gap:12px}
+.pl__en{flex:1;white-space:pre-line}
+.pl__ko{flex-shrink:0;font-size:11px;color:var(--t3);text-align:right;white-space:pre-line}
 
 /* x (remove) button — subtle persistent, stronger on hover */
 .crud-x{

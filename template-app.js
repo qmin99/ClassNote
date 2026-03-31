@@ -2003,7 +2003,10 @@
                 h += secH(sec.num, sec.name, 'phrases', si).replace('</div>', secXBtn + '</div>');
                 h += '<ul class="pl">';
                 sec.phrases.forEach(function (p, pi) {
-                    h += '<li' + solo + ' data-crud-type="phrases" data-crud-sec="' + si + '" data-crud-idx="' + pi + '"><span' + E + '>' + p + '</span>';
+                    var parts = String(p).split('\n');
+                    var en = parts[0] || '';
+                    var ko = parts.slice(1).join(' ') || '';
+                    h += '<li class="pl__duo"' + solo + ' data-crud-type="phrases" data-crud-sec="' + si + '" data-crud-idx="' + pi + '"><span class="pl__en"' + E + '>' + en + '</span><span class="pl__ko"' + E + '>' + ko + '</span>';
                     h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></li>';
                 });
                 var isLast = si === s.sections.length - 1;
@@ -3068,7 +3071,13 @@
     }
 
     var SYNC_HANDLERS = {
-        phrases: function (el) { var span = el.querySelector('[contenteditable]'); return span ? _ctEl(span) : el.textContent.trim(); },
+        phrases: function (el) {
+            var en = el.querySelector('.pl__en');
+            var ko = el.querySelector('.pl__ko');
+            if (en && ko) return _ctEl(en) + '\n' + _ctEl(ko);
+            var span = el.querySelector('[contenteditable]');
+            return span ? _ctEl(span) : el.textContent.trim();
+        },
         vocab: function (el) { return { term: _ct(el, '.vi__t'), def: _ct(el, '.vi__d') }; },
         scenarios: function (el, ex) { return { num: ex.num || '', title: _ct(el, '.sc__t'), prompt: _ct(el, '.sc__p') }; },
         homework: function (el) { return { title: _ct(el, '.hw__t'), desc: _ct(el, '.hw__d') }; },
