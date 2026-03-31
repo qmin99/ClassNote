@@ -452,13 +452,7 @@
             pg.classList.add('layout--' + noteLayout);
         });
 
-        // Replace brand text in page footer
-        container.querySelectorAll('.pf').forEach(function (pf) {
-            var firstSpan = pf.querySelector('span');
-            if (firstSpan) {
-                firstSpan.innerHTML = '';
-            }
-        });
+        // Footer: keep brand + teacher name as-is
 
         // Apply font
         if (noteFont !== 'sans') {
