@@ -695,6 +695,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .pl__en{flex:1;white-space:pre-line}
 .pl__ko{flex-shrink:0;font-size:11px;color:var(--t3);text-align:right;white-space:pre-line}
 
+/* Phrase long-press drag reorder */
+.pl__ph{background:var(--ac-l,#e8f8f8);border:1.5px dashed var(--ac,#2ABFBF);border-radius:3px;list-style:none}
+.pl__drag{position:fixed;z-index:9999;pointer-events:none;opacity:.85;box-shadow:0 6px 20px rgba(0,0,0,.15);border-radius:4px;background:var(--white,#fff);transition:none}
+.pl li[data-crud-type="phrases"]{cursor:grab}
+
 /* x (remove) button — subtle persistent, stronger on hover */
 .crud-x{
     position:absolute;top:-5px;right:-5px;

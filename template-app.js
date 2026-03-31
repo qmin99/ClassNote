@@ -4592,6 +4592,166 @@
     els.btnPdf.addEventListener('click', function () { window.print(); });
 
     // =========================================
+    // PHRASE LONG-PRESS DRAG REORDER
+    // =========================================
+    (function () {
+        var HOLD_MS = 350;
+        var holdTimer = null;
+        var dragLi = null;
+        var dragClone = null;
+        var dragList = null;      // the <ul class="pl">
+        var dragSecIdx = -1;
+        var placeholder = null;
+        var offsetY = 0;
+        var startY = 0;
+        var active = false;
+
+        function getY(e) {
+            return e.touches ? e.touches[0].clientY : e.clientY;
+        }
+
+        function beginDrag(li, y) {
+            active = true;
+            dragLi = li;
+            dragList = li.closest('ul.pl');
+            dragSecIdx = parseInt((li.closest('[data-crud-sec-wrap]') || li.closest('[data-crud-sec]') || { getAttribute: function () { return '0'; } }).getAttribute('data-crud-sec-wrap') || li.getAttribute('data-crud-sec') || '0', 10);
+            var rect = li.getBoundingClientRect();
+            offsetY = y - rect.top;
+
+            // Create placeholder
+            placeholder = document.createElement('li');
+            placeholder.className = 'pl__ph';
+            placeholder.style.height = rect.height + 'px';
+            li.parentNode.insertBefore(placeholder, li);
+
+            // Create floating clone
+            dragClone = li.cloneNode(true);
+            dragClone.className = 'pl__drag';
+            dragClone.style.width = rect.width + 'px';
+            dragClone.style.top = rect.top + 'px';
+            dragClone.style.left = rect.left + 'px';
+            document.body.appendChild(dragClone);
+
+            li.style.display = 'none';
+            document.body.style.userSelect = 'none';
+        }
+
+        function moveDrag(y) {
+            if (!active || !dragClone) return;
+            dragClone.style.top = (y - offsetY) + 'px';
+
+            // Find insertion point
+            var items = dragList.querySelectorAll('li:not(.pl__ph):not(.pl__drag)');
+            var inserted = false;
+            for (var i = 0; i < items.length; i++) {
+                var it = items[i];
+                if (it === dragLi || it.style.display === 'none') continue;
+                var r = it.getBoundingClientRect();
+                if (y < r.top + r.height / 2) {
+                    dragList.insertBefore(placeholder, it);
+                    inserted = true;
+                    break;
+                }
+            }
+            if (!inserted) dragList.appendChild(placeholder);
+        }
+
+        function endDrag() {
+            if (!active) return;
+            clearTimeout(holdTimer);
+
+            // Place the real li at placeholder position
+            if (placeholder && placeholder.parentNode) {
+                placeholder.parentNode.insertBefore(dragLi, placeholder);
+                placeholder.parentNode.removeChild(placeholder);
+            }
+            dragLi.style.display = '';
+            if (dragClone && dragClone.parentNode) dragClone.parentNode.removeChild(dragClone);
+            document.body.style.userSelect = '';
+
+            // Read new order from DOM indices and update data
+            syncEditablesToSession();
+            var sess = getSession();
+            if (sess && sess.sections && sess.sections[dragSecIdx]) {
+                var sec = sess.sections[dragSecIdx];
+                var lis = dragList.querySelectorAll('li[data-crud-idx]');
+                var newPhrases = [];
+                lis.forEach(function (el) {
+                    var idx = parseInt(el.getAttribute('data-crud-idx'), 10);
+                    if (sec.phrases[idx] !== undefined) newPhrases.push(sec.phrases[idx]);
+                });
+                if (newPhrases.length === sec.phrases.length) {
+                    sec.phrases = newPhrases;
+                }
+            }
+            renderPage();
+
+            active = false;
+            dragLi = null;
+            dragClone = null;
+            dragList = null;
+            placeholder = null;
+        }
+
+        function cancelDrag() {
+            clearTimeout(holdTimer);
+            if (!active) return;
+            if (dragLi) dragLi.style.display = '';
+            if (placeholder && placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
+            if (dragClone && dragClone.parentNode) dragClone.parentNode.removeChild(dragClone);
+            document.body.style.userSelect = '';
+            active = false;
+            dragLi = null;
+            dragClone = null;
+            dragList = null;
+            placeholder = null;
+        }
+
+        // Mouse events
+        document.addEventListener('mousedown', function (e) {
+            if (e.button !== 0) return;
+            var li = e.target.closest('.pl li[data-crud-type="phrases"]');
+            if (!li || e.target.closest('.crud-x') || e.target.closest('button')) return;
+            startY = getY(e);
+            var capturedLi = li;
+            holdTimer = setTimeout(function () { beginDrag(capturedLi, startY); }, HOLD_MS);
+        });
+        document.addEventListener('mousemove', function (e) {
+            if (holdTimer && !active && Math.abs(getY(e) - startY) > 8) { clearTimeout(holdTimer); holdTimer = null; }
+            if (active) { e.preventDefault(); moveDrag(getY(e)); }
+        });
+        document.addEventListener('mouseup', function () {
+            clearTimeout(holdTimer); holdTimer = null;
+            if (active) endDrag();
+        });
+
+        // Touch events
+        document.addEventListener('touchstart', function (e) {
+            var li = e.target.closest('.pl li[data-crud-type="phrases"]');
+            if (!li || e.target.closest('.crud-x') || e.target.closest('button')) return;
+            startY = getY(e);
+            var capturedLi = li;
+            holdTimer = setTimeout(function () {
+                beginDrag(capturedLi, startY);
+                // Haptic feedback if available
+                if (navigator.vibrate) navigator.vibrate(30);
+            }, HOLD_MS);
+        }, { passive: true });
+        document.addEventListener('touchmove', function (e) {
+            if (holdTimer && !active && Math.abs(getY(e) - startY) > 8) { clearTimeout(holdTimer); holdTimer = null; }
+            if (active) { e.preventDefault(); moveDrag(getY(e)); }
+        }, { passive: false });
+        document.addEventListener('touchend', function () {
+            clearTimeout(holdTimer); holdTimer = null;
+            if (active) endDrag();
+        });
+        document.addEventListener('touchcancel', function () {
+            clearTimeout(holdTimer); holdTimer = null;
+            cancelDrag();
+        });
+    })();
+
+    // =========================================
     // PUBLISH / DEPLOY (Phase 2: Firebase Firestore)
     // =========================================
 
