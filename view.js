@@ -475,29 +475,28 @@
     }
 
     function setupKoToggle() {
-        // Find all 핵심 문장 section headers (.psh with "핵심 문장")
+        var koEls = container.querySelectorAll('.pl__ko');
+        if (!koEls.length) return;
+
+        // Hide all Korean by default
+        koEls.forEach(function (ko) { ko.classList.add('pl__ko--hidden'); });
+
+        // Find the 핵심 문장 header and add eye icon
         container.querySelectorAll('.psh').forEach(function (psh) {
             var title = psh.querySelector('.psh__t');
             if (!title || title.textContent.trim() !== '핵심 문장') return;
 
-            // Find the parent .ps and hide all .pl__ko inside it
-            var section = psh.closest('.page') || container;
-            var koEls = section.querySelectorAll('.pl__ko');
-            if (!koEls.length) return;
-
-            koEls.forEach(function (ko) { ko.classList.add('pl__ko--hidden'); });
-
-            // Create toggle button next to the header
             var btn = document.createElement('button');
             btn.className = 'ko-toggle';
-            btn.textContent = '해석 보기';
+            btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+            btn.title = '해석 보기';
             btn.addEventListener('click', function () {
                 var isHidden = koEls[0].classList.contains('pl__ko--hidden');
                 koEls.forEach(function (ko) {
                     ko.classList.toggle('pl__ko--hidden', !isHidden);
                 });
-                btn.textContent = isHidden ? '해석 숨기기' : '해석 보기';
                 btn.classList.toggle('ko-toggle--on', isHidden);
+                btn.title = isHidden ? '해석 숨기기' : '해석 보기';
             });
             psh.appendChild(btn);
         });

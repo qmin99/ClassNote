@@ -439,10 +439,11 @@ body{
 .pl__ko--hidden{opacity:0;user-select:none;pointer-events:none;transition:opacity .25s ease}
 .ko-toggle{
     all:unset;cursor:pointer;order:1;
-    font-size:10px;color:var(--ac,#2ABFBF);opacity:.45;
-    font-family:'Noto Sans KR',sans-serif;white-space:nowrap;
-    padding:2px 8px;border:1px solid transparent;border-radius:10px;
+    color:var(--t3,#999);opacity:.3;
+    display:flex;align-items:center;
+    padding:2px;border-radius:4px;
     transition:all .2s ease;
 }
-.ko-toggle:hover{opacity:.75}
-.ko-toggle--on{opacity:.6;background:rgba(42,191,191,.08);border-color:rgba(42,191,191,.2)}
+.ko-toggle:hover{opacity:.55}
+.ko-toggle--on{opacity:.55;color:var(--ac,#2ABFBF)}
+.ko-toggle svg{display:block}
