@@ -433,6 +433,7 @@ body{
         min-height:100vh;max-height:none;height:auto;
         overflow:visible;
         margin:0;padding:48px 60px;
+        zoom:1!important;
     }
     .view-pages .page:last-child{page-break-after:auto}
 }
