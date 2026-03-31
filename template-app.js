@@ -2006,9 +2006,11 @@
                     h += '<li' + solo + ' data-crud-type="phrases" data-crud-sec="' + si + '" data-crud-idx="' + pi + '"><span' + E + '>' + p + '</span>';
                     h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></li>';
                 });
-                h += '</ul>' + crudAdd('phrases', sec.phrases.length, si) + '</div>';
+                var isLast = si === s.sections.length - 1;
+                h += '</ul><div class="crud-row">' + crudAdd('phrases', sec.phrases.length, si);
+                if (isLast) h += '<button class="crud-add--sec-sib" data-crud-action="add-sec">+ 번호 추가</button>';
+                h += '</div></div>';
             });
-            h += '<button class="crud-add crud-add--sec" data-crud-action="add-sec">+ 번호 추가</button>';
         }
 
         if (secOn('vocab')) {
@@ -4338,6 +4340,13 @@
         // Update sidebar section panel
         renderSectionPanel();
     }
+
+    // Expose helpers for external data access (e.g. Playwright tests)
+    window.__getSession = getSession;
+    window.__getCourse = getCourse;
+    window.__renderPage = renderPage;
+    window.__renderNav = renderNav;
+    window.__save = function () { saveCourseToFirestore(true); };
 
     window.__go = function (dir) {
         var c = getCourse();

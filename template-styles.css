@@ -716,12 +716,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
     opacity:.5;
 }
 .crud-add:hover{color:var(--ac);border-color:var(--ac);opacity:1;background:var(--ac-l)}
-.crud-add--sec{
-    position:relative;left:auto;bottom:auto;
-    width:auto;height:auto;border-radius:4px;
-    padding:3px 10px;font-size:11px;
-    margin:4px 0 0;opacity:.4;
+.crud-row{display:flex;align-items:center;justify-content:center;gap:8px}
+.crud-add--sec-sib{
+    all:unset;cursor:pointer;
+    font-size:10px;color:var(--ac);opacity:.3;
+    font-family:var(--kr);white-space:nowrap;
+    transition:opacity 150ms ease;
 }
+.crud-add--sec-sib:hover{opacity:.6}
 
 /* Line count +/- buttons */
 .crud-lines{display:flex;justify-content:center;gap:4px;margin-top:4px}
