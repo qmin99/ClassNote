@@ -201,6 +201,23 @@
         return pdfLibsReady;
     }
 
+    // Resolve CSS variables to inline styles for html2canvas compatibility
+    function resolveVarsForCapture(el) {
+        var computed = getComputedStyle(el);
+        var color = computed.color;
+        var bg = computed.backgroundColor;
+        var borderColor = computed.borderColor;
+        var borderBottom = computed.borderBottomColor;
+        if (color) el.style.color = color;
+        if (bg && bg !== 'rgba(0, 0, 0, 0)') el.style.backgroundColor = bg;
+        if (borderColor) el.style.borderColor = borderColor;
+        if (borderBottom) el.style.borderBottomColor = borderBottom;
+        var children = el.children;
+        for (var i = 0; i < children.length; i++) {
+            resolveVarsForCapture(children[i]);
+        }
+    }
+
     function generatePdf() {
         showToast('PDF 준비 중...');
         pdfBtn.disabled = true;
@@ -216,13 +233,14 @@
                 if (pg.style.display === 'none') { hiddenPages.push(pg); pg.style.display = ''; }
             });
 
-            // Reset zoom/transform for clean capture
+            // Force A4 fixed size and reset zoom/transform for clean capture
             pages.forEach(function (pg) {
-                pg.setAttribute('data-prev-zoom', pg.style.zoom || '');
-                pg.setAttribute('data-prev-transform', pg.style.transform || '');
-                pg.style.zoom = '1';
-                pg.style.transform = 'none';
+                pg.setAttribute('data-prev-style', pg.getAttribute('style') || '');
+                pg.style.cssText = 'display:flex;flex-direction:column;width:794px;min-width:794px;max-width:794px;height:1123px;min-height:1123px;max-height:1123px;padding:48px 60px;margin:0;zoom:1;transform:none;overflow:hidden;box-sizing:border-box;background:#fff;';
             });
+
+            // Resolve CSS variables to inline for html2canvas
+            pages.forEach(function (pg) { resolveVarsForCapture(pg); });
 
             showToast('PDF 생성 중...');
 
@@ -233,18 +251,34 @@
 
             function capturePage(idx) {
                 if (idx >= pages.length) {
+                    // Restore original styles
                     pages.forEach(function (pg) {
-                        pg.style.zoom = pg.getAttribute('data-prev-zoom') || '';
-                        pg.style.transform = pg.getAttribute('data-prev-transform') || '';
-                        pg.removeAttribute('data-prev-zoom');
-                        pg.removeAttribute('data-prev-transform');
+                        pg.style.cssText = pg.getAttribute('data-prev-style') || '';
+                        pg.removeAttribute('data-prev-style');
+                        // Remove inline color/bg styles set by resolveVarsForCapture
+                        var all = pg.querySelectorAll('*');
+                        for (var i = 0; i < all.length; i++) {
+                            all[i].style.color = '';
+                            all[i].style.backgroundColor = '';
+                            all[i].style.borderColor = '';
+                            all[i].style.borderBottomColor = '';
+                        }
                     });
                     hiddenPages.forEach(function (pg) { pg.style.display = 'none'; });
                     if (viewState.total > 1) showCurrentPage();
                     requestAnimationFrame(scalePages);
 
                     var title = document.title.replace(' — 클래스노트', '') || 'classnote';
-                    pdf.save(title + '.pdf');
+
+                    // iOS Safari: open blob URL instead of download
+                    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                        var blob = pdf.output('blob');
+                        var url = URL.createObjectURL(blob);
+                        window.open(url, '_blank');
+                    } else {
+                        pdf.save(title + '.pdf');
+                    }
+
                     pdfBtn.disabled = false;
                     if (printBtn) printBtn.disabled = false;
                     showToast('PDF가 저장되었습니다');
@@ -269,12 +303,12 @@
                 });
             }
 
-            setTimeout(function () { capturePage(0); }, 100);
+            setTimeout(function () { capturePage(0); }, 200);
         }).catch(function () {
             showToast('PDF 라이브러리를 불러올 수 없습니다. 네트워크를 확인해주세요.');
             pdfBtn.disabled = false;
             if (printBtn) printBtn.disabled = false;
-            pdfLibsReady = null; // retry next time
+            pdfLibsReady = null;
         });
     }
 
