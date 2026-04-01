@@ -193,9 +193,9 @@
             return Promise.resolve();
         }
         if (!pdfLibsReady) {
-            pdfLibsReady = loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js')
+            pdfLibsReady = loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js')
                 .then(function () {
-                    return loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js');
+                    return loadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js');
                 });
         }
         return pdfLibsReady;
