@@ -202,29 +202,31 @@
         return pdfLibsReady;
     }
 
-    // Inline ALL computed styles on an element tree (for html2canvas clone)
+    // Recursively inline all computed styles on element tree
+    // Reads from the LIVE DOM (main window) so CSS vars are fully resolved
     function inlineAllStyles(el) {
-        var computed = getComputedStyle(el);
-        var dominated = ['color','background-color','background-image','background',
+        var computed = window.getComputedStyle(el);
+        var props = ['color','background-color','background-image',
             'border-color','border-top-color','border-bottom-color','border-left-color','border-right-color',
-            'border-bottom-width','border-bottom-style',
+            'border-top-width','border-bottom-width','border-left-width','border-right-width',
+            'border-top-style','border-bottom-style','border-left-style','border-right-style',
             'font-family','font-size','font-weight','font-style','line-height','letter-spacing',
-            'text-decoration','text-align','text-transform',
+            'text-decoration','text-decoration-color','text-align','text-transform',
             'padding-top','padding-right','padding-bottom','padding-left',
             'margin-top','margin-right','margin-bottom','margin-left',
+            'display','flex-direction','align-items','justify-content','gap','flex-wrap','flex-grow','flex-shrink',
+            'opacity','box-shadow','border-radius',
+            'overflow','overflow-x','overflow-y','white-space','word-break',
+            'grid-template-columns','grid-template-rows','column-gap','row-gap',
+            'list-style-type','vertical-align','position','top','left','right','bottom',
             'width','height','min-width','min-height','max-width','max-height',
-            'display','flex-direction','align-items','justify-content','gap',
-            'opacity','box-shadow','border-radius','overflow','white-space','word-break',
-            'grid-template-columns','grid-template-rows','grid-gap','column-gap','row-gap',
-            'list-style-type','vertical-align','position','top','left','right','bottom'];
-        for (var i = 0; i < dominated.length; i++) {
-            var prop = dominated[i];
-            var val = computed.getPropertyValue(prop);
-            if (val) el.style.setProperty(prop, val);
+            'box-sizing','outline'];
+        for (var i = 0; i < props.length; i++) {
+            var val = computed.getPropertyValue(props[i]);
+            if (val) el.style.setProperty(props[i], val);
         }
-        var children = el.children;
-        for (var j = 0; j < children.length; j++) {
-            inlineAllStyles(children[j]);
+        for (var j = 0; j < el.children.length; j++) {
+            inlineAllStyles(el.children[j]);
         }
     }
 
@@ -237,19 +239,22 @@
             var pages = Array.prototype.slice.call(container.querySelectorAll('.page'));
             if (!pages.length) { pdfBtn.disabled = false; if (printBtn) printBtn.disabled = false; return; }
 
-            // Show all pages temporarily
-            var hiddenPages = [];
-            viewState.pages.forEach(function (pg) {
-                if (pg.style.display === 'none') { hiddenPages.push(pg); pg.style.display = ''; }
+            // Show ALL pages and force A4 desktop layout
+            viewState.pages.forEach(function (pg) { pg.style.display = ''; });
+            pages.forEach(function (pg) {
+                pg.style.cssText = 'display:flex !important;flex-direction:column;width:794px !important;min-width:794px !important;max-width:794px !important;height:1123px !important;min-height:1123px !important;max-height:1123px !important;padding:48px 60px !important;margin:0;zoom:1 !important;transform:none !important;overflow:hidden;box-sizing:border-box;background:#fff;';
             });
 
-            // Save and force A4 size on original for accurate computed style reads
-            pages.forEach(function (pg) {
-                pg.setAttribute('data-prev-style', pg.getAttribute('style') || '');
-                pg.style.cssText = 'display:flex;flex-direction:column;width:794px;min-width:794px;max-width:794px;height:1123px;min-height:1123px;max-height:1123px;padding:48px 60px;margin:0;zoom:1;transform:none;overflow:hidden;box-sizing:border-box;background:#fff;';
-            });
+            // Inline all resolved CSS on original DOM (CSS vars → real values)
+            pages.forEach(function (pg) { inlineAllStyles(pg); });
+
+            // Remove toasts from DOM before capture
+            document.querySelectorAll('[data-toast]').forEach(function (t) { t.remove(); });
 
             showToast('PDF 생성 중...');
+            // Immediately hide the toast we just created
+            var genToast = document.querySelector('[data-toast]');
+            if (genToast) genToast.style.display = 'none';
 
             var pdf = new jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
             var pdfW = 210;
@@ -258,22 +263,15 @@
 
             function capturePage(idx) {
                 if (idx >= pages.length) {
-                    // Restore original
-                    pages.forEach(function (pg) {
-                        pg.style.cssText = pg.getAttribute('data-prev-style') || '';
-                        pg.removeAttribute('data-prev-style');
-                    });
-                    hiddenPages.forEach(function (pg) { pg.style.display = 'none'; });
-                    if (viewState.total > 1) showCurrentPage();
-                    requestAnimationFrame(scalePages);
+                    // Clean restore: re-render session (removes all inline hacks)
+                    renderSession(currentSessionIdx);
 
                     var title = document.title.replace(' — 클래스노트', '') || 'classnote';
 
-                    // iOS Safari: open blob URL; others: download
+                    // iOS Safari: anchor download; others: pdf.save
                     if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                         var blob = pdf.output('blob');
                         var blobUrl = URL.createObjectURL(blob);
-                        // Use link with download attribute for better iOS support
                         var a = document.createElement('a');
                         a.href = blobUrl;
                         a.download = title + '.pdf';
@@ -299,15 +297,7 @@
                     allowTaint: true,
                     backgroundColor: '#ffffff',
                     width: 794,
-                    height: 1123,
-                    onclone: function (clonedDoc) {
-                        // Resolve CSS variables in the clone so html2canvas renders them
-                        var clonedPages = clonedDoc.querySelectorAll('.page');
-                        if (clonedPages[idx]) {
-                            clonedPages[idx].style.cssText = 'display:flex;flex-direction:column;width:794px;height:1123px;padding:48px 60px;margin:0;overflow:hidden;box-sizing:border-box;background:#fff;';
-                            inlineAllStyles(clonedPages[idx]);
-                        }
-                    }
+                    height: 1123
                 }).then(function (canvas) {
                     var imgData = canvas.toDataURL('image/jpeg', 0.92);
                     pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
@@ -317,7 +307,8 @@
                 });
             }
 
-            setTimeout(function () { capturePage(0); }, 200);
+            // Let forced layout settle before capture
+            setTimeout(function () { capturePage(0); }, 300);
         }).catch(function () {
             showToast('PDF 라이브러리를 불러올 수 없습니다. 네트워크를 확인해주세요.');
             pdfBtn.disabled = false;
