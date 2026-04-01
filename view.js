@@ -64,6 +64,7 @@
     function showToast(msg) {
         var t = document.createElement('div');
         t.textContent = msg;
+        t.setAttribute('data-toast', '');
         t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s';
         document.body.appendChild(t);
         requestAnimationFrame(function () { t.style.opacity = '1'; });
@@ -201,20 +202,29 @@
         return pdfLibsReady;
     }
 
-    // Resolve CSS variables to inline styles for html2canvas compatibility
-    function resolveVarsForCapture(el) {
+    // Inline ALL computed styles on an element tree (for html2canvas clone)
+    function inlineAllStyles(el) {
         var computed = getComputedStyle(el);
-        var color = computed.color;
-        var bg = computed.backgroundColor;
-        var borderColor = computed.borderColor;
-        var borderBottom = computed.borderBottomColor;
-        if (color) el.style.color = color;
-        if (bg && bg !== 'rgba(0, 0, 0, 0)') el.style.backgroundColor = bg;
-        if (borderColor) el.style.borderColor = borderColor;
-        if (borderBottom) el.style.borderBottomColor = borderBottom;
+        var dominated = ['color','background-color','background-image','background',
+            'border-color','border-top-color','border-bottom-color','border-left-color','border-right-color',
+            'border-bottom-width','border-bottom-style',
+            'font-family','font-size','font-weight','font-style','line-height','letter-spacing',
+            'text-decoration','text-align','text-transform',
+            'padding-top','padding-right','padding-bottom','padding-left',
+            'margin-top','margin-right','margin-bottom','margin-left',
+            'width','height','min-width','min-height','max-width','max-height',
+            'display','flex-direction','align-items','justify-content','gap',
+            'opacity','box-shadow','border-radius','overflow','white-space','word-break',
+            'grid-template-columns','grid-template-rows','grid-gap','column-gap','row-gap',
+            'list-style-type','vertical-align','position','top','left','right','bottom'];
+        for (var i = 0; i < dominated.length; i++) {
+            var prop = dominated[i];
+            var val = computed.getPropertyValue(prop);
+            if (val) el.style.setProperty(prop, val);
+        }
         var children = el.children;
-        for (var i = 0; i < children.length; i++) {
-            resolveVarsForCapture(children[i]);
+        for (var j = 0; j < children.length; j++) {
+            inlineAllStyles(children[j]);
         }
     }
 
@@ -227,20 +237,17 @@
             var pages = Array.prototype.slice.call(container.querySelectorAll('.page'));
             if (!pages.length) { pdfBtn.disabled = false; if (printBtn) printBtn.disabled = false; return; }
 
-            // Show all pages for capture
+            // Show all pages temporarily
             var hiddenPages = [];
             viewState.pages.forEach(function (pg) {
                 if (pg.style.display === 'none') { hiddenPages.push(pg); pg.style.display = ''; }
             });
 
-            // Force A4 fixed size and reset zoom/transform for clean capture
+            // Save and force A4 size on original for accurate computed style reads
             pages.forEach(function (pg) {
                 pg.setAttribute('data-prev-style', pg.getAttribute('style') || '');
                 pg.style.cssText = 'display:flex;flex-direction:column;width:794px;min-width:794px;max-width:794px;height:1123px;min-height:1123px;max-height:1123px;padding:48px 60px;margin:0;zoom:1;transform:none;overflow:hidden;box-sizing:border-box;background:#fff;';
             });
-
-            // Resolve CSS variables to inline for html2canvas
-            pages.forEach(function (pg) { resolveVarsForCapture(pg); });
 
             showToast('PDF 생성 중...');
 
@@ -251,18 +258,10 @@
 
             function capturePage(idx) {
                 if (idx >= pages.length) {
-                    // Restore original styles
+                    // Restore original
                     pages.forEach(function (pg) {
                         pg.style.cssText = pg.getAttribute('data-prev-style') || '';
                         pg.removeAttribute('data-prev-style');
-                        // Remove inline color/bg styles set by resolveVarsForCapture
-                        var all = pg.querySelectorAll('*');
-                        for (var i = 0; i < all.length; i++) {
-                            all[i].style.color = '';
-                            all[i].style.backgroundColor = '';
-                            all[i].style.borderColor = '';
-                            all[i].style.borderBottomColor = '';
-                        }
                     });
                     hiddenPages.forEach(function (pg) { pg.style.display = 'none'; });
                     if (viewState.total > 1) showCurrentPage();
@@ -270,11 +269,18 @@
 
                     var title = document.title.replace(' — 클래스노트', '') || 'classnote';
 
-                    // iOS Safari: open blob URL instead of download
+                    // iOS Safari: open blob URL; others: download
                     if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                         var blob = pdf.output('blob');
-                        var url = URL.createObjectURL(blob);
-                        window.open(url, '_blank');
+                        var blobUrl = URL.createObjectURL(blob);
+                        // Use link with download attribute for better iOS support
+                        var a = document.createElement('a');
+                        a.href = blobUrl;
+                        a.download = title + '.pdf';
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        setTimeout(function () { a.remove(); URL.revokeObjectURL(blobUrl); }, 1000);
                     } else {
                         pdf.save(title + '.pdf');
                     }
@@ -293,7 +299,15 @@
                     allowTaint: true,
                     backgroundColor: '#ffffff',
                     width: 794,
-                    height: 1123
+                    height: 1123,
+                    onclone: function (clonedDoc) {
+                        // Resolve CSS variables in the clone so html2canvas renders them
+                        var clonedPages = clonedDoc.querySelectorAll('.page');
+                        if (clonedPages[idx]) {
+                            clonedPages[idx].style.cssText = 'display:flex;flex-direction:column;width:794px;height:1123px;padding:48px 60px;margin:0;overflow:hidden;box-sizing:border-box;background:#fff;';
+                            inlineAllStyles(clonedPages[idx]);
+                        }
+                    }
                 }).then(function (canvas) {
                     var imgData = canvas.toDataURL('image/jpeg', 0.92);
                     pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
@@ -318,11 +332,8 @@
                 generatePdf();
             } else {
                 viewState.pages.forEach(function (pg) { pg.style.display = ''; });
-                showToast('PDF로 저장하려면 인쇄 대화상자에서 "PDF로 저장"을 선택하세요');
-                setTimeout(function () {
-                    window.print();
-                    if (viewState.total > 1) showCurrentPage();
-                }, 300);
+                window.print();
+                if (viewState.total > 1) showCurrentPage();
             }
         });
     }

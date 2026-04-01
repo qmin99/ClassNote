@@ -420,7 +420,7 @@ body{
 
 /* --- Print --- */
 @media print{
-    .view-header,.view-footer,.view-offline,.ko-toggle,.session-nav{display:none!important}
+    .view-header,.view-footer,.view-offline,.ko-toggle,.session-nav,[data-toast]{display:none!important}
     body{background:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .view-body{padding:0;align-items:stretch}
     .view-pages{gap:0;align-items:stretch}
