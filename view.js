@@ -169,17 +169,98 @@
     }
 
     // =========================================
-    // PDF BUTTON
+    // PDF BUTTON (html2canvas + jsPDF for mobile)
     // =========================================
+
+    function isMobileDevice() {
+        return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (window.innerWidth <= 820 && 'ontouchstart' in window);
+    }
+
+    function generatePdf() {
+        if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
+            showToast('PDF 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+            return;
+        }
+
+        var pages = Array.prototype.slice.call(container.querySelectorAll('.page'));
+        if (!pages.length) return;
+
+        // Show all pages for capture
+        var hiddenPages = [];
+        viewState.pages.forEach(function (pg) {
+            if (pg.style.display === 'none') { hiddenPages.push(pg); pg.style.display = ''; }
+        });
+
+        // Reset zoom/transform for clean capture
+        pages.forEach(function (pg) {
+            pg.setAttribute('data-prev-zoom', pg.style.zoom || '');
+            pg.setAttribute('data-prev-transform', pg.style.transform || '');
+            pg.style.zoom = '1';
+            pg.style.transform = 'none';
+        });
+
+        showToast('PDF 생성 중...');
+        pdfBtn.disabled = true;
+
+        var pdf = new jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        var pdfW = 210;
+        var pdfH = 297;
+        var scale = 2;
+
+        function capturePage(idx) {
+            if (idx >= pages.length) {
+                // Restore pages
+                pages.forEach(function (pg) {
+                    pg.style.zoom = pg.getAttribute('data-prev-zoom') || '';
+                    pg.style.transform = pg.getAttribute('data-prev-transform') || '';
+                    pg.removeAttribute('data-prev-zoom');
+                    pg.removeAttribute('data-prev-transform');
+                });
+                hiddenPages.forEach(function (pg) { pg.style.display = 'none'; });
+                if (viewState.total > 1) showCurrentPage();
+                requestAnimationFrame(scalePages);
+
+                var title = document.title.replace(' — 클래스노트', '') || 'classnote';
+                pdf.save(title + '.pdf');
+                pdfBtn.disabled = false;
+                showToast('PDF가 저장되었습니다');
+                return;
+            }
+
+            if (idx > 0) pdf.addPage();
+
+            html2canvas(pages[idx], {
+                scale: scale,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                width: 794,
+                height: 1123
+            }).then(function (canvas) {
+                var imgData = canvas.toDataURL('image/jpeg', 0.92);
+                pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+                capturePage(idx + 1);
+            }).catch(function () {
+                capturePage(idx + 1);
+            });
+        }
+
+        // Small delay to let DOM settle after showing all pages
+        setTimeout(function () { capturePage(0); }, 100);
+    }
 
     if (pdfBtn) {
         pdfBtn.addEventListener('click', function () {
-            viewState.pages.forEach(function (pg) { pg.style.display = ''; });
-            showToast('PDF로 저장하려면 인쇄 대화상자에서 "PDF로 저장"을 선택하세요');
-            setTimeout(function () {
-                window.print();
-                if (viewState.total > 1) showCurrentPage();
-            }, 300);
+            if (isMobileDevice()) {
+                generatePdf();
+            } else {
+                viewState.pages.forEach(function (pg) { pg.style.display = ''; });
+                showToast('PDF로 저장하려면 인쇄 대화상자에서 "PDF로 저장"을 선택하세요');
+                setTimeout(function () {
+                    window.print();
+                    if (viewState.total > 1) showCurrentPage();
+                }, 300);
+            }
         });
     }
 
@@ -638,9 +719,13 @@
     // Print button
     if (printBtn) {
         printBtn.addEventListener('click', function () {
-            viewState.pages.forEach(function (pg) { pg.style.display = ''; });
-            window.print();
-            if (viewState.total > 1) showCurrentPage();
+            if (isMobileDevice()) {
+                generatePdf();
+            } else {
+                viewState.pages.forEach(function (pg) { pg.style.display = ''; });
+                window.print();
+                if (viewState.total > 1) showCurrentPage();
+            }
         });
     }
 
