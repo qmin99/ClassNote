@@ -3628,6 +3628,14 @@
                 newSession.title = 'Session ' + newSession.num;
                 // Clear content but keep structure
                 clearSessionContent(newSession);
+                // Set date to today
+                var today = new Date();
+                var todayStr = formatDate(today.toISOString().split('T')[0]);
+                newSession._date = todayStr;
+                state.date = todayStr;
+                if (els.sessionDate) {
+                    els.sessionDate.value = today.toISOString().split('T')[0];
+                }
                 course.sessions.push(newSession);
                 state.sessionIdx = course.sessions.length - 1;
                 hasEdited = false;
