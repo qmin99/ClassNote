@@ -4913,7 +4913,10 @@
                     var all = StudentStore.getAll() || [];
                     if (course.sessions && course.sessions.length && all.length) {
                         var synced = course.sessions.map(function (ss) {
-                            return { title: ss.title || '', date: (ss._date || '').replace(/년\s*/g, '.').replace(/월\s*/g, '.').replace(/일/, '') };
+                            var d = ss._date || '';
+                            var m = d.match(/(\d+)년\s*(\d+)월\s*(\d+)일/);
+                            var formatted = m ? m[1] + '.' + (m[2].length < 2 ? '0' + m[2] : m[2]) + '.' + (m[3].length < 2 ? '0' + m[3] : m[3]) : d.replace(/년\s*/g, '.').replace(/월\s*/g, '.').replace(/일/, '');
+                            return { title: ss.title || '', date: formatted };
                         });
                         // studentName과 매칭되는 학생에게 세션 동기화
                         for (var si = 0; si < all.length; si++) {
