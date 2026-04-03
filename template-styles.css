@@ -2420,9 +2420,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .smb__memo-box[contenteditable]:empty::before{content:'메모를 입력하세요...';color:#B0C4C4;font-weight:400}
 
 /* Session list — numbered circle badges */
-.smb__sess-list{display:flex;flex-direction:column;gap:5px}
-.smb__sess-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:#fff;border:1px solid #E8E4DF;transition:background .15s,border-color .15s}
-.smb__sess-item:hover{background:#FAFAF5;border-color:#D4EFEF}
+.smb__sess-list{display:flex;flex-direction:column;gap:5px;flex:1;min-height:0}
+.smb__sess-list--compact{gap:3px}
+.smb__sess-list--compact .smb__sess-item{padding:5px 10px}
+.smb__sess-list--compact .smb__sess-num{width:18px;height:18px;font-size:9px}
+.smb__sess-list--compact .smb__sess-title{font-size:11px}
+.smb__sess-list--compact .smb__sess-date{font-size:10px}
+.smb__sess-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:#fff;border:1px solid #E8E4DF;transition:background .15s,border-color .15s,transform .15s}
+.smb__sess-item:hover{background:#F0FAFA;border-color:#2ABFBF;transform:translateX(2px)}
 .smb__sess-num{
     width:22px;height:22px;border-radius:50%;flex-shrink:0;
     background:#2ABFBF;color:#fff;

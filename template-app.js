@@ -6128,12 +6128,16 @@
             var linkIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
 
             var sessHTML = '';
-            // 날짜 오름차순 정렬 (오래된 수업 = 1번)
-            var sorted = s.sessions.slice().sort(function (a, b) {
-                return (a.date || '').localeCompare(b.date || '');
+            // 원래 번호 부여 후 최신순 정렬 (최신이 위)
+            var numbered = s.sessions.map(function (ss, i) {
+                return { title: ss.title, date: ss.date, origIdx: i };
             });
-            sorted.forEach(function (ss, i) {
-                sessHTML += '<div class="smb__sess-item"><div class="smb__sess-num">' + (i + 1) + '</div><span class="smb__sess-title">' + ss.title + '</span><span class="smb__sess-date">' + ss.date + '</span></div>';
+            numbered.sort(function (a, b) {
+                return (b.date || '').localeCompare(a.date || '');
+            });
+            var compactCls = numbered.length > 4 ? ' smb__sess-list--compact' : '';
+            numbered.forEach(function (ss) {
+                sessHTML += '<div class="smb__sess-item" data-sess-idx="' + ss.origIdx + '" style="cursor:pointer"><div class="smb__sess-num">' + (ss.origIdx + 1) + '</div><span class="smb__sess-title">' + ss.title + '</span><span class="smb__sess-date">' + ss.date + '</span></div>';
             });
 
             return '<div class="smb__left">' +
@@ -6170,7 +6174,7 @@
                 '<div class="smb__memo-box" contenteditable="true" data-student-id="' + s.id + '">' + s.memo + '</div>' +
                 '<div class="smb__divider"></div>' +
                 '<p class="smb__sess-label">수업 세션</p>' +
-                '<div class="smb__sess-list">' + sessHTML + '</div>' +
+                '<div class="smb__sess-list' + compactCls + '">' + sessHTML + '</div>' +
             '</div>';
         }
 
@@ -6333,6 +6337,16 @@
             var ring = e.target.closest('.smb__avatar-ring');
             if (ring) {
                 openDetail(currentIdx);
+                return;
+            }
+            // 세션 클릭 → 해당 세션으로 에디터 이동
+            var sessItem = e.target.closest('.smb__sess-item');
+            if (sessItem && sessItem.dataset.sessIdx !== undefined) {
+                var idx = parseInt(sessItem.dataset.sessIdx, 10);
+                hideStudentBook();
+                state.sessionIdx = idx;
+                renderNav();
+                renderPage();
                 return;
             }
         });
