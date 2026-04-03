@@ -245,6 +245,19 @@
                 pg.style.cssText = 'display:flex !important;flex-direction:column;width:794px !important;min-width:794px !important;max-width:794px !important;height:1123px !important;min-height:1123px !important;max-height:1123px !important;padding:48px 60px !important;margin:0;zoom:1 !important;transform:none !important;overflow:hidden;box-sizing:border-box;background:#fff;';
             });
 
+            // Reveal all hidden Korean translations for PDF capture
+            container.querySelectorAll('.pl__ko--hidden').forEach(function (ko) {
+                ko.classList.remove('pl__ko--hidden');
+                ko.dataset.wasHidden = '1';
+            });
+            // Hide eye toggle button from PDF
+            container.querySelectorAll('.ko-toggle').forEach(function (btn) {
+                btn.style.display = 'none';
+            });
+
+            // Force layout reflow so getComputedStyle reads correct values
+            void container.offsetHeight;
+
             // Inline all resolved CSS on original DOM (CSS vars → real values)
             pages.forEach(function (pg) { inlineAllStyles(pg); });
 
