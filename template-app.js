@@ -5728,11 +5728,39 @@
         });
     }
 
+    // Save onboarding student to localStorage (clears any stale seed data first)
+    function _saveOnboardingStudent(name, gender) {
+        if (!name) return;
+        // Onboarding = fresh start. Clear any leftover seed/demo data.
+        StudentStore.saveAll([]);
+        var isFemale = gender === 'female';
+        // Derive course label from onboarding selections
+        var courseLabel = '';
+        var types = subjectTypes[obState.subject] || [];
+        for (var i = 0; i < types.length; i++) {
+            if (types[i].val === obState.type) { courseLabel = types[i].label; break; }
+        }
+        StudentStore.add({
+            name: name,
+            gender: gender,
+            genderLabel: isFemale ? '여학생' : '남학생',
+            ageGroup: LEVEL_LABELS[obState.level] || '중등',
+            course: courseLabel || '일상 영어 회화',
+            level: DIFF_LABELS[obState.difficulty] || '중급',
+            freq: '주 2회',
+            nextClass: '',
+            memo: '',
+            sessions: [],
+            avatar: isFemale ? 'images/generated-1774419137742.png' : 'images/generated-1774417632961.png'
+        });
+    }
+
     // Start button → launch editor
     var wmStartBtn = document.getElementById('wmStart');
     if (wmStartBtn) {
         wmStartBtn.addEventListener('click', function () {
             var nameVal = (document.getElementById('wmName').value || '').trim();
+            _saveOnboardingStudent(nameVal, wmGender);
             var modal = document.getElementById('welcomeModal');
             modal.style.opacity = '0';
             modal.style.transition = 'opacity .3s ease';
@@ -5741,6 +5769,29 @@
                 modal.style.opacity = '';
                 modal.style.transition = '';
                 _launchEditorReal(nameVal, wmGender);
+            }, 300);
+        });
+    }
+
+    // "학생 관리" ghost link → launch editor then open SMB
+    var wmManageBtn = document.getElementById('wmManage');
+    if (wmManageBtn) {
+        wmManageBtn.addEventListener('click', function () {
+            var nameVal = (document.getElementById('wmName').value || '').trim();
+            _saveOnboardingStudent(nameVal, wmGender);
+            var modal = document.getElementById('welcomeModal');
+            modal.style.opacity = '0';
+            modal.style.transition = 'opacity .3s ease';
+            setTimeout(function () {
+                modal.style.display = 'none';
+                modal.style.opacity = '';
+                modal.style.transition = '';
+                _launchEditorReal(nameVal, wmGender);
+                // Open student management book after editor loads
+                setTimeout(function () {
+                    if (typeof window.refreshStudentBook === 'function') window.refreshStudentBook();
+                    if (typeof window.showStudentBook === 'function') window.showStudentBook();
+                }, 500);
             }, 300);
         });
     }
@@ -5792,7 +5843,7 @@
         });
     }
 
-    // Confirm (placeholder — just close for now)
+    // Confirm — add student to store + refresh book
     var asmConfirm = document.getElementById('asmConfirm');
     if (asmConfirm) {
         asmConfirm.addEventListener('click', function () {
@@ -5804,14 +5855,49 @@
                 setTimeout(function () { inp.style.borderColor = ''; }, 1500);
                 return;
             }
+
+            // Gather form values
+            var typeMap = { conversation: '비즈니스 영어', daily: '일상 영어 회화', grammar: '영문법', reading: '영어 독해' };
+            var ageMap = { elementary: '초등', middle: '중등', high: '고등', adult: '성인' };
+            var diffMap = { beginner: '초급', intermediate: '중급', advanced: '상급' };
+
+            var activeType = document.querySelector('#asmTypeGrid .asm__type-card--active');
+            var activeAge = document.querySelector('#asmLevel .asm__pill--active');
+            var activeDiff = document.querySelector('#asmDiff .asm__pill--active');
+            var activeGender = document.querySelector('#asmGender .asm__pill--active');
+            var activeFreq = document.querySelector('#asmFreq .asm__pill--active');
+
+            var gender = activeGender ? activeGender.dataset.val : 'male';
+            var isFemale = gender === 'female';
+
+            var newStudent = {
+                name: name,
+                gender: gender,
+                genderLabel: isFemale ? '여학생' : '남학생',
+                ageGroup: activeAge ? ageMap[activeAge.dataset.val] || '성인' : '성인',
+                course: activeType ? typeMap[activeType.dataset.type] || '일상 영어 회화' : '일상 영어 회화',
+                level: activeDiff ? diffMap[activeDiff.dataset.val] || '중급' : '중급',
+                freq: activeFreq ? activeFreq.dataset.val : '주 2회',
+                nextClass: '',
+                memo: '',
+                sessions: [],
+                avatar: isFemale ? 'images/generated-1774946208329.png' : 'images/generated-1774422022912.png'
+            };
+
+            StudentStore.add(newStudent);
+
             // Apply student name to editor
             var studentInput = document.getElementById('studentName');
             if (studentInput) {
                 studentInput.value = name;
                 studentInput.dispatchEvent(new Event('input'));
             }
+
             asmOverlay.style.display = 'none';
             document.getElementById('asmName').value = '';
+
+            // Refresh student book if open
+            if (typeof window.refreshStudentBook === 'function') window.refreshStudentBook();
         });
     }
 
@@ -5826,5 +5912,423 @@
     window.showAddStudentModal = function () {
         if (asmOverlay) asmOverlay.style.display = '';
     };
+
+    // =========================================
+    // STUDENT STORE (localStorage persistence)
+    // =========================================
+    var SS_KEY = 'classnote_students';
+    window.StudentStore = {
+        _genId: function () { return 'stu_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4); },
+        getAll: function () {
+            try { var d = localStorage.getItem(SS_KEY); return d ? JSON.parse(d) : null; }
+            catch (e) { return null; }
+        },
+        saveAll: function (arr) {
+            try { localStorage.setItem(SS_KEY, JSON.stringify(arr)); } catch (e) { /* quota */ }
+        },
+        add: function (obj) {
+            var arr = this.getAll() || [];
+            obj.id = this._genId();
+            obj.createdAt = Date.now();
+            arr.push(obj);
+            this.saveAll(arr);
+            return obj;
+        },
+        update: function (id, fields) {
+            var arr = this.getAll() || [];
+            for (var i = 0; i < arr.length; i++) {
+                if (arr[i].id === id) { Object.assign(arr[i], fields); break; }
+            }
+            this.saveAll(arr);
+        },
+        remove: function (id) {
+            var arr = (this.getAll() || []).filter(function (s) { return s.id !== id; });
+            this.saveAll(arr);
+            return arr;
+        },
+        getById: function (id) {
+            var arr = this.getAll() || [];
+            for (var i = 0; i < arr.length; i++) { if (arr[i].id === id) return arr[i]; }
+            return null;
+        },
+        init: function (seedData) {
+            var existing = this.getAll();
+            if (existing !== null) return existing;
+            var arr = seedData.map(function (s) {
+                var copy = Object.assign({}, s);
+                copy.id = window.StudentStore._genId();
+                copy.createdAt = Date.now();
+                copy.sessions = s.sessions.map(function (ss) { return Object.assign({}, ss); });
+                return copy;
+            });
+            this.saveAll(arr);
+            return arr;
+        }
+    };
+
+    var DEFAULT_STUDENTS = [
+        { name: '민수', gender: 'male', genderLabel: '남학생', ageGroup: '중등', course: '일상 영어 회화', level: '중급', freq: '주 2회', nextClass: '4월 3일 (목) 오후 3:00', memo: '감받이 좋고 적극적. 리스닝 고민 있고, 다음 수업엔 롤플레이 포커스로 갈 것.', sessions: [{ title: 'Getting Around Town', date: '2026.03.28' }, { title: 'At the Restaurant', date: '2026.03.25' }, { title: 'Meeting New People', date: '2026.03.21' }], avatar: 'images/generated-1774417632961.png' },
+        { name: '지은', gender: 'female', genderLabel: '여학생', ageGroup: '초등', course: '일상 영어 회화', level: '초급', freq: '주 3회', nextClass: '4월 4일 (금) 오후 2:00', memo: '발음에 자신감이 부족하지만 꾸준히 노력 중. 단어 암기 숙제 잘 해옴.', sessions: [{ title: 'Shopping Conversations', date: '2026.03.29' }, { title: 'Asking for Directions', date: '2026.03.26' }, { title: 'Daily Greetings', date: '2026.03.22' }], avatar: 'images/generated-1774946208329.png' },
+        { name: '서준', gender: 'male', genderLabel: '남학생', ageGroup: '성인', course: '비즈니스 영어', level: '중급', freq: '주 2회', nextClass: '4월 5일 (토) 오전 10:00', memo: '프레젠테이션 스킬 집중 연습 중. 이메일 작문 실력 빠르게 향상.', sessions: [{ title: 'Business Email Writing', date: '2026.03.30' }, { title: 'Meeting Presentations', date: '2026.03.27' }, { title: 'Negotiation Phrases', date: '2026.03.23' }], avatar: 'images/generated-1774422022912.png' },
+        { name: '하윤', gender: 'female', genderLabel: '여학생', ageGroup: '고등', course: '영어 독해', level: '상급', freq: '주 1회', nextClass: '4월 6일 (일) 오후 4:00', memo: '독해 속도가 빠르고 어휘력 우수. 고급 지문 위주로 수업 진행.', sessions: [{ title: 'News Article Analysis', date: '2026.03.31' }, { title: 'Short Story Reading', date: '2026.03.24' }, { title: 'Essay Comprehension', date: '2026.03.17' }], avatar: 'images/generated-1774946353478.png' },
+        { name: '도윤', gender: 'male', genderLabel: '남학생', ageGroup: '중등', course: '영문법', level: '중급', freq: '주 2회', nextClass: '4월 7일 (월) 오후 5:00', memo: '시제 파트에서 자주 실수. 문법 규칙 반복 학습 필요.', sessions: [{ title: 'Perfect Tenses', date: '2026.03.29' }, { title: 'Conditional Sentences', date: '2026.03.26' }, { title: 'Passive Voice', date: '2026.03.20' }], avatar: 'images/generated-1775007232328.png' }
+    ];
+
+    // =========================================
+    // STUDENT MANAGEMENT BOOK
+    // =========================================
+    (function initStudentBook() {
+        var overlay = document.getElementById('smbOverlay');
+        if (!overlay) return;
+
+        var smbBook = document.getElementById('smbBook');
+        var smbEmpty = document.getElementById('smbEmpty');
+        var smbSpread = document.getElementById('smbSpread');
+        var smbPages = document.getElementById('smbPages');
+        var smbNav = document.getElementById('smbNav');
+        var smbBadge = document.getElementById('smbBadge');
+        var smbAvatars = document.getElementById('smbAvatars');
+        var smbCurrent = document.getElementById('smbCurrent');
+        var smbTotal = document.getElementById('smbTotal');
+        var smbPrev = document.getElementById('smbPrev');
+        var smbNext = document.getElementById('smbNext');
+
+        var currentIdx = 0;
+        var isFlipping = false;
+
+        // Read persisted students. All students come from onboarding or ASM add.
+        var students = StudentStore.getAll() || [];
+
+        function buildPageHTML(s) {
+            var gIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+            var calIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+            var penIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
+            var linkIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+
+            var sessHTML = '';
+            s.sessions.forEach(function (ss, i) {
+                sessHTML += '<div class="smb__sess-item"><div class="smb__sess-num">' + (i + 1) + '</div><span class="smb__sess-title">' + ss.title + '</span><span class="smb__sess-date">' + ss.date + '</span></div>';
+            });
+
+            return '<div class="smb__left">' +
+                '<div class="smb__avatar-ring"><img class="smb__avatar-img" src="' + s.avatar + '" alt="' + s.name + '"><div class="smb__avatar-hint"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg></div></div>' +
+                '<h2 class="smb__student-name">' + s.name + '</h2>' +
+                '<div class="smb__badges">' +
+                    '<span class="smb__student-badge">' + gIcon + ' ' + s.genderLabel + '</span>' +
+                    '<span class="smb__student-badge smb__student-badge--age">' + s.ageGroup + '</span>' +
+                '</div>' +
+                '<div class="smb__next-class">' +
+                    '<span class="smb__nc-label">' + calIcon + ' 다음 수업</span>' +
+                    '<p class="smb__nc-date">' + s.nextClass + '</p>' +
+                '</div>' +
+                '<div class="smb__btns">' +
+                    '<button class="smb__btn smb__btn--edit">' + penIcon + ' 수업편집</button>' +
+                    '<button class="smb__btn smb__btn--link">' + linkIcon + ' 학생 페이지</button>' +
+                '</div>' +
+                '<button class="smb__btn--delete" data-delete-id="' + s.id + '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> 삭제</button>' +
+            '</div>' +
+            '<div class="smb__right">' +
+                '<h3 class="smb__info-title">학생 정보</h3>' +
+                '<div class="smb__info-grid">' +
+                    '<div class="smb__info-row">' +
+                        '<div class="smb__info-cell"><p class="smb__info-label">이름</p><p class="smb__info-value">' + s.name + '</p></div>' +
+                        '<div class="smb__info-cell"><p class="smb__info-label">과목</p><p class="smb__info-value">' + s.course + '</p></div>' +
+                    '</div>' +
+                    '<div class="smb__info-row">' +
+                        '<div class="smb__info-cell"><p class="smb__info-label">레벨</p><p class="smb__info-value">' + s.level + '</p></div>' +
+                        '<div class="smb__info-cell"><p class="smb__info-label">수업 빈도</p><p class="smb__info-value">' + s.freq + '</p></div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="smb__divider"></div>' +
+                '<p class="smb__memo-label">메모</p>' +
+                '<div class="smb__memo-box" contenteditable="true" data-student-id="' + s.id + '">' + s.memo + '</div>' +
+                '<div class="smb__divider"></div>' +
+                '<p class="smb__sess-label">수업 세션</p>' +
+                '<div class="smb__sess-list">' + sessHTML + '</div>' +
+            '</div>';
+        }
+
+        function renderBook() {
+            if (!students.length) {
+                smbEmpty.style.display = '';
+                smbSpread.style.display = 'none';
+                smbNav.style.display = 'none';
+                smbBadge.textContent = '0명';
+                smbAvatars.innerHTML = '';
+                return;
+            }
+
+            smbEmpty.style.display = 'none';
+            smbSpread.style.display = '';
+            smbNav.style.display = '';
+            smbBadge.textContent = students.length + '명';
+            smbTotal.textContent = students.length;
+
+            // Avatars
+            smbAvatars.innerHTML = students.map(function (s) {
+                return '<img class="smb__av" src="' + s.avatar + '" alt="' + s.name + '">';
+            }).join('');
+
+            // Build all pages
+            smbPages.innerHTML = '';
+            students.forEach(function (s, i) {
+                var div = document.createElement('div');
+                div.className = 'smb__page' + (i === currentIdx ? ' smb__page--active' : '');
+                div.innerHTML = buildPageHTML(s);
+                div.dataset.idx = i;
+                smbPages.appendChild(div);
+            });
+
+            updateNav();
+        }
+
+        function updateNav() {
+            smbCurrent.textContent = currentIdx + 1;
+            smbPrev.disabled = currentIdx === 0;
+            smbNext.disabled = currentIdx === students.length - 1;
+            // Highlight active avatar
+            var avs = smbAvatars.querySelectorAll('.smb__av');
+            avs.forEach(function (av, i) {
+                if (i === currentIdx) av.classList.add('smb__av--active');
+                else av.classList.remove('smb__av--active');
+            });
+        }
+
+        function flipTo(newIdx, direction) {
+            if (isFlipping || newIdx < 0 || newIdx >= students.length || newIdx === currentIdx) return;
+            isFlipping = true;
+            closeDetail();
+
+            var pages = smbPages.querySelectorAll('.smb__page');
+            var outPage = pages[currentIdx];
+            var inPage = pages[newIdx];
+
+            var outClass = direction === 'next' ? 'smb__page--turn-out-next' : 'smb__page--turn-out-prev';
+            var inClass = direction === 'next' ? 'smb__page--turn-in-next' : 'smb__page--turn-in-prev';
+
+            // Start: remove active from outgoing, show incoming underneath
+            outPage.classList.remove('smb__page--active');
+            outPage.classList.add(outClass);
+
+            inPage.classList.add(inClass);
+            inPage.style.opacity = '1';
+            inPage.style.pointerEvents = 'auto';
+
+            currentIdx = newIdx;
+            updateNav();
+
+            // Clean up after animation — prev is faster (350ms) than next (450ms)
+            var flipDuration = direction === 'prev' ? 370 : 480;
+            setTimeout(function () {
+                outPage.classList.remove(outClass);
+                outPage.style.opacity = '';
+                outPage.style.pointerEvents = '';
+                outPage.style.zIndex = '';
+
+                inPage.classList.remove(inClass);
+                inPage.classList.add('smb__page--active');
+                inPage.style.opacity = '';
+                inPage.style.pointerEvents = '';
+                inPage.style.zIndex = '';
+
+                isFlipping = false;
+            }, flipDuration);
+        }
+
+        // Avatar click navigation
+        smbAvatars.addEventListener('click', function (e) {
+            var av = e.target.closest('.smb__av');
+            if (!av) return;
+            var idx = Array.prototype.indexOf.call(smbAvatars.querySelectorAll('.smb__av'), av);
+            if (idx >= 0 && idx !== currentIdx) {
+                flipTo(idx, idx > currentIdx ? 'next' : 'prev');
+            }
+        });
+
+        // Navigation
+        smbPrev.addEventListener('click', function () { flipTo(currentIdx - 1, 'prev'); });
+        smbNext.addEventListener('click', function () { flipTo(currentIdx + 1, 'next'); });
+
+        // Keyboard navigation
+        overlay.addEventListener('keydown', function (e) {
+            if (e.key === 'ArrowLeft') flipTo(currentIdx - 1, 'prev');
+            else if (e.key === 'ArrowRight') flipTo(currentIdx + 1, 'next');
+            else if (e.key === 'Escape') hideStudentBook();
+        });
+
+        // ---- Click Detail Popup ----
+        var detailEl = document.createElement('div');
+        detailEl.className = 'smb__detail';
+        detailEl.innerHTML = '<div class="smb__detail-bg"></div><div class="smb__detail-inner"></div>';
+        smbBook.appendChild(detailEl);
+
+        function buildDetailHTML(s) {
+            var gIcon = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+            var linkIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+            var penIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
+            var checkIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+            var closeIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+            return '<button class="smb__detail-close" data-action="close-detail">' + closeIcon + '</button>' +
+                '<div class="smb__detail-glow"></div>' +
+                '<div class="smb__detail-avatar"><img src="' + s.avatar + '" alt="' + s.name + '"><div class="smb__detail-check">' + checkIcon + '</div></div>' +
+                '<div class="smb__detail-name">' + s.name + '</div>' +
+                '<div class="smb__detail-badge">' + gIcon + ' ' + s.genderLabel + '</div>' +
+                '<div class="smb__detail-cards">' +
+                    '<div class="smb__detail-card"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#2ABFBF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><span class="smb__detail-card-label">과목</span><span class="smb__detail-card-value">' + s.course + '</span></div>' +
+                    '<div class="smb__detail-card"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#F0A030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span class="smb__detail-card-label">레벨</span><span class="smb__detail-card-value">' + s.level + '</span></div>' +
+                    '<div class="smb__detail-card"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#6C63FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="smb__detail-card-label">수업 빈도</span><span class="smb__detail-card-value">' + s.freq + '</span></div>' +
+                    '<div class="smb__detail-card"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#F06292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="smb__detail-card-label">메모</span><span class="smb__detail-card-value">' + (s.memo.length > 12 ? s.memo.substring(0, 12) + '...' : s.memo) + '</span></div>' +
+                '</div>' +
+                '<div class="smb__detail-actions">' +
+                    '<button class="smb__detail-btn-primary">' + linkIcon + ' 학생 페이지</button>' +
+                    '<button class="smb__detail-btn-secondary">' + penIcon + ' 수업편집</button>' +
+                '</div>' +
+                '<svg class="smb__detail-sparkle" style="top:12%;left:18%;fill:#2ABFBF;opacity:.3" width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
+                '<svg class="smb__detail-sparkle" style="top:16%;right:15%;fill:#F0C040;opacity:.4" width="14" height="14" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
+                '<svg class="smb__detail-sparkle" style="top:38%;left:14%;fill:#2ABFBF;opacity:.25" width="10" height="10" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
+                '<svg class="smb__detail-sparkle" style="top:35%;right:12%;fill:#F0C040;opacity:.35" width="16" height="16" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>';
+        }
+
+        function openDetail(idx) {
+            var s = students[idx];
+            if (!s) return;
+            var inner = detailEl.querySelector('.smb__detail-inner');
+            inner.innerHTML = buildDetailHTML(s);
+            detailEl.classList.add('smb__detail--open');
+        }
+
+        function closeDetail() {
+            detailEl.classList.remove('smb__detail--open');
+        }
+
+        // Click avatar-ring in page to open detail
+        smbPages.addEventListener('click', function (e) {
+            var ring = e.target.closest('.smb__avatar-ring');
+            if (ring) {
+                openDetail(currentIdx);
+                return;
+            }
+        });
+
+        // Close detail
+        detailEl.addEventListener('click', function (e) {
+            if (e.target.closest('[data-action="close-detail"]')) {
+                closeDetail();
+            }
+        });
+
+        // Memo auto-save on blur
+        smbPages.addEventListener('focusout', function (e) {
+            if (e.target.classList.contains('smb__memo-box')) {
+                var sid = e.target.dataset.studentId;
+                var newMemo = e.target.textContent.trim();
+                for (var i = 0; i < students.length; i++) {
+                    if (students[i].id === sid) { students[i].memo = newMemo; break; }
+                }
+                StudentStore.saveAll(students);
+            }
+        });
+
+        // "수업편집" → close SMB
+        smbPages.addEventListener('click', function (e) {
+            if (e.target.closest('.smb__btn--edit')) { hideStudentBook(); return; }
+        });
+        detailEl.addEventListener('click', function (e) {
+            if (e.target.closest('.smb__detail-btn-secondary')) { closeDetail(); hideStudentBook(); return; }
+        });
+
+        // "학생 페이지" → deployed: open Netlify view, else: guide toast
+        function handleStudentPageClick() {
+            if (currentPublishedSlug) {
+                window.open('https://class-note-material.netlify.app/view.html?id=' + currentPublishedSlug, '_blank');
+            } else {
+                hideStudentBook();
+                var toast = document.createElement('div');
+                toast.className = 'smb-toast';
+                toast.innerHTML = '<span>상단의 <b>학생에게 공유</b> 버튼을 눌러 먼저 배포해주세요</span>';
+                document.body.appendChild(toast);
+                requestAnimationFrame(function () { toast.classList.add('smb-toast--visible'); });
+                setTimeout(function () {
+                    toast.classList.remove('smb-toast--visible');
+                    setTimeout(function () { toast.remove(); }, 300);
+                }, 3500);
+            }
+        }
+        smbPages.addEventListener('click', function (e) {
+            if (e.target.closest('.smb__btn--link')) { handleStudentPageClick(); return; }
+        });
+        detailEl.addEventListener('click', function (e) {
+            if (e.target.closest('.smb__detail-btn-primary')) { handleStudentPageClick(); return; }
+        });
+
+        // Delete student
+        smbPages.addEventListener('click', function (e) {
+            var delBtn = e.target.closest('.smb__btn--delete');
+            if (!delBtn) return;
+            var delId = delBtn.dataset.deleteId;
+            var stu = StudentStore.getById(delId);
+            if (!stu) return;
+            if (!confirm(stu.name + ' 학생을 삭제하시겠습니까?')) return;
+            students = StudentStore.remove(delId);
+            currentIdx = Math.min(currentIdx, Math.max(students.length - 1, 0));
+            renderBook();
+        });
+
+        // Open / Close
+        function showStudentBook() {
+            // Always re-read from localStorage so newly added students appear
+            students = StudentStore.getAll() || [];
+            overlay.style.display = 'flex';
+            requestAnimationFrame(function () {
+                overlay.classList.add('smb-overlay--visible');
+            });
+            currentIdx = 0;
+            renderBook();
+            overlay.focus();
+        }
+
+        function hideStudentBook() {
+            overlay.classList.remove('smb-overlay--visible');
+            setTimeout(function () { overlay.style.display = 'none'; }, 350);
+        }
+
+        // Close on backdrop click
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) hideStudentBook();
+        });
+
+        document.getElementById('smbClose').addEventListener('click', hideStudentBook);
+
+        // Sidebar button
+        var sidebarBtn = document.getElementById('btnStudentMgmt');
+        if (sidebarBtn) {
+            sidebarBtn.addEventListener('click', showStudentBook);
+        }
+
+        // Add student buttons
+        document.getElementById('smbAdd').addEventListener('click', function () {
+            hideStudentBook();
+            if (window.showAddStudentModal) window.showAddStudentModal();
+        });
+        document.getElementById('smbEmptyCta').addEventListener('click', function () {
+            hideStudentBook();
+            if (window.showAddStudentModal) window.showAddStudentModal();
+        });
+
+        // Make overlay focusable for keyboard
+        overlay.setAttribute('tabindex', '-1');
+
+        // Refresh data from localStorage and re-render
+        function refreshStudentBook() {
+            students = StudentStore.getAll() || [];
+            currentIdx = Math.min(currentIdx, Math.max(students.length - 1, 0));
+            renderBook();
+        }
+
+        // Expose
+        window.showStudentBook = showStudentBook;
+        window.refreshStudentBook = refreshStudentBook;
+    })();
 
 })();

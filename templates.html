@@ -550,6 +550,10 @@
                         <span>수업 자료 만들기</span>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m0 0l-7-7m7 7l-7 7"/></svg>
                     </button>
+                    <button class="wm__ghost-link" id="wmManage" type="button">
+                        <span>학생 관리</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m0 0l-7-7m7 7l-7 7"/></svg>
+                    </button>
                     <div class="wm__dots">
                         <span class="wm__dot"></span>
                         <span class="wm__dot wm__dot--active"></span>
@@ -597,6 +601,13 @@
                     </div>
                 </div>
                 <div class="asm__field">
+                    <label class="asm__label">성별</label>
+                    <div class="asm__pills" id="asmGender">
+                        <button class="asm__pill asm__pill--active" data-val="male" type="button">남학생</button>
+                        <button class="asm__pill" data-val="female" type="button">여학생</button>
+                    </div>
+                </div>
+                <div class="asm__field">
                     <label class="asm__label">대상</label>
                     <div class="asm__pills" id="asmLevel">
                         <button class="asm__pill" data-val="elementary" type="button">초등</button>
@@ -611,6 +622,14 @@
                         <button class="asm__pill" data-val="beginner" type="button">초급</button>
                         <button class="asm__pill asm__pill--active" data-val="intermediate" type="button">중급</button>
                         <button class="asm__pill" data-val="advanced" type="button">고급</button>
+                    </div>
+                </div>
+                <div class="asm__field">
+                    <label class="asm__label">수업 빈도</label>
+                    <div class="asm__pills" id="asmFreq">
+                        <button class="asm__pill" data-val="주 1회" type="button">주 1회</button>
+                        <button class="asm__pill asm__pill--active" data-val="주 2회" type="button">주 2회</button>
+                        <button class="asm__pill" data-val="주 3회" type="button">주 3회</button>
                     </div>
                 </div>
                 <div class="asm__hr"></div>
@@ -752,9 +771,89 @@
         </div>
     </div>
 
+    <!-- ===================== STUDENT MANAGEMENT BOOK ===================== -->
+    <div class="smb-overlay" id="smbOverlay" style="display:none">
+        <div class="smb">
+            <!-- Header -->
+            <header class="smb__header">
+                <div class="smb__header-row">
+                    <div class="smb__header-spacer"></div>
+                    <div class="smb__title-group">
+                        <svg class="smb__title-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                        <span class="smb__title">학생관리북</span>
+                        <span class="smb__badge" id="smbBadge">0명</span>
+                    </div>
+                    <div class="smb__header-actions">
+                        <button class="smb__sort-btn" id="smbSort" title="정렬">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5h10"/><path d="M11 9h7"/><path d="M11 13h4"/><path d="M3 17l3 3 3-3"/><path d="M6 18V4"/></svg>
+                        </button>
+                        <button class="smb__add-btn" id="smbAdd">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            학생 추가
+                        </button>
+                        <button class="smb__close-btn" id="smbClose" title="닫기">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="smb__avatars" id="smbAvatars"></div>
+            </header>
+
+            <!-- Book content area -->
+            <div class="smb__book" id="smbBook">
+                <!-- Empty state -->
+                <div class="smb__empty" id="smbEmpty">
+                    <div class="smb__empty-icon">
+                        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                    </div>
+                    <h3 class="smb__empty-title">아직 등록된 학생이 없어요</h3>
+                    <p class="smb__empty-sub">첫 학생을 추가하고 수업을 시작해보세요!</p>
+                    <button class="smb__empty-cta" id="smbEmptyCta">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        첫 학생 추가하기
+                    </button>
+                    <p class="smb__empty-hint">학생을 추가하면 출석, 메모, 수업 관리를<br>한 곳에서 할 수 있어요</p>
+                </div>
+
+                <!-- Spread (two-panel content) -->
+                <div class="smb__spread" id="smbSpread" style="display:none">
+                    <div class="smb__book-wrapper">
+                        <!-- Page edge layers (stacked behind) -->
+                        <div class="smb__page-edge smb__page-edge--1"></div>
+                        <div class="smb__page-edge smb__page-edge--2"></div>
+                        <div class="smb__page-edge smb__page-edge--3"></div>
+                        <!-- Main book surface -->
+                        <div class="smb__book-surface">
+                            <div class="smb__perspective">
+                                <div class="smb__pages" id="smbPages"></div>
+                            </div>
+                            <!-- Spine -->
+                            <div class="smb__spine"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page navigation -->
+            <nav class="smb__nav" id="smbNav" style="display:none">
+                <button class="smb__nav-arrow smb__nav-arrow--prev" id="smbPrev">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <div class="smb__nav-indicator">
+                    <span class="smb__nav-current" id="smbCurrent">1</span>
+                    <span class="smb__nav-slash">/</span>
+                    <span class="smb__nav-total" id="smbTotal">5</span>
+                </div>
+                <button class="smb__nav-arrow smb__nav-arrow--next" id="smbNext">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+            </nav>
+        </div>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script src="template-app.js"></script>
+    <script src="template-app.js?v=20260403d"></script>
 </body>
 </html>
