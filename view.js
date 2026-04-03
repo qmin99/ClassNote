@@ -268,24 +268,30 @@
 
                     var title = document.title.replace(' — 클래스노트', '') || 'classnote';
 
-                    // iOS Safari: anchor download; others: pdf.save
+                    // iOS Safari doesn't support <a download> or pdf.save
+                    // Open PDF in new tab so user can share/save from there
+                    var blob = pdf.output('blob');
+                    var blobUrl = URL.createObjectURL(blob);
                     if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                        var blob = pdf.output('blob');
-                        var blobUrl = URL.createObjectURL(blob);
+                        // iOS: open in new tab (user can share/save from Safari)
+                        window.location.href = blobUrl;
+                    } else if (/Android/i.test(navigator.userAgent)) {
+                        // Android: try anchor download, fallback to open
                         var a = document.createElement('a');
                         a.href = blobUrl;
                         a.download = title + '.pdf';
                         a.style.display = 'none';
                         document.body.appendChild(a);
                         a.click();
-                        setTimeout(function () { a.remove(); URL.revokeObjectURL(blobUrl); }, 1000);
+                        setTimeout(function () { a.remove(); }, 1000);
                     } else {
                         pdf.save(title + '.pdf');
+                        URL.revokeObjectURL(blobUrl);
                     }
 
                     pdfBtn.disabled = false;
                     if (printBtn) printBtn.disabled = false;
-                    showToast('PDF가 저장되었습니다');
+                    showToast('PDF가 생성되었습니다');
                     return;
                 }
 
