@@ -249,6 +249,20 @@
                 btn.style.display = 'none';
             });
 
+            // Override mobile media-query layouts to match desktop/print
+            var pdfOverride = document.createElement('style');
+            pdfOverride.id = 'pdf-capture-override';
+            pdfOverride.textContent =
+                '.view-pages .page{width:794px!important;min-width:794px!important;max-width:794px!important;height:1123px!important;min-height:1123px!important;max-height:1123px!important;padding:48px 60px!important;box-shadow:none!important;border-radius:0!important;font-size:inherit!important;transform:none!important;margin:0!important;}' +
+                '.vg{grid-template-columns:repeat(3,1fr)!important;gap:6px!important}' +
+                '.scs{grid-template-columns:1fr 1fr!important;gap:8px!important}' +
+                '.hwl{grid-template-columns:repeat(3,1fr)!important;gap:6px!important}' +
+                '.layout--compact .vg{grid-template-columns:1fr 1fr!important}' +
+                '.layout--compact .scs{grid-template-columns:1fr!important}' +
+                '.layout--compact .hwl{grid-template-columns:1fr!important}' +
+                '.layout--modern .hwl{grid-template-columns:repeat(3,1fr)!important}';
+            document.head.appendChild(pdfOverride);
+
             // Force layout reflow so getComputedStyle reads correct values
             void container.offsetHeight;
 
@@ -270,6 +284,9 @@
 
             function capturePage(idx) {
                 if (idx >= pages.length) {
+                    // Remove PDF override styles
+                    var ov = document.getElementById('pdf-capture-override');
+                    if (ov) ov.remove();
                     // Clean restore: re-render session (removes all inline hacks)
                     renderSession(currentSessionIdx);
 
