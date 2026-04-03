@@ -202,8 +202,8 @@
         return pdfLibsReady;
     }
 
-    // Recursively inline all computed styles on element tree
-    // Reads from the LIVE DOM (main window) so CSS vars are fully resolved
+    // Recursively inline VISUAL styles only (colors, fonts, borders)
+    // Skips layout props so mobile media-query overrides don't get baked in
     function inlineAllStyles(el) {
         var computed = window.getComputedStyle(el);
         var props = ['color','background-color','background-image',
@@ -212,15 +212,8 @@
             'border-top-style','border-bottom-style','border-left-style','border-right-style',
             'font-family','font-size','font-weight','font-style','line-height','letter-spacing',
             'text-decoration','text-decoration-color','text-align','text-transform',
-            'padding-top','padding-right','padding-bottom','padding-left',
-            'margin-top','margin-right','margin-bottom','margin-left',
-            'display','flex-direction','align-items','justify-content','gap','flex-wrap','flex-grow','flex-shrink',
-            'opacity','box-shadow','border-radius',
-            'overflow','overflow-x','overflow-y','white-space','word-break',
-            'grid-template-columns','grid-template-rows','column-gap','row-gap',
-            'list-style-type','vertical-align','position','top','left','right','bottom',
-            'width','height','min-width','min-height','max-width','max-height',
-            'box-sizing','outline'];
+            'box-shadow','border-radius','white-space','word-break',
+            'list-style-type'];
         for (var i = 0; i < props.length; i++) {
             var val = computed.getPropertyValue(props[i]);
             if (val) el.style.setProperty(props[i], val);
