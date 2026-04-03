@@ -235,6 +235,9 @@
         pdfBtn.disabled = true;
         if (printBtn) printBtn.disabled = true;
 
+        // iOS: pre-open window in sync click handler to avoid popup block
+        var iosWin = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? window.open('', '_blank') : null;
+
         ensurePdfLibs().then(function () {
             var pages = Array.prototype.slice.call(container.querySelectorAll('.page'));
             if (!pages.length) { pdfBtn.disabled = false; if (printBtn) printBtn.disabled = false; return; }
@@ -272,8 +275,11 @@
                     // Open PDF in new tab so user can share/save from there
                     var blob = pdf.output('blob');
                     var blobUrl = URL.createObjectURL(blob);
-                    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                        // iOS: open in new tab (user can share/save from Safari)
+                    if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && iosWin) {
+                        // iOS: use pre-opened tab (avoids popup block + stays on page)
+                        iosWin.location.href = blobUrl;
+                    } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                        // iOS fallback: navigate current page
                         window.location.href = blobUrl;
                     } else if (/Android/i.test(navigator.userAgent)) {
                         // Android: try anchor download, fallback to open
@@ -291,7 +297,11 @@
 
                     pdfBtn.disabled = false;
                     if (printBtn) printBtn.disabled = false;
-                    showToast('PDF가 생성되었습니다');
+                    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                        showToast('새 탭에서 PDF가 열렸습니다. 공유(□↑) 버튼으로 저장하세요.');
+                    } else {
+                        showToast('PDF가 저장되었습니다');
+                    }
                     return;
                 }
 
