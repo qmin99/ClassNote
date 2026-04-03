@@ -48,8 +48,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .topbar__btn--primary:hover{opacity:.85}
 .topbar__btn--publish{background:var(--ac);color:#fff}
 .topbar__btn--publish:hover{opacity:.85}
-.topbar__autosave{font-size:10px;color:var(--t4);opacity:0;transition:opacity .3s}
-.topbar__autosave--show{opacity:1}
+.topbar__autosave{font-size:10px;color:var(--t4);opacity:0;max-width:0;overflow:hidden;white-space:nowrap;transition:opacity .3s ease,max-width .35s ease}
+.topbar__autosave--show{opacity:1;max-width:120px}
 
 /* === LAYOUT === */
 .app{display:flex;margin-top:56px;height:calc(100vh - 56px)}
