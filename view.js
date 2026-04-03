@@ -297,8 +297,13 @@
                     var blob = pdf.output('blob');
                     var blobUrl = URL.createObjectURL(blob);
                     if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                        // iOS: navigate to blob URL for native PDF preview/save
-                        window.location.href = blobUrl;
+                        // iOS: use Web Share API for proper filename, fallback to blob URL
+                        var file = new File([blob], title + '.pdf', { type: 'application/pdf' });
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            navigator.share({ files: [file], title: title }).catch(function () {});
+                        } else {
+                            window.location.href = blobUrl;
+                        }
                     } else if (/Android/i.test(navigator.userAgent)) {
                         // Android: try anchor download, fallback to open
                         var a = document.createElement('a');
