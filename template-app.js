@@ -4861,6 +4861,7 @@
                     date: state.date
                 },
                 sessions: JSON.parse(JSON.stringify(course.sessions)),
+                studentBook: JSON.parse(JSON.stringify(StudentStore.getAll() || [])),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             if (currentPublishedSlug) {
@@ -4948,6 +4949,11 @@
                 }
                 // Show the latest session by default
                 state.sessionIdx = course && course.sessions ? Math.max(0, course.sessions.length - 1) : 0;
+
+                // Restore student book from Firestore
+                if (data.studentBook && data.studentBook.length) {
+                    StudentStore.saveAll(data.studentBook);
+                }
 
                 // Restore published slug
                 if (data.publishedSlug) {
@@ -5914,9 +5920,17 @@
     };
 
     // =========================================
-    // STUDENT STORE (localStorage persistence)
+    // STUDENT STORE (localStorage + Firestore sync)
     // =========================================
     var SS_KEY = 'classnote_students';
+    function _syncStudentBookToFirestore() {
+        if (!db || !currentCourseDocId) return;
+        var arr = StudentStore.getAll() || [];
+        db.collection('courses').doc(currentCourseDocId).update({
+            studentBook: JSON.parse(JSON.stringify(arr)),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(function (e) { console.error('StudentBook sync failed:', e); });
+    }
     window.StudentStore = {
         _genId: function () { return 'stu_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4); },
         getAll: function () {
@@ -5932,6 +5946,7 @@
             obj.createdAt = Date.now();
             arr.push(obj);
             this.saveAll(arr);
+            _syncStudentBookToFirestore();
             return obj;
         },
         update: function (id, fields) {
@@ -5940,10 +5955,12 @@
                 if (arr[i].id === id) { Object.assign(arr[i], fields); break; }
             }
             this.saveAll(arr);
+            _syncStudentBookToFirestore();
         },
         remove: function (id) {
             var arr = (this.getAll() || []).filter(function (s) { return s.id !== id; });
             this.saveAll(arr);
+            _syncStudentBookToFirestore();
             return arr;
         },
         getById: function (id) {
