@@ -5710,8 +5710,8 @@
             badgeText.textContent = isFemale ? '여학생' : '남학생';
             greeting.textContent = '"오늘부터 ' + nameVal + ' 학생의 여정이 시작돼요"';
             avatarImg.src = isFemale
-                ? 'images/generated-1774419137742.png'
-                : 'images/generated-1774417632961.png';
+                ? 'images/여학생2-가디건.png'
+                : 'images/남학생2-후디.png';
 
             if (isFemale) {
                 profileCard.classList.add('wm__profile-card--female');
@@ -5757,7 +5757,7 @@
             nextClass: '',
             memo: '',
             sessions: [],
-            avatar: isFemale ? 'images/generated-1774419137742.png' : 'images/generated-1774417632961.png'
+            avatar: isFemale ? 'images/여학생2-가디건.png' : 'images/남학생2-후디.png'
         });
     }
 
@@ -5887,7 +5887,7 @@
                 nextClass: '',
                 memo: '',
                 sessions: [],
-                avatar: isFemale ? 'images/generated-1774946208329.png' : 'images/generated-1774422022912.png'
+                avatar: isFemale ? 'images/여학생3-교복.png' : 'images/남학생3-카키후디.png'
             };
 
             StudentStore.add(newStudent);
@@ -5984,11 +5984,11 @@
     };
 
     var DEFAULT_STUDENTS = [
-        { name: '민수', gender: 'male', genderLabel: '남학생', ageGroup: '중등', course: '일상 영어 회화', level: '중급', freq: '주 2회', nextClass: '4월 3일 (목) 오후 3:00', memo: '감받이 좋고 적극적. 리스닝 고민 있고, 다음 수업엔 롤플레이 포커스로 갈 것.', sessions: [{ title: 'Getting Around Town', date: '2026.03.28' }, { title: 'At the Restaurant', date: '2026.03.25' }, { title: 'Meeting New People', date: '2026.03.21' }], avatar: 'images/generated-1774417632961.png' },
-        { name: '지은', gender: 'female', genderLabel: '여학생', ageGroup: '초등', course: '일상 영어 회화', level: '초급', freq: '주 3회', nextClass: '4월 4일 (금) 오후 2:00', memo: '발음에 자신감이 부족하지만 꾸준히 노력 중. 단어 암기 숙제 잘 해옴.', sessions: [{ title: 'Shopping Conversations', date: '2026.03.29' }, { title: 'Asking for Directions', date: '2026.03.26' }, { title: 'Daily Greetings', date: '2026.03.22' }], avatar: 'images/generated-1774946208329.png' },
-        { name: '서준', gender: 'male', genderLabel: '남학생', ageGroup: '성인', course: '비즈니스 영어', level: '중급', freq: '주 2회', nextClass: '4월 5일 (토) 오전 10:00', memo: '프레젠테이션 스킬 집중 연습 중. 이메일 작문 실력 빠르게 향상.', sessions: [{ title: 'Business Email Writing', date: '2026.03.30' }, { title: 'Meeting Presentations', date: '2026.03.27' }, { title: 'Negotiation Phrases', date: '2026.03.23' }], avatar: 'images/generated-1774422022912.png' },
-        { name: '하윤', gender: 'female', genderLabel: '여학생', ageGroup: '고등', course: '영어 독해', level: '상급', freq: '주 1회', nextClass: '4월 6일 (일) 오후 4:00', memo: '독해 속도가 빠르고 어휘력 우수. 고급 지문 위주로 수업 진행.', sessions: [{ title: 'News Article Analysis', date: '2026.03.31' }, { title: 'Short Story Reading', date: '2026.03.24' }, { title: 'Essay Comprehension', date: '2026.03.17' }], avatar: 'images/generated-1774946353478.png' },
-        { name: '도윤', gender: 'male', genderLabel: '남학생', ageGroup: '중등', course: '영문법', level: '중급', freq: '주 2회', nextClass: '4월 7일 (월) 오후 5:00', memo: '시제 파트에서 자주 실수. 문법 규칙 반복 학습 필요.', sessions: [{ title: 'Perfect Tenses', date: '2026.03.29' }, { title: 'Conditional Sentences', date: '2026.03.26' }, { title: 'Passive Voice', date: '2026.03.20' }], avatar: 'images/generated-1775007232328.png' }
+        { name: '민수', gender: 'male', genderLabel: '남학생', ageGroup: '중등', course: '일상 영어 회화', level: '중급', freq: '주 2회', nextClass: '4월 3일 (목) 오후 3:00', memo: '감받이 좋고 적극적. 리스닝 고민 있고, 다음 수업엔 롤플레이 포커스로 갈 것.', sessions: [{ title: 'Getting Around Town', date: '2026.03.28' }, { title: 'At the Restaurant', date: '2026.03.25' }, { title: 'Meeting New People', date: '2026.03.21' }], avatar: 'images/남학생2-후디.png' },
+        { name: '지은', gender: 'female', genderLabel: '여학생', ageGroup: '초등', course: '일상 영어 회화', level: '초급', freq: '주 3회', nextClass: '4월 4일 (금) 오후 2:00', memo: '발음에 자신감이 부족하지만 꾸준히 노력 중. 단어 암기 숙제 잘 해옴.', sessions: [{ title: 'Shopping Conversations', date: '2026.03.29' }, { title: 'Asking for Directions', date: '2026.03.26' }, { title: 'Daily Greetings', date: '2026.03.22' }], avatar: 'images/여학생3-교복.png' },
+        { name: '서준', gender: 'male', genderLabel: '남학생', ageGroup: '성인', course: '비즈니스 영어', level: '중급', freq: '주 2회', nextClass: '4월 5일 (토) 오전 10:00', memo: '프레젠테이션 스킬 집중 연습 중. 이메일 작문 실력 빠르게 향상.', sessions: [{ title: 'Business Email Writing', date: '2026.03.30' }, { title: 'Meeting Presentations', date: '2026.03.27' }, { title: 'Negotiation Phrases', date: '2026.03.23' }], avatar: 'images/남학생3-카키후디.png' },
+        { name: '하윤', gender: 'female', genderLabel: '여학생', ageGroup: '고등', course: '영어 독해', level: '상급', freq: '주 1회', nextClass: '4월 6일 (일) 오후 4:00', memo: '독해 속도가 빠르고 어휘력 우수. 고급 지문 위주로 수업 진행.', sessions: [{ title: 'News Article Analysis', date: '2026.03.31' }, { title: 'Short Story Reading', date: '2026.03.24' }, { title: 'Essay Comprehension', date: '2026.03.17' }], avatar: 'images/여학생4-민트후디.png' },
+        { name: '도윤', gender: 'male', genderLabel: '남학생', ageGroup: '중등', course: '영문법', level: '중급', freq: '주 2회', nextClass: '4월 7일 (월) 오후 5:00', memo: '시제 파트에서 자주 실수. 문법 규칙 반복 학습 필요.', sessions: [{ title: 'Perfect Tenses', date: '2026.03.29' }, { title: 'Conditional Sentences', date: '2026.03.26' }, { title: 'Passive Voice', date: '2026.03.20' }], avatar: 'images/남학생4-초등후디.png' }
     ];
 
     // =========================================
