@@ -1115,7 +1115,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
     .main{display:block;overflow:visible}
     .preview{padding:0;display:block;overflow:visible}
     .page{background:#fff;padding:48px 60px;height:1123px;min-height:1123px;max-height:1123px;overflow:hidden;box-shadow:none;width:794px;zoom:1}
-    .page--extra{page-break-before:always;margin-top:0!important;max-height:1123px;overflow:hidden}
+    .page--extra{page-break-before:auto;margin-top:0!important;max-height:1123px;overflow:hidden}
     .page-wrap{display:block}
     .p-nav{display:none}
     [contenteditable="true"]:hover,[contenteditable="true"]:focus{background:none;box-shadow:none}
