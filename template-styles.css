@@ -1114,8 +1114,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
     .app{display:block;height:auto}
     .main{display:block;overflow:visible}
     .preview{padding:0;display:block;overflow:visible}
-    .page{background:#fff;padding:48px 60px;height:297mm;min-height:0;max-height:297mm;overflow:hidden;box-shadow:none;width:210mm;zoom:1}
-    .page--extra{margin-top:0!important;max-height:297mm;overflow:hidden}
+    .page{display:flex!important;flex-direction:column;background:#fff;padding:48px 60px;height:auto;min-height:100vh;max-height:none;overflow:visible;box-shadow:none;width:100%!important;max-width:100%!important;zoom:1;page-break-after:always;page-break-inside:avoid;margin:0}
+    .page:last-child,.page-wrap>:last-child{page-break-after:auto}
+    .page--extra{margin-top:0!important}
     .page-wrap{display:block}
     .p-nav{display:none}
     [contenteditable="true"]:hover,[contenteditable="true"]:focus{background:none;box-shadow:none}
