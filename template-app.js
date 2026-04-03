@@ -6139,8 +6139,15 @@
                 return (b.date || '').localeCompare(a.date || '');
             });
             var compactCls = numbered.length > 4 ? ' smb__sess-list--compact' : '';
-            numbered.forEach(function (ss) {
-                sessHTML += '<div class="smb__sess-item" data-sess-idx="' + ss.origIdx + '" style="cursor:pointer"><div class="smb__sess-num">' + (ss.origIdx + 1) + '</div><span class="smb__sess-title">' + ss.title + '</span><span class="smb__sess-date">' + ss.date + '</span></div>';
+            // 그라데이션: 최신(위)=진한 teal → 오래된(아래)=연한 teal
+            var tealColors = ['#2ABFBF','#50CECE','#7DD4D4','#9DDFDF','#B0E4E4','#C8EDED','#DCF3F3'];
+            numbered.forEach(function (ss, pos) {
+                var bg = tealColors[Math.min(pos, tealColors.length - 1)];
+                // 날짜 0-padding
+                var dt = ss.date || '';
+                var dm = dt.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})$/);
+                if (dm) dt = dm[1] + '.' + (dm[2].length < 2 ? '0' + dm[2] : dm[2]) + '.' + (dm[3].length < 2 ? '0' + dm[3] : dm[3]);
+                sessHTML += '<div class="smb__sess-item" data-sess-idx="' + ss.origIdx + '" style="cursor:pointer"><div class="smb__sess-num" style="background:' + bg + '">' + (ss.origIdx + 1) + '</div><span class="smb__sess-title">' + ss.title + '</span><span class="smb__sess-date">' + dt + '</span></div>';
             });
 
             return '<div class="smb__left">' +
