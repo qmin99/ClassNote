@@ -6330,12 +6330,14 @@
                     '<button class="smb__detail-btn-primary">' + linkIcon + ' 학생 페이지</button>' +
                     '<button class="smb__detail-btn-secondary">' + penIcon + ' 수업편집</button>' +
                 '</div>' +
-                /* Sparkle decorations — matching Pencil positions */
-                '<svg class="smb__detail-sparkle" style="top:16%;left:31%;fill:#2ABFBF;opacity:.3" width="22" height="22" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
-                '<svg class="smb__detail-sparkle" style="top:19%;right:28%;fill:#F0C040;opacity:.4" width="16" height="16" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
-                '<svg class="smb__detail-sparkle" style="top:39%;left:28%;fill:#2ABFBF;opacity:.25" width="12" height="12" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
-                '<svg class="smb__detail-sparkle" style="top:37%;right:25%;fill:#F0C040;opacity:.35" width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
-                '<svg class="smb__detail-sparkle" style="top:30%;left:25%;fill:#2ABFBF;opacity:.2" width="14" height="14" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>';
+                /* Sparkle decorations — refined positions and sizes */
+                '<svg class="smb__detail-sparkle" style="top:14%;left:32%;fill:#2ABFBF;opacity:.22" width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
+                '<svg class="smb__detail-sparkle" style="top:18%;right:30%;fill:#F0C040;opacity:.3" width="14" height="14" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
+                '<svg class="smb__detail-sparkle" style="top:38%;left:29%;fill:#2ABFBF;opacity:.18" width="10" height="10" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
+                '<svg class="smb__detail-sparkle" style="top:36%;right:27%;fill:#F0C040;opacity:.25" width="13" height="13" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
+                '<svg class="smb__detail-sparkle" style="top:28%;left:26%;fill:#2ABFBF;opacity:.15" width="11" height="11" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
+                '<svg class="smb__detail-sparkle" style="top:10%;left:44%;fill:#F0C040;opacity:.2" width="8" height="8" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
+                '<svg class="smb__detail-sparkle" style="top:9%;right:40%;fill:#2ABFBF;opacity:.16" width="9" height="9" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>';
         }
 
         function openDetail(idx) {
