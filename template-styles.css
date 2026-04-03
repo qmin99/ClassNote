@@ -1118,7 +1118,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
     .page:last-child,.page-wrap>:last-child{page-break-after:auto}
     .page--extra{margin-top:0!important}
     .page-wrap{display:block}
-    .p-nav{display:none}
+    .p-nav,.p-page-num{display:none!important}
     [contenteditable="true"]:hover,[contenteditable="true"]:focus{background:none;box-shadow:none}
     body{orphans:2;widows:2}
     .pl,.vi,.sc,.hwl li,.cb,.ptb{box-shadow:none}
