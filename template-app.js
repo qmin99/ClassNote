@@ -6303,31 +6303,39 @@
         smbBook.appendChild(detailEl);
 
         function buildDetailHTML(s) {
-            var gIcon = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-            var linkIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
-            var penIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
-            var checkIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-            var closeIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+            var gIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+            var linkIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+            var penIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 113 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
+            var checkIcon = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+            var closeIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 
             return '<button class="smb__detail-close" data-action="close-detail">' + closeIcon + '</button>' +
+                /* Book background + spine */
+                '<div class="smb__detail-book"></div>' +
+                '<div class="smb__detail-spine"></div>' +
+                /* Avatar glow + ring */
                 '<div class="smb__detail-glow"></div>' +
                 '<div class="smb__detail-avatar"><img src="' + s.avatar + '" alt="' + s.name + '"><div class="smb__detail-check">' + checkIcon + '</div></div>' +
                 '<div class="smb__detail-name">' + s.name + '</div>' +
                 '<div class="smb__detail-badge">' + gIcon + ' ' + s.genderLabel + '</div>' +
+                /* Cards — absolute positioned at 4 corners */
                 '<div class="smb__detail-cards">' +
-                    '<div class="smb__detail-card"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#2ABFBF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><span class="smb__detail-card-label">과목</span><span class="smb__detail-card-value">' + s.course + '</span></div>' +
-                    '<div class="smb__detail-card"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#F0A030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span class="smb__detail-card-label">레벨</span><span class="smb__detail-card-value">' + s.level + '</span></div>' +
-                    '<div class="smb__detail-card"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#6C63FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="smb__detail-card-label">수업 빈도</span><span class="smb__detail-card-value">' + s.freq + '</span></div>' +
-                    '<div class="smb__detail-card"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#F06292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="smb__detail-card-label">메모</span><span class="smb__detail-card-value">' + (s.memo.length > 12 ? s.memo.substring(0, 12) + '...' : s.memo) + '</span></div>' +
+                    '<div class="smb__detail-card smb__detail-card--tl"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#2ABFBF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><span class="smb__detail-card-label">과목</span><span class="smb__detail-card-value">' + s.course + '</span></div>' +
+                    '<div class="smb__detail-card smb__detail-card--tr"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#F0A030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span class="smb__detail-card-label">레벨</span><span class="smb__detail-card-value">' + s.level + '</span></div>' +
+                    '<div class="smb__detail-card smb__detail-card--bl"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#6C63FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="smb__detail-card-label">수업 빈도</span><span class="smb__detail-card-value">' + s.freq + '</span></div>' +
+                    '<div class="smb__detail-card smb__detail-card--br"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#F06292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="smb__detail-card-label">메모</span><span class="smb__detail-card-value">' + (s.memo.length > 12 ? s.memo.substring(0, 12) + '...' : s.memo) + '</span></div>' +
                 '</div>' +
+                /* Action buttons */
                 '<div class="smb__detail-actions">' +
                     '<button class="smb__detail-btn-primary">' + linkIcon + ' 학생 페이지</button>' +
                     '<button class="smb__detail-btn-secondary">' + penIcon + ' 수업편집</button>' +
                 '</div>' +
-                '<svg class="smb__detail-sparkle" style="top:12%;left:18%;fill:#2ABFBF;opacity:.3" width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
-                '<svg class="smb__detail-sparkle" style="top:16%;right:15%;fill:#F0C040;opacity:.4" width="14" height="14" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
-                '<svg class="smb__detail-sparkle" style="top:38%;left:14%;fill:#2ABFBF;opacity:.25" width="10" height="10" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
-                '<svg class="smb__detail-sparkle" style="top:35%;right:12%;fill:#F0C040;opacity:.35" width="16" height="16" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>';
+                /* Sparkle decorations — matching Pencil positions */
+                '<svg class="smb__detail-sparkle" style="top:16%;left:31%;fill:#2ABFBF;opacity:.3" width="22" height="22" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
+                '<svg class="smb__detail-sparkle" style="top:19%;right:28%;fill:#F0C040;opacity:.4" width="16" height="16" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
+                '<svg class="smb__detail-sparkle" style="top:39%;left:28%;fill:#2ABFBF;opacity:.25" width="12" height="12" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
+                '<svg class="smb__detail-sparkle" style="top:37%;right:25%;fill:#F0C040;opacity:.35" width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>' +
+                '<svg class="smb__detail-sparkle" style="top:30%;left:25%;fill:#2ABFBF;opacity:.2" width="14" height="14" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 10l-6.09 1.74L12 18l-2.09-6.26L3.82 10l6.09-1.74z"/></svg>';
         }
 
         function openDetail(idx) {

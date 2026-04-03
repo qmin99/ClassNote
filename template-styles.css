@@ -2453,57 +2453,98 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .smb__nav-slash{font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#B0BEC5}
 .smb__nav-total{font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:500;color:#94A3AF}
 
-/* Click detail overlay */
-.smb__detail{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s ease}
+/* Click detail overlay — Pencil pixel-perfect */
+.smb__detail{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .35s ease}
 .smb__detail--open{opacity:1;pointer-events:auto}
 .smb__detail-bg{position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,#E8FAFA,#D0F0F0 50%,#B8E8E8);border-radius:8px;overflow:hidden}
-.smb__detail-inner{position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.smb__detail-close{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:18px;border:none;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);z-index:5;transition:transform .15s}
-.smb__detail-close:hover{transform:scale(1.08)}
-.smb__detail-close svg{width:16px;height:16px;color:#6B8A8A}
+.smb__detail-inner{position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center}
 
-/* Avatar area */
-.smb__detail-glow{position:absolute;top:8%;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(42,191,191,.12),transparent 70%)}
-.smb__detail-avatar{width:180px;height:180px;border-radius:50%;padding:4px;background:linear-gradient(135deg,#2ABFBF,#1A8F8F);box-shadow:0 12px 30px rgba(42,191,191,.25),0 6px 12px rgba(0,0,0,.08);margin-top:-20px;position:relative;z-index:2}
+/* Close button — 40×40 per Pencil */
+.smb__detail-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:20px;border:none;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);z-index:5;transition:transform .15s,box-shadow .15s}
+.smb__detail-close:hover{transform:scale(1.08);box-shadow:0 4px 14px rgba(0,0,0,.1)}
+.smb__detail-close svg{width:18px;height:18px;color:#8A9A9A}
+
+/* Avatar glow — 280×280 radial teal */
+.smb__detail-glow{position:absolute;top:10%;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(42,191,191,.12),transparent 70%);z-index:1}
+
+/* Avatar ring — 220×220, gradient border, triple shadow */
+.smb__detail-avatar{width:220px;height:220px;border-radius:50%;padding:5px;background:linear-gradient(135deg,#2ABFBF,#1A8F8F);box-shadow:0 12px 30px rgba(42,191,191,.25),0 6px 12px rgba(0,0,0,.08),0 20px 50px rgba(10,61,61,.06);margin-top:10%;position:relative;z-index:2}
 .smb__detail-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
-.smb__detail-check{position:absolute;bottom:-4px;right:-4px;width:36px;height:36px;border-radius:50%;background:#22C55E;border:3px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(34,197,94,.25);z-index:3}
-.smb__detail-check svg{width:18px;height:18px;color:#fff}
-.smb__detail-name{font-family:'Noto Sans KR',sans-serif;font-size:36px;font-weight:900;color:#1A3A3A;letter-spacing:-1px;margin:10px 0 4px;position:relative;z-index:2}
-.smb__detail-badge{display:flex;align-items:center;gap:6px;padding:5px 14px;border-radius:18px;background:#fff;box-shadow:0 3px 10px rgba(0,0,0,.06);font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:600;color:#2ABFBF;position:relative;z-index:2}
-.smb__detail-badge svg{width:13px;height:13px}
 
-/* Info cards */
-.smb__detail-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:460px;padding:0 24px;margin-top:20px;position:relative;z-index:2}
-.smb__detail-card{display:flex;flex-direction:column;align-items:center;gap:5px;padding:16px 12px;border-radius:14px;background:#fff;box-shadow:0 4px 16px rgba(10,61,61,.06),0 1px 3px rgba(0,0,0,.02);transition:transform .2s}
-.smb__detail-card:hover{transform:translateY(-2px)}
-.smb__detail-card-icon{width:24px;height:24px}
-.smb__detail-card-label{font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:600;color:#8A9A9A}
-.smb__detail-card-value{font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;color:#1A3A3A;text-align:center}
+/* Check badge — 44×44, outside stroke 3px */
+.smb__detail-check{position:absolute;bottom:0;right:0;width:44px;height:44px;border-radius:50%;background:#22C55E;border:3px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(34,197,94,.25);z-index:3}
+.smb__detail-check svg{width:22px;height:22px;color:#fff}
 
-/* Action buttons */
-.smb__detail-actions{display:flex;gap:10px;margin-top:22px;position:relative;z-index:2}
-.smb__detail-btn-primary{display:flex;align-items:center;gap:6px;height:44px;padding:0 28px;border-radius:22px;border:none;background:linear-gradient(135deg,#2ABFBF,#1FA3A3);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(42,191,191,.25);transition:transform .15s}
-.smb__detail-btn-primary:hover{transform:translateY(-1px)}
-.smb__detail-btn-primary svg{width:14px;height:14px}
-.smb__detail-btn-secondary{display:flex;align-items:center;gap:6px;height:44px;padding:0 28px;border-radius:22px;border:1.5px solid rgba(42,191,191,.35);background:#fff;color:#2ABFBF;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.03);transition:transform .15s}
-.smb__detail-btn-secondary:hover{transform:translateY(-1px)}
-.smb__detail-btn-secondary svg{width:14px;height:14px}
+/* Name — 44px weight 900 */
+.smb__detail-name{font-family:'Noto Sans KR',sans-serif;font-size:44px;font-weight:900;color:#1A3A3A;letter-spacing:-1px;margin:8px 0 4px;position:relative;z-index:2}
+
+/* Gender badge — pill, white bg, teal text */
+.smb__detail-badge{display:flex;align-items:center;gap:6px;padding:6px 16px;border-radius:20px;background:#fff;box-shadow:0 3px 10px rgba(0,0,0,.06);font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:600;color:#2ABFBF;position:relative;z-index:2}
+.smb__detail-badge svg{width:14px;height:14px}
+
+/* Info cards — absolute positioned, symmetric around center */
+.smb__detail-cards{position:absolute;inset:0;z-index:3;pointer-events:none}
+.smb__detail-card{position:absolute;display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px 24px;border-radius:16px;background:#fff;width:150px;box-shadow:0 8px 20px rgba(10,61,61,.07),0 2px 6px rgba(0,0,0,.02);pointer-events:auto;transition:transform .2s,box-shadow .2s;cursor:default}
+.smb__detail-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(10,61,61,.1),0 4px 8px rgba(0,0,0,.04)}
+.smb__detail-card--tl{top:18%;left:5%}
+.smb__detail-card--tr{top:18%;right:5%}
+.smb__detail-card--bl{top:52%;left:5%}
+.smb__detail-card--br{top:52%;right:5%}
+.smb__detail-card-icon{width:28px;height:28px}
+.smb__detail-card-label{font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:600;color:#8A9A9A}
+.smb__detail-card-value{font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;color:#1A3A3A;text-align:center}
+
+/* Book background — white 35% opacity */
+.smb__detail-book{position:absolute;top:47%;left:50%;transform:translate(-50%,0);width:58%;height:38%;background:#fff;opacity:.35;border-radius:10px;box-shadow:0 8px 24px rgba(10,61,61,.07);z-index:0}
+.smb__detail-spine{position:absolute;top:47%;left:50%;transform:translateX(-50%);width:4px;height:38%;background:linear-gradient(180deg,rgba(0,0,0,.09),rgba(0,0,0,.02) 50%,rgba(0,0,0,.09));z-index:1}
+
+/* Action buttons — 48px height, 200px width, radius 24 */
+.smb__detail-actions{display:flex;gap:12px;margin-top:auto;margin-bottom:8%;position:relative;z-index:4}
+.smb__detail-btn-primary{display:flex;align-items:center;justify-content:center;gap:6px;height:48px;width:200px;border-radius:24px;border:none;background:linear-gradient(135deg,#2ABFBF,#1FA3A3);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(42,191,191,.25),0 2px 4px rgba(0,0,0,.03);transition:transform .15s,box-shadow .15s}
+.smb__detail-btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(42,191,191,.3)}
+.smb__detail-btn-primary svg{width:16px;height:16px}
+.smb__detail-btn-secondary{display:flex;align-items:center;justify-content:center;gap:6px;height:48px;width:200px;border-radius:24px;border:1.5px solid rgba(42,191,191,.31);background:#fff;color:#2ABFBF;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.03);transition:transform .15s,box-shadow .15s}
+.smb__detail-btn-secondary:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.06)}
+.smb__detail-btn-secondary svg{width:16px;height:16px}
 
 /* Sparkle decorations */
 .smb__detail-sparkle{position:absolute;pointer-events:none;z-index:1}
 
-/* Detail open animation */
-.smb__detail--open .smb__detail-avatar{animation:smbDetailPop .4s cubic-bezier(.34,1.56,.64,1) both}
-.smb__detail--open .smb__detail-name{animation:smbDetailFadeUp .35s .1s cubic-bezier(.16,1,.3,1) both}
-.smb__detail--open .smb__detail-badge{animation:smbDetailFadeUp .35s .15s cubic-bezier(.16,1,.3,1) both}
-.smb__detail--open .smb__detail-cards{animation:smbDetailFadeUp .4s .2s cubic-bezier(.16,1,.3,1) both}
-.smb__detail--open .smb__detail-actions{animation:smbDetailFadeUp .4s .3s cubic-bezier(.16,1,.3,1) both}
+/* Detail open animations — staggered entrance */
+.smb__detail--open .smb__detail-glow{animation:smbGlowPulse 2s ease-in-out infinite alternate}
+.smb__detail--open .smb__detail-avatar{animation:smbDetailPop .5s cubic-bezier(.34,1.56,.64,1) both}
+.smb__detail--open .smb__detail-check{animation:smbCheckPop .3s .35s cubic-bezier(.34,1.56,.64,1) both}
+.smb__detail--open .smb__detail-name{animation:smbDetailFadeUp .4s .12s cubic-bezier(.16,1,.3,1) both}
+.smb__detail--open .smb__detail-badge{animation:smbDetailFadeUp .4s .18s cubic-bezier(.16,1,.3,1) both}
+.smb__detail--open .smb__detail-card--tl{animation:smbCardSlide .45s .15s cubic-bezier(.16,1,.3,1) both}
+.smb__detail--open .smb__detail-card--tr{animation:smbCardSlide .45s .2s cubic-bezier(.16,1,.3,1) both}
+.smb__detail--open .smb__detail-card--bl{animation:smbCardSlide .45s .25s cubic-bezier(.16,1,.3,1) both}
+.smb__detail--open .smb__detail-card--br{animation:smbCardSlide .45s .3s cubic-bezier(.16,1,.3,1) both}
+.smb__detail--open .smb__detail-actions{animation:smbDetailFadeUp .45s .35s cubic-bezier(.16,1,.3,1) both}
+.smb__detail--open .smb__detail-book{animation:smbDetailFadeIn .5s .1s ease both}
+.smb__detail--open .smb__detail-spine{animation:smbDetailFadeIn .5s .1s ease both}
 
 @keyframes smbDetailPop{
-    0%{opacity:0;transform:scale(.7) translateY(20px)}
+    0%{opacity:0;transform:scale(.6) translateY(30px)}
     100%{opacity:1;transform:scale(1) translateY(0)}
 }
+@keyframes smbCheckPop{
+    0%{opacity:0;transform:scale(0)}
+    100%{opacity:1;transform:scale(1)}
+}
 @keyframes smbDetailFadeUp{
-    0%{opacity:0;transform:translateY(12px)}
+    0%{opacity:0;transform:translateY(16px)}
     100%{opacity:1;transform:translateY(0)}
+}
+@keyframes smbCardSlide{
+    0%{opacity:0;transform:translateY(20px) scale(.9)}
+    100%{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes smbDetailFadeIn{
+    0%{opacity:0}
+    100%{opacity:1}
+}
+@keyframes smbGlowPulse{
+    0%{transform:scale(1);opacity:1}
+    100%{transform:scale(1.08);opacity:.7}
 }
