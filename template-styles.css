@@ -1114,7 +1114,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
     .app{display:block;height:auto}
     .main{display:block;overflow:visible}
     .preview{padding:0;display:block;overflow:visible}
-    .page{background:#fff;padding:48px 60px;height:1123px;min-height:1123px;max-height:1123px;overflow:hidden;box-shadow:none;width:794px;zoom:1}
+    .page{background:#fff;padding:48px 60px;height:1123px;min-height:1123px;max-height:1123px;overflow:hidden;box-shadow:none;width:794px;zoom:1;page-break-after:always}
+    .page-wrap>:last-child{page-break-after:auto}
     .page--extra{page-break-before:auto;margin-top:0!important;max-height:1123px;overflow:hidden}
     .page-wrap{display:block}
     .p-nav{display:none}
