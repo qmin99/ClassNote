@@ -283,6 +283,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .cbar__input{padding:5px 10px;border:1.5px solid var(--bd);border-radius:6px;font-family:var(--font);font-size:12px;width:100px;background:var(--white);color:var(--text);outline:none;transition:border-color .15s}
 .cbar__input:focus{border-color:var(--ac)}
 .cbar__input--date{width:130px}
+.cbar__save-btn{padding:4px 14px;border:none;border-radius:6px;background:var(--ac);color:#fff;font-size:11px;font-weight:600;font-family:var(--font);cursor:pointer;transition:opacity .15s;white-space:nowrap}
+.cbar__save-btn:hover{opacity:.85}
+.cbar__save-btn--saved{background:var(--t4);pointer-events:none}
 .cbar__sep{width:1px;height:22px;background:var(--bd)}
 
 /* theme dots */

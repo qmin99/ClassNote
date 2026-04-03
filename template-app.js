@@ -4559,35 +4559,53 @@
         }
     });
 
-    // --- A2: Ctrl+S / Cmd+S instant save ---
+    // --- 즉시 저장 (버튼 + Ctrl+S 공용) ---
+    function doInstantSave() {
+        clearTimeout(autosaveTimer);
+        syncEditablesToSession();
+        var course = getCourse();
+        var session = getSession();
+        if (!course || !session) return;
+        try {
+            var key = 'classnote_autosave_' + state.courseId + '_' + state.sessionIdx;
+            localStorage.setItem(key, JSON.stringify({
+                session: session,
+                teacherName: state.teacherName,
+                studentName: state.studentName,
+                date: state.date,
+                theme: state.theme,
+                ts: Date.now()
+            }));
+        } catch (ex) {}
+        saveCourseToFirestore(true);
+        // 저장 버튼 피드백
+        var saveBtn = document.getElementById('saveBtn');
+        if (saveBtn) {
+            saveBtn.textContent = '저장됨';
+            saveBtn.classList.add('cbar__save-btn--saved');
+            setTimeout(function () {
+                saveBtn.textContent = '저장';
+                saveBtn.classList.remove('cbar__save-btn--saved');
+            }, 2000);
+        }
+        if (autosaveEl) {
+            autosaveEl.textContent = '저장됨';
+            autosaveEl.classList.add('topbar__autosave--show');
+            setTimeout(function () {
+                autosaveEl.classList.remove('topbar__autosave--show');
+            }, 2000);
+        }
+    }
+
+    // 저장 버튼 클릭
+    var saveBtnEl = document.getElementById('saveBtn');
+    if (saveBtnEl) saveBtnEl.addEventListener('click', doInstantSave);
+
+    // Ctrl+S / Cmd+S
     document.addEventListener('keydown', function (e) {
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
             e.preventDefault();
-            clearTimeout(autosaveTimer);
-            syncEditablesToSession();
-            var course = getCourse();
-            var session = getSession();
-            if (!course || !session) return;
-            try {
-                var key = 'classnote_autosave_' + state.courseId + '_' + state.sessionIdx;
-                localStorage.setItem(key, JSON.stringify({
-                    session: session,
-                    teacherName: state.teacherName,
-                    studentName: state.studentName,
-                    date: state.date,
-                    theme: state.theme,
-                    ts: Date.now()
-                }));
-            } catch (ex) {}
-            if (autosaveEl) {
-                autosaveEl.textContent = '저장됨';
-                autosaveEl.classList.add('topbar__autosave--show');
-                setTimeout(function () {
-                    autosaveEl.classList.remove('topbar__autosave--show');
-                }, 2000);
-            }
-            // Ctrl+S → Firestore도 즉시 저장
-            saveCourseToFirestore(true);
+            doInstantSave();
         }
     });
 
