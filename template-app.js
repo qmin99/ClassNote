@@ -4908,7 +4908,24 @@
                     date: state.date
                 },
                 sessions: JSON.parse(JSON.stringify(course.sessions)),
-                studentBook: JSON.parse(JSON.stringify(StudentStore.getAll() || [])),
+                studentBook: (function () {
+                    // 코스 세션 → studentBook 세션 자동 동기화
+                    var all = StudentStore.getAll() || [];
+                    if (course.sessions && course.sessions.length && all.length) {
+                        var synced = course.sessions.map(function (ss) {
+                            return { title: ss.title || '', date: (ss._date || '').replace(/년\s*/g, '.').replace(/월\s*/g, '.').replace(/일/, '') };
+                        });
+                        // studentName과 매칭되는 학생에게 세션 동기화
+                        for (var si = 0; si < all.length; si++) {
+                            if (all[si].name === state.studentName) {
+                                all[si].sessions = synced;
+                                break;
+                            }
+                        }
+                        StudentStore.saveAll(all);
+                    }
+                    return JSON.parse(JSON.stringify(all));
+                })(),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             if (currentPublishedSlug) {
@@ -6111,7 +6128,11 @@
             var linkIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
 
             var sessHTML = '';
-            s.sessions.forEach(function (ss, i) {
+            // 날짜 오름차순 정렬 (오래된 수업 = 1번)
+            var sorted = s.sessions.slice().sort(function (a, b) {
+                return (a.date || '').localeCompare(b.date || '');
+            });
+            sorted.forEach(function (ss, i) {
                 sessHTML += '<div class="smb__sess-item"><div class="smb__sess-num">' + (i + 1) + '</div><span class="smb__sess-title">' + ss.title + '</span><span class="smb__sess-date">' + ss.date + '</span></div>';
             });
 

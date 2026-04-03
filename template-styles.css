@@ -2390,7 +2390,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
     border-radius:0 8px 8px 0;
     padding:24px 22px;
     display:flex;flex-direction:column;gap:14px;
-    overflow-y:auto;
+    overflow:hidden;
     position:relative
 }
 .smb__right::-webkit-scrollbar{width:3px}
