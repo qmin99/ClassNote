@@ -239,10 +239,11 @@
             var pages = Array.prototype.slice.call(container.querySelectorAll('.page'));
             if (!pages.length) { pdfBtn.disabled = false; if (printBtn) printBtn.disabled = false; return; }
 
-            // Show ALL pages and force A4 desktop layout
+            // Show ALL pages, kill animations, force A4 desktop layout
             viewState.pages.forEach(function (pg) { pg.style.display = ''; });
             pages.forEach(function (pg) {
-                pg.style.cssText = 'display:flex !important;flex-direction:column;width:794px !important;min-width:794px !important;max-width:794px !important;height:1123px !important;min-height:1123px !important;max-height:1123px !important;padding:48px 60px !important;margin:0;zoom:1 !important;transform:none !important;overflow:hidden;box-sizing:border-box;background:#fff;';
+                pg.classList.remove('page--enter');
+                pg.style.cssText = 'display:flex !important;flex-direction:column;width:794px !important;min-width:794px !important;max-width:794px !important;height:1123px !important;min-height:1123px !important;max-height:1123px !important;padding:48px 60px !important;margin:0;zoom:1 !important;transform:none !important;overflow:hidden;box-sizing:border-box;background:#fff;animation:none !important;opacity:1 !important;';
             });
 
             // Reveal all hidden Korean translations for PDF capture
