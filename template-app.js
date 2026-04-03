@@ -4529,7 +4529,34 @@
         if (e.target.closest('.page') || e.target.closest('.cbar') || e.target.closest('.sidebar')) hasEdited = true;
     });
     window.addEventListener('beforeunload', function (e) {
-        if (hasEdited) { e.preventDefault(); e.returnValue = ''; }
+        if (hasEdited) {
+            e.preventDefault(); e.returnValue = '';
+            // 탭 닫기/새로고침 직전 즉시 저장 시도
+            syncEditablesToSession();
+            var course = getCourse();
+            var session = getSession();
+            if (course && session) {
+                try {
+                    var key = 'classnote_autosave_' + state.courseId + '_' + state.sessionIdx;
+                    localStorage.setItem(key, JSON.stringify({
+                        session: session,
+                        teacherName: state.teacherName,
+                        studentName: state.studentName,
+                        date: state.date,
+                        theme: state.theme,
+                        ts: Date.now()
+                    }));
+                } catch (ex) {}
+            }
+            saveCourseToFirestore(true);
+        }
+    });
+    // 탭 전환 시 즉시 저장
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden && hasEdited) {
+            syncEditablesToSession();
+            saveCourseToFirestore(true);
+        }
     });
 
     // --- A2: Ctrl+S / Cmd+S instant save ---
@@ -4559,6 +4586,8 @@
                     autosaveEl.classList.remove('topbar__autosave--show');
                 }, 2000);
             }
+            // Ctrl+S → Firestore도 즉시 저장
+            saveCourseToFirestore(true);
         }
     });
 
@@ -5757,7 +5786,7 @@
             nextClass: '',
             memo: '',
             sessions: [],
-            avatar: isFemale ? 'images/여학생2-가디건.png' : 'images/남학생2-후디.png'
+            avatar: _pickAvatar(gender, LEVEL_LABELS[obState.level] || '중등')
         });
     }
 
@@ -5887,7 +5916,7 @@
                 nextClass: '',
                 memo: '',
                 sessions: [],
-                avatar: isFemale ? 'images/여학생3-교복.png' : 'images/남학생3-카키후디.png'
+                avatar: _pickAvatar(gender, activeAge ? ageMap[activeAge.dataset.val] || '성인' : '성인')
             };
 
             StudentStore.add(newStudent);
@@ -5918,6 +5947,47 @@
     window.showAddStudentModal = function () {
         if (asmOverlay) asmOverlay.style.display = '';
     };
+
+    // =========================================
+    // AVATAR PICKER (ageGroup + gender aware)
+    // =========================================
+    var AVATARS_MALE = [
+        'images/남학생1-정장.png',
+        'images/남학생2-후디.png',
+        'images/남학생3-카키후디.png',
+        'images/남학생4-초등후디.png'
+    ];
+    var AVATARS_FEMALE = [
+        'images/여학생1-초등.png',
+        'images/여학생2-가디건.png',
+        'images/여학생3-교복.png',
+        'images/여학생4-민트후디.png'
+    ];
+    // 성인 부적합: 애기 느낌 or 교복
+    var ADULT_EXCLUDE_MALE = ['images/남학생4-초등후디.png'];
+    var ADULT_EXCLUDE_FEMALE = ['images/여학생1-초등.png', 'images/여학생3-교복.png'];
+
+    function _pickAvatar(gender, ageGroup) {
+        var isFemale = gender === 'female';
+        var pool = isFemale ? AVATARS_FEMALE.slice() : AVATARS_MALE.slice();
+        var isAdult = ageGroup === '성인';
+
+        // 성인이면 부적합 아바타 제외
+        if (isAdult) {
+            var exclude = isFemale ? ADULT_EXCLUDE_FEMALE : ADULT_EXCLUDE_MALE;
+            pool = pool.filter(function (a) {
+                return exclude.indexOf(a) === -1;
+            });
+        }
+
+        // 기존 학생들이 쓰는 아바타 확인해서 안 겹치는 걸로
+        var existing = (window.StudentStore && window.StudentStore.getAll()) || [];
+        var used = existing.map(function (s) { return s.avatar; });
+        var unused = pool.filter(function (a) { return used.indexOf(a) === -1; });
+
+        if (unused.length > 0) return unused[0];
+        return pool[0]; // 다 쓰이면 첫 번째
+    }
 
     // =========================================
     // STUDENT STORE (localStorage + Firestore sync)
