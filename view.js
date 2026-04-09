@@ -695,7 +695,7 @@
             var ph = el.querySelector('.prb__placeholder');
             if (!ans) return;
 
-            el.style.cursor = 'pointer';
+            el.style.cursor = 'default';
             el.addEventListener('click', function () {
                 var isHidden = ans.classList.contains('prb__ans--hidden');
                 ans.classList.toggle('prb__ans--hidden', !isHidden);
