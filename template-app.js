@@ -2130,7 +2130,8 @@
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
                 h += '<div class="prb__h"><div class="prb__n">' + (i + 1) + '</div>';
                 h += '<div class="prb__q"' + E + '>' + item.q + '</div></div>';
-                h += '<div class="prb__a"' + E + '>영어로 작성</div></div>';
+                var ans = item.a ? ' data-answer="' + item.a.replace(/"/g, '&quot;') + '"' : '';
+                h += '<div class="prb__a"' + E + ans + '>영어로 작성</div></div>';
             });
             h += crudAdd('writing-prb', wr.length) + '</div>';
         }
@@ -3083,7 +3084,7 @@
         homework: function (el) { return { title: _ct(el, '.hw__t'), desc: _ct(el, '.hw__d') }; },
         'eng-compare': function (el) { return { title: _ct(el, '.sc__t'), desc: _ct(el, '.sc__p') }; },
         fillblank: function (el) { return { q: _ct(el, '.prb__q') }; },
-        'writing-prb': function (el) { return { q: _ct(el, '.prb__q') }; },
+        'writing-prb': function (el) { var o = { q: _ct(el, '.prb__q') }; var aEl = el.querySelector('.prb__a'); if (aEl && aEl.dataset.answer) o.a = aEl.dataset.answer; return o; },
         translate: function (el) { return { q: _ct(el, '.prb__q') }; },
         'structure-q': function (el) { return { q: _ct(el, '.prb__q') }; },
         truefalse: function (el) { return { q: _ct(el, '.prb__q') }; },

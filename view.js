@@ -459,7 +459,11 @@
 
     // --- Strip interactive/dangerous elements from HTML ---
     function stripInteractive(html) {
-        html = html.replace(/<div class="prb__a"[^>]*>영어로 작성<\/div>/g, '<div class="prb__a prb__a--student"></div>');
+        html = html.replace(/<div class="prb__a"([^>]*)>영어로 작성<\/div>/g, function(m, attrs) {
+            var ansMatch = attrs.match(/data-answer="([^"]*)"/);
+            var ans = ansMatch ? ansMatch[1] : '';
+            return '<div class="prb__a prb__a--student"' + (ans ? ' data-answer="' + ans + '"' : '') + '><span class="prb__placeholder">영어로 작성</span>' + (ans ? '<span class="prb__ans prb__ans--hidden">' + ans + '</span>' : '') + '</div>';
+        });
         html = html.replace(/ contenteditable="true"/g, '');
         html = html.replace(/<button[^>]*class="crud-[^"]*"[^>]*>.*?<\/button>/gs, '');
         html = html.replace(/<div[^>]*class="crud-row"[^>]*>[\s\S]*?<\/div>/g, '');
@@ -649,6 +653,7 @@
 
         // Hide Korean translations and add toggle buttons
         setupKoToggle();
+        setupWritingToggle();
 
         // Build session dropdown + page nav
         buildSessionDropdown();
@@ -679,6 +684,35 @@
                 });
                 btn.classList.toggle('ko-toggle--on', isHidden);
                 btn.title = isHidden ? '해석 숨기기' : '해석 보기';
+            });
+            psh.appendChild(btn);
+        });
+    }
+
+    function setupWritingToggle() {
+        var ansEls = container.querySelectorAll('.prb__ans');
+        if (!ansEls.length) return;
+
+        // Find 영작 연습 header and add eye icon
+        container.querySelectorAll('.psh').forEach(function (psh) {
+            var title = psh.querySelector('.psh__t');
+            if (!title || title.textContent.trim() !== '영작 연습') return;
+
+            var btn = document.createElement('button');
+            btn.className = 'ko-toggle';
+            btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+            btn.title = '모범답안 보기';
+            btn.addEventListener('click', function () {
+                var isHidden = ansEls[0].classList.contains('prb__ans--hidden');
+                ansEls.forEach(function (el) {
+                    el.classList.toggle('prb__ans--hidden', !isHidden);
+                });
+                // Toggle placeholder visibility
+                container.querySelectorAll('.prb__placeholder').forEach(function (ph) {
+                    ph.style.display = isHidden ? 'none' : '';
+                });
+                btn.classList.toggle('ko-toggle--on', isHidden);
+                btn.title = isHidden ? '모범답안 숨기기' : '모범답안 보기';
             });
             psh.appendChild(btn);
         });

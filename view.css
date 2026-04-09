@@ -453,4 +453,7 @@ body{
 .ko-toggle svg{display:block}
 
 /* Student writing box — blank for print */
-.prb__a--student{min-height:44px}
+.prb__a--student{min-height:44px;position:relative}
+.prb__placeholder{color:#aaa;font-size:.85em}
+.prb__ans{color:var(--ac,#2ABFBF);font-size:.92em;font-style:italic;transition:opacity .25s}
+.prb__ans--hidden{display:none}
