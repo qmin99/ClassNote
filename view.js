@@ -690,31 +690,17 @@
     }
 
     function setupWritingToggle() {
-        var ansEls = container.querySelectorAll('.prb__ans');
-        if (!ansEls.length) return;
+        container.querySelectorAll('.prb__a--student').forEach(function (el) {
+            var ans = el.querySelector('.prb__ans');
+            var ph = el.querySelector('.prb__placeholder');
+            if (!ans) return;
 
-        // Find 영작 연습 header and add eye icon
-        container.querySelectorAll('.psh').forEach(function (psh) {
-            var title = psh.querySelector('.psh__t');
-            if (!title || title.textContent.trim() !== '영작 연습') return;
-
-            var btn = document.createElement('button');
-            btn.className = 'ko-toggle';
-            btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-            btn.title = '모범답안 보기';
-            btn.addEventListener('click', function () {
-                var isHidden = ansEls[0].classList.contains('prb__ans--hidden');
-                ansEls.forEach(function (el) {
-                    el.classList.toggle('prb__ans--hidden', !isHidden);
-                });
-                // Toggle placeholder visibility
-                container.querySelectorAll('.prb__placeholder').forEach(function (ph) {
-                    ph.style.display = isHidden ? 'none' : '';
-                });
-                btn.classList.toggle('ko-toggle--on', isHidden);
-                btn.title = isHidden ? '모범답안 숨기기' : '모범답안 보기';
+            el.style.cursor = 'pointer';
+            el.addEventListener('click', function () {
+                var isHidden = ans.classList.contains('prb__ans--hidden');
+                ans.classList.toggle('prb__ans--hidden', !isHidden);
+                if (ph) ph.style.display = isHidden ? 'none' : '';
             });
-            psh.appendChild(btn);
         });
     }
 
