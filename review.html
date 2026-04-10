@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 6 — Total Review</title>
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg: #f5f5f0;
+  --card: #fff;
+  --ac: #2ABFBF;
+  --ac2: #1a9e9e;
+  --red: #e74c3c;
+  --green: #27ae60;
+  --gray: #888;
+  --dark: #222;
+  --radius: 14px;
+  --shadow: 0 2px 16px rgba(0,0,0,.07);
+}
+body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--dark); line-height: 1.6; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 24px 16px 80px; }
+
+/* --- Header --- */
+.hero { text-align: center; padding: 48px 0 32px; }
+.hero__badge { display: inline-block; background: var(--ac); color: #fff; font-size: 13px; font-weight: 700; padding: 4px 14px; border-radius: 20px; margin-bottom: 12px; letter-spacing: .5px; }
+.hero__title { font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+.hero__sub { color: var(--gray); font-size: 15px; }
+
+/* --- Nav tabs --- */
+.nav { display: flex; gap: 6px; margin-bottom: 32px; position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 12px 0; }
+.nav__btn { flex: 1; padding: 10px 0; border: 2px solid #ddd; background: var(--card); border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; color: var(--gray); }
+.nav__btn--active { border-color: var(--ac); color: var(--ac); background: #eafafa; }
+.nav__btn--done { border-color: var(--green); color: var(--green); background: #eafaf0; }
+.nav__btn:hover { border-color: var(--ac); }
+
+/* --- Part container --- */
+.part { display: none; }
+.part--active { display: block; animation: fadeUp .35s ease; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+.part__header { margin-bottom: 24px; }
+.part__num { font-size: 13px; color: var(--ac); font-weight: 700; margin-bottom: 4px; }
+.part__title { font-size: 22px; font-weight: 800; }
+.part__desc { font-size: 14px; color: var(--gray); margin-top: 4px; }
+
+/* --- Quiz card (Part 1) --- */
+.quiz-card { background: var(--card); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; box-shadow: var(--shadow); }
+.quiz-card__num { font-size: 12px; color: var(--gray); font-weight: 600; margin-bottom: 8px; }
+.quiz-card__q { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.quiz-card__session { font-size: 12px; color: var(--ac); margin-bottom: 16px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 8px; }
+.quiz-opt { padding: 12px 16px; border: 2px solid #e8e8e8; border-radius: 10px; background: #fafafa; font-size: 15px; cursor: pointer; transition: all .2s; text-align: left; }
+.quiz-opt:hover { border-color: var(--ac); background: #f0fafa; }
+.quiz-opt--correct { border-color: var(--green) !important; background: #eafaf0 !important; color: var(--green); font-weight: 600; }
+.quiz-opt--wrong { border-color: var(--red) !important; background: #fdeaea !important; color: var(--red); opacity: .7; }
+.quiz-opt--disabled { pointer-events: none; }
+
+/* --- Fill blank (Part 2) --- */
+.fill-card { background: var(--card); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; box-shadow: var(--shadow); }
+.fill-card__num { font-size: 12px; color: var(--gray); font-weight: 600; margin-bottom: 8px; }
+.fill-card__context { font-size: 13px; color: var(--ac); margin-bottom: 10px; }
+.fill-card__q { font-size: 16px; margin-bottom: 14px; line-height: 1.7; }
+.fill-card__q .blank { display: inline-block; min-width: 120px; border-bottom: 2px dashed var(--ac); padding: 2px 4px; color: transparent; font-weight: 600; }
+.fill-card__q .blank--revealed { color: var(--green); border-bottom-color: var(--green); }
+.fill-row { display: flex; gap: 8px; align-items: center; }
+.fill-input { flex: 1; padding: 10px 14px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 15px; outline: none; transition: border-color .2s; }
+.fill-input:focus { border-color: var(--ac); }
+.fill-input--correct { border-color: var(--green); background: #eafaf0; }
+.fill-input--wrong { border-color: var(--red); background: #fdeaea; }
+.fill-btn { padding: 10px 18px; background: var(--ac); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .2s; }
+.fill-btn:hover { background: var(--ac2); }
+.fill-hint { font-size: 13px; color: var(--gray); margin-top: 8px; cursor: pointer; }
+.fill-hint:hover { color: var(--ac); }
+.fill-result { font-size: 14px; margin-top: 10px; font-weight: 600; }
+.fill-result--correct { color: var(--green); }
+.fill-result--wrong { color: var(--red); }
+
+/* --- Conversation sort (Part 3) --- */
+.conv-card { background: var(--card); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; box-shadow: var(--shadow); }
+.conv-card__num { font-size: 12px; color: var(--gray); font-weight: 600; margin-bottom: 4px; }
+.conv-card__situation { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.conv-lines { display: flex; flex-direction: column; gap: 8px; min-height: 50px; }
+.conv-line { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 2px solid #e8e8e8; border-radius: 10px; background: #fafafa; cursor: grab; transition: all .2s; user-select: none; }
+.conv-line:active { cursor: grabbing; }
+.conv-line.dragging { opacity: .4; }
+.conv-line.over { border-color: var(--ac); background: #f0fafa; }
+.conv-line__role { font-size: 12px; font-weight: 700; color: #fff; background: var(--ac); padding: 2px 8px; border-radius: 6px; flex-shrink: 0; }
+.conv-line__role--b { background: #e67e22; }
+.conv-line__text { font-size: 15px; }
+.conv-check { margin-top: 12px; padding: 10px 20px; background: var(--ac); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.conv-check:hover { background: var(--ac2); }
+.conv-result { margin-top: 10px; font-size: 14px; font-weight: 600; }
+.conv-line--correct { border-color: var(--green); background: #eafaf0; }
+.conv-line--wrong { border-color: var(--red); background: #fdeaea; }
+
+/* --- Speed round (Part 4) --- */
+.speed-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.speed-timer { font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.speed-timer--warn { color: var(--red); }
+.speed-score { font-size: 18px; font-weight: 700; color: var(--ac); }
+.speed-card { background: var(--card); border-radius: var(--radius); padding: 32px; box-shadow: var(--shadow); text-align: center; min-height: 200px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.speed-card__session { font-size: 12px; color: var(--ac); margin-bottom: 8px; }
+.speed-card__q { font-size: 20px; font-weight: 700; margin-bottom: 24px; }
+.speed-card__input { width: 100%; max-width: 400px; padding: 12px 16px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 16px; text-align: center; outline: none; }
+.speed-card__input:focus { border-color: var(--ac); }
+.speed-card__skip { margin-top: 12px; background: none; border: none; color: var(--gray); font-size: 14px; cursor: pointer; text-decoration: underline; }
+.speed-flash { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 48px; font-weight: 800; pointer-events: none; animation: flashPop .6s ease forwards; z-index: 99; }
+.speed-flash--correct { color: var(--green); }
+.speed-flash--wrong { color: var(--red); }
+@keyframes flashPop { 0% { opacity:1; transform:translate(-50%,-50%) scale(1); } 100% { opacity:0; transform:translate(-50%,-70%) scale(1.3); } }
+
+/* --- Start / Result screen --- */
+.start-screen, .result-screen { text-align: center; padding: 40px 20px; }
+.start-btn, .result-btn { padding: 14px 40px; background: var(--ac); color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 20px; transition: background .2s; }
+.start-btn:hover, .result-btn:hover { background: var(--ac2); }
+.result-screen h2 { font-size: 24px; margin-bottom: 8px; }
+.result-score { font-size: 48px; font-weight: 800; color: var(--ac); margin: 16px 0; }
+.result-breakdown { text-align: left; max-width: 400px; margin: 20px auto; }
+.result-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+.result-row__label { color: var(--gray); }
+.result-row__val { font-weight: 700; }
+
+/* --- Progress bar --- */
+.progress { height: 4px; background: #e8e8e8; border-radius: 4px; margin-bottom: 24px; overflow: hidden; }
+.progress__bar { height: 100%; background: var(--ac); border-radius: 4px; transition: width .3s; }
+
+/* --- Score footer --- */
+.score-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid #eee; padding: 12px 0; z-index: 20; }
+.score-inner { max-width: 720px; margin: 0 auto; padding: 0 16px; display: flex; justify-content: space-between; align-items: center; }
+.score-text { font-size: 15px; font-weight: 600; }
+.score-next { padding: 10px 24px; background: var(--ac); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.score-next:hover { background: var(--ac2); }
+.score-next:disabled { background: #ccc; cursor: default; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="hero__badge">SESSION 6</div>
+    <div class="hero__title">Total Review</div>
+    <div class="hero__sub">Sessions 1-5 총복습</div>
+  </div>
+
+  <div class="nav">
+    <button class="nav__btn nav__btn--active" data-part="0">상황 퀴즈</button>
+    <button class="nav__btn" data-part="1">빈칸 채우기</button>
+    <button class="nav__btn" data-part="2">대화 정렬</button>
+    <button class="nav__btn" data-part="3">스피드 라운드</button>
+  </div>
+
+  <!-- Part 1: Situation Quiz -->
+  <div class="part part--active" id="part0"></div>
+
+  <!-- Part 2: Fill the Blank -->
+  <div class="part" id="part1"></div>
+
+  <!-- Part 3: Conversation Sort -->
+  <div class="part" id="part2"></div>
+
+  <!-- Part 4: Speed Round -->
+  <div class="part" id="part3"></div>
+</div>
+
+<div class="score-bar">
+  <div class="score-inner">
+    <div class="score-text" id="scoreText">0 / 0</div>
+    <button class="score-next" id="scoreNext">다음 파트 →</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ============ DATA ============
+  var quizData = [
+    { q: '카페 직원이 너무 빨리 말해서 못 알아들었을 때', session: 'S1', answer: 'Can you say that again?', opts: ['Can you say that again?', 'Good question.', 'That looks great on you!', 'Would you mind closing the door?'] },
+    { q: '갑자기 질문을 받았는데 바로 대답이 안 떠오를 때', session: 'S2', answer: 'Hmm, give me a second.', opts: ['I totally agree.', 'Hmm, give me a second.', 'Sorry to bother you, but...', 'I have no idea.'] },
+    { q: '친구 의견에 정중하게 반대하고 싶을 때', session: 'S3', answer: 'I see your point, but I think differently.', opts: ['Could you repeat that?', 'I see your point, but I think differently.', 'You\'re really talented at this!', 'Hold on, let me think.'] },
+    { q: '친구가 새 옷을 입고 왔는데 잘 어울릴 때', session: 'S4', answer: 'That looks very great on you!', opts: ['A little slower, please.', 'I\'d love to, but...', 'That looks very great on you!', 'What do you think?'] },
+    { q: '카페에서 잠깐 자리 비울 때 옆 사람에게 짐 좀 봐달라고 할 때', session: 'S5', answer: 'Could you watch my stuff for a minute?', opts: ['Could you watch my stuff for a minute?', 'Sounds good!', 'I\'m not really sure about that.', 'You just made my day!'] },
+    { q: '상대방이 한 말을 좀 더 천천히 말해달라고 할 때', session: 'S1', answer: 'A little slower, please.', opts: ['That\'s exactly what I was thinking.', 'A little slower, please.', 'I appreciate that!', 'Do me a favor.'] },
+    { q: '상대방의 질문을 되돌리고 싶을 때', session: 'S2', answer: 'What do you think?', opts: ['What do you think?', 'Sure, no problem!', 'Not bad at all!', 'I definitely disagree on that.'] },
+    { q: '회의에서 팀원 의견에 완전히 동의할 때', session: 'S3', answer: 'I totally agree with you on that.', opts: ['Could you help me with this?', 'I have no idea.', 'I totally agree with you on that.', 'Really? What makes you say that?'] },
+    { q: '누군가 칭찬해줬을 때 자연스럽게 반응하기', session: 'S4', answer: 'Oh, that\'s so nice of you!', opts: ['If you don\'t mind...', 'Oh, that\'s so nice of you!', 'I\'m not sure I agree with that.', 'Can you say that again?'] },
+    { q: '부탁하기 전에 쿠션 한마디 던지고 싶을 때', session: 'S5', answer: 'Sorry to bother you, but...', opts: ['Good question. Let me think about that.', 'That means a lot.', 'Sorry to bother you, but...', 'Sounds good!'] },
+    { q: '외국인이 말한 게 하나도 이해 안 될 때', session: 'S1', answer: 'I have no idea.', opts: ['I have no idea.', 'How about you?', 'That\'s absolutely right.', 'I hate to ask, but...'] },
+    { q: '부탁을 받았는데 흔쾌히 수락할 때', session: 'S5', answer: 'Sure, no problem!', opts: ['Hold on, let me think.', 'Sure, no problem!', 'I\'m not really sure about that.', 'That looks very great on you!'] },
+  ];
+
+  var fillData = [
+    { context: 'S1 — 못 들었을 때', sentence: 'Can you _____ that again?', blank: 'say', hint: 's' },
+    { context: 'S2 — 시간 벌기', sentence: 'Good question. Let me _____ about that.', blank: 'think', hint: 't' },
+    { context: 'S3 — 정중한 반대', sentence: 'I see your _____, but I think differently.', blank: 'point', hint: 'p' },
+    { context: 'S4 — 칭찬하기', sentence: "You're really _____ at this!", blank: 'talented', hint: 't' },
+    { context: 'S5 — 부탁하기', sentence: 'Would you _____ closing the door?', blank: 'mind', hint: 'm' },
+    { context: 'S1 — 천천히 말해달라고', sentence: 'A little _____, please.', blank: 'slower', hint: 's' },
+    { context: 'S2 — 질문 되돌리기', sentence: "I'm not sure. What would you _____?", blank: 'do', hint: 'd' },
+    { context: 'S3 — 강한 동의', sentence: "That's _____ right!", blank: 'absolutely', hint: 'a' },
+    { context: 'S4 — 칭찬 받기', sentence: 'You just made my _____!', blank: 'day', hint: 'd' },
+    { context: 'S5 — 쿠션 표현', sentence: 'I _____ to ask, but...', blank: 'hate', hint: 'h' },
+  ];
+
+  var convData = [
+    {
+      situation: '카페에서 — 주문이 안 들려서 다시 물어보고, 생각할 시간을 번 뒤 주문하기',
+      correct: [
+        { role: 'A', text: 'What can I get for you today?' },
+        { role: 'B', text: 'Can you say that again? A little slower, please.' },
+        { role: 'A', text: 'Sure! What would you like to drink?' },
+        { role: 'B', text: 'Hmm, give me a second... I\'ll have an iced latte, please.' },
+      ]
+    },
+    {
+      situation: '친구에게 충전기를 빌리고 싶은데, 칭찬도 곁들이기',
+      correct: [
+        { role: 'A', text: 'Sorry to bother you, but could I borrow your charger?' },
+        { role: 'B', text: 'Sure, no problem!' },
+        { role: 'A', text: 'Thanks! By the way, that looks great on you!' },
+        { role: 'B', text: 'Oh, that\'s so nice of you! I appreciate that.' },
+      ]
+    },
+    {
+      situation: '회의에서 동료 의견에 부분 동의하면서 자기 생각 말하기',
+      correct: [
+        { role: 'A', text: 'I think we should focus only on social media marketing.' },
+        { role: 'B', text: 'I see your point, but I think differently.' },
+        { role: 'A', text: 'What do you mean?' },
+        { role: 'B', text: 'Good question. Let me think... I think we need a mix of online and offline.' },
+      ]
+    },
+  ];
+
+  var speedData = [
+    { q: '다시 말해줄래?', a: ['can you say that again', 'could you say that again', 'could you repeat that'], session: 'S1' },
+    { q: '좀 천천히요', a: ['a little slower please', 'a little slower, please'], session: 'S1' },
+    { q: '잘 모르겠어요', a: ["i have no idea", "i'm not really sure about that", "i'm not sure"], session: 'S1' },
+    { q: '좋은 질문이네요, 생각 좀 할게요', a: ['good question let me think about that', 'good question. let me think about that'], session: 'S2' },
+    { q: '잠깐만요', a: ['give me a second', 'hmm give me a second', 'hold on let me think', 'hold on, let me think'], session: 'S2' },
+    { q: '너는 어떻게 생각해?', a: ['what do you think', 'how about you'], session: 'S2' },
+    { q: '완전 동의해!', a: ['i totally agree', 'i totally agree with you on that', 'sounds good'], session: 'S3' },
+    { q: '네 말은 이해하지만 생각이 달라', a: ['i see your point but i think differently', 'i see your point, but i think differently'], session: 'S3' },
+    { q: '너한테 진짜 잘 어울린다!', a: ['that looks very great on you', 'that looks great on you'], session: 'S4' },
+    { q: '너 이거 진짜 잘한다!', a: ["you're really talented at this", "you're really good at this", 'youre really talented at this'], session: 'S4' },
+    { q: '와 정말 고마워요!', a: ['i appreciate that', "that's so nice of you", "oh that's so nice of you"], session: 'S4' },
+    { q: '이것 좀 도와주실 수 있으세요?', a: ['could you help me with this', 'do you think you could give me a hand'], session: 'S5' },
+    { q: '귀찮게 해서 죄송한데...', a: ['sorry to bother you but', 'sorry to bother you, but', 'i hate to ask but', 'i hate to ask, but'], session: 'S5' },
+    { q: '그럼요, 문제없어요!', a: ['sure no problem', 'sure, no problem'], session: 'S5' },
+    { q: '그러고 싶지만...', a: ["i'd love to but", "i'd love to, but", "id love to but"], session: 'S5' },
+  ];
+
+  // ============ STATE ============
+  var currentPart = 0;
+  var scores = [0, 0, 0, 0];
+  var totals = [quizData.length, fillData.length, convData.length, 0];
+  var partDone = [false, false, false, false];
+
+  var navBtns = document.querySelectorAll('.nav__btn');
+  var parts = [document.getElementById('part0'), document.getElementById('part1'), document.getElementById('part2'), document.getElementById('part3')];
+  var scoreText = document.getElementById('scoreText');
+  var scoreNext = document.getElementById('scoreNext');
+
+  // ============ NAV ============
+  navBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      switchPart(parseInt(btn.dataset.part));
+    });
+  });
+
+  scoreNext.addEventListener('click', function () {
+    if (currentPart < 3) switchPart(currentPart + 1);
+  });
+
+  function switchPart(idx) {
+    currentPart = idx;
+    navBtns.forEach(function (b, i) {
+      b.classList.toggle('nav__btn--active', i === idx);
+    });
+    parts.forEach(function (p, i) {
+      p.classList.toggle('part--active', i === idx);
+    });
+    updateScore();
+    scoreNext.style.display = idx === 3 ? 'none' : '';
+  }
+
+  function updateScore() {
+    var t = totals[currentPart];
+    if (currentPart === 3 && !partDone[3]) {
+      scoreText.textContent = '준비됨';
+    } else {
+      scoreText.textContent = scores[currentPart] + ' / ' + t + ' 정답';
+    }
+    if (partDone[currentPart] && currentPart < 3) {
+      navBtns[currentPart].classList.add('nav__btn--done');
+    }
+  }
+
+  // ============ PART 1: QUIZ ============
+  function buildQuiz() {
+    var html = '<div class="part__header"><div class="part__num">PART 1</div><div class="part__title">상황 퀴즈</div><div class="part__desc">상황에 맞는 영어 표현을 골라보세요</div></div><div class="progress"><div class="progress__bar" id="quizProgress"></div></div>';
+    var answered = 0;
+
+    quizData.forEach(function (item, qi) {
+      var shuffled = shuffle(item.opts.slice());
+      html += '<div class="quiz-card" id="qc' + qi + '"><div class="quiz-card__num">Q' + (qi + 1) + '</div><div class="quiz-card__q">' + item.q + '</div><div class="quiz-card__session">' + item.session + '</div><div class="quiz-opts">';
+      shuffled.forEach(function (opt, oi) {
+        html += '<button class="quiz-opt" data-qi="' + qi + '" data-val="' + escHtml(opt) + '">' + opt + '</button>';
+      });
+      html += '</div></div>';
+    });
+
+    parts[0].innerHTML = html;
+
+    parts[0].querySelectorAll('.quiz-opt').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var qi = parseInt(btn.dataset.qi);
+        var card = document.getElementById('qc' + qi);
+        if (card.dataset.done) return;
+        card.dataset.done = '1';
+
+        var val = btn.dataset.val;
+        var correct = quizData[qi].answer;
+        var allOpts = card.querySelectorAll('.quiz-opt');
+
+        allOpts.forEach(function (o) {
+          o.classList.add('quiz-opt--disabled');
+          if (o.dataset.val === correct) o.classList.add('quiz-opt--correct');
+        });
+
+        if (val === correct) {
+          scores[0]++;
+        } else {
+          btn.classList.add('quiz-opt--wrong');
+        }
+
+        answered++;
+        document.getElementById('quizProgress').style.width = (answered / quizData.length * 100) + '%';
+        updateScore();
+
+        if (answered === quizData.length) partDone[0] = true;
+        updateScore();
+      });
+    });
+  }
+
+  // ============ PART 2: FILL BLANK ============
+  function buildFill() {
+    var html = '<div class="part__header"><div class="part__num">PART 2</div><div class="part__title">빈칸 채우기</div><div class="part__desc">빠진 단어를 영어로 입력하세요</div></div><div class="progress"><div class="progress__bar" id="fillProgress"></div></div>';
+    var answered = 0;
+
+    fillData.forEach(function (item, fi) {
+      var display = item.sentence.replace('_____', '<span class="blank" id="blank' + fi + '">' + item.blank + '</span>');
+      html += '<div class="fill-card" id="fc' + fi + '"><div class="fill-card__num">Q' + (fi + 1) + '</div><div class="fill-card__context">' + item.context + '</div><div class="fill-card__q">' + display + '</div>';
+      html += '<div class="fill-row"><input class="fill-input" id="fi' + fi + '" placeholder="빈칸에 들어갈 단어" autocomplete="off" autocapitalize="off"><button class="fill-btn" data-fi="' + fi + '">확인</button></div>';
+      html += '<div class="fill-hint" data-fi="' + fi + '">💡 힌트 보기</div>';
+      html += '<div class="fill-result" id="fr' + fi + '"></div></div>';
+    });
+
+    parts[1].innerHTML = html;
+
+    parts[1].querySelectorAll('.fill-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { checkFill(parseInt(btn.dataset.fi)); });
+    });
+
+    parts[1].querySelectorAll('.fill-input').forEach(function (inp) {
+      inp.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          var fi = parseInt(inp.id.replace('fi', ''));
+          checkFill(fi);
+        }
+      });
+    });
+
+    parts[1].querySelectorAll('.fill-hint').forEach(function (hint) {
+      hint.addEventListener('click', function () {
+        var fi = parseInt(hint.dataset.fi);
+        hint.textContent = '힌트: 첫 글자는 "' + fillData[fi].hint + '"';
+      });
+    });
+
+    function checkFill(fi) {
+      var card = document.getElementById('fc' + fi);
+      if (card.dataset.done) return;
+
+      var input = document.getElementById('fi' + fi);
+      var val = input.value.trim().toLowerCase();
+      var correct = fillData[fi].blank.toLowerCase();
+      var result = document.getElementById('fr' + fi);
+      var blank = document.getElementById('blank' + fi);
+
+      card.dataset.done = '1';
+
+      if (val === correct) {
+        scores[1]++;
+        input.classList.add('fill-input--correct');
+        result.className = 'fill-result fill-result--correct';
+        result.textContent = '정답! ✓';
+      } else {
+        input.classList.add('fill-input--wrong');
+        result.className = 'fill-result fill-result--wrong';
+        result.textContent = '정답: ' + fillData[fi].blank;
+      }
+
+      blank.classList.add('blank--revealed');
+      input.disabled = true;
+
+      answered++;
+      document.getElementById('fillProgress').style.width = (answered / fillData.length * 100) + '%';
+      if (answered === fillData.length) partDone[1] = true;
+      updateScore();
+    }
+  }
+
+  // ============ PART 3: CONVERSATION SORT ============
+  function buildConv() {
+    var html = '<div class="part__header"><div class="part__num">PART 3</div><div class="part__title">대화 정렬</div><div class="part__desc">대화 순서를 맞게 드래그해서 정렬하세요</div></div>';
+
+    convData.forEach(function (conv, ci) {
+      var shuffled = shuffle(conv.correct.map(function (line, li) {
+        return { role: line.role, text: line.text, origIdx: li };
+      }));
+
+      html += '<div class="conv-card" id="cc' + ci + '"><div class="conv-card__num">대화 ' + (ci + 1) + '</div><div class="conv-card__situation">' + conv.situation + '</div><div class="conv-lines" id="cl' + ci + '">';
+      shuffled.forEach(function (line) {
+        html += '<div class="conv-line" draggable="true" data-orig="' + line.origIdx + '"><span class="conv-line__role' + (line.role === 'B' ? ' conv-line__role--b' : '') + '">' + line.role + '</span><span class="conv-line__text">' + line.text + '</span></div>';
+      });
+      html += '</div><button class="conv-check" data-ci="' + ci + '">정답 확인</button><div class="conv-result" id="cr' + ci + '"></div></div>';
+    });
+
+    parts[2].innerHTML = html;
+
+    // Drag and drop
+    convData.forEach(function (conv, ci) {
+      var container = document.getElementById('cl' + ci);
+      var dragEl = null;
+
+      container.addEventListener('dragstart', function (e) {
+        dragEl = e.target.closest('.conv-line');
+        if (dragEl) dragEl.classList.add('dragging');
+      });
+      container.addEventListener('dragend', function () {
+        if (dragEl) dragEl.classList.remove('dragging');
+        container.querySelectorAll('.conv-line').forEach(function (l) { l.classList.remove('over'); });
+        dragEl = null;
+      });
+      container.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        var target = e.target.closest('.conv-line');
+        if (target && target !== dragEl) {
+          container.querySelectorAll('.conv-line').forEach(function (l) { l.classList.remove('over'); });
+          target.classList.add('over');
+        }
+      });
+      container.addEventListener('drop', function (e) {
+        e.preventDefault();
+        var target = e.target.closest('.conv-line');
+        if (target && target !== dragEl && dragEl) {
+          var allLines = Array.prototype.slice.call(container.querySelectorAll('.conv-line'));
+          var dragIdx = allLines.indexOf(dragEl);
+          var targetIdx = allLines.indexOf(target);
+          if (dragIdx < targetIdx) {
+            container.insertBefore(dragEl, target.nextSibling);
+          } else {
+            container.insertBefore(dragEl, target);
+          }
+        }
+        container.querySelectorAll('.conv-line').forEach(function (l) { l.classList.remove('over'); });
+      });
+
+      // Touch drag support
+      var touchEl = null;
+      var touchClone = null;
+      container.addEventListener('touchstart', function (e) {
+        touchEl = e.target.closest('.conv-line');
+        if (!touchEl) return;
+        touchEl.classList.add('dragging');
+      }, { passive: true });
+      container.addEventListener('touchmove', function (e) {
+        if (!touchEl) return;
+        e.preventDefault();
+        var touch = e.touches[0];
+        var elBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+        var target = elBelow ? elBelow.closest('.conv-line') : null;
+        container.querySelectorAll('.conv-line').forEach(function (l) { l.classList.remove('over'); });
+        if (target && target !== touchEl) target.classList.add('over');
+      }, { passive: false });
+      container.addEventListener('touchend', function () {
+        if (!touchEl) return;
+        var overEl = container.querySelector('.conv-line.over');
+        if (overEl && overEl !== touchEl) {
+          var allLines = Array.prototype.slice.call(container.querySelectorAll('.conv-line'));
+          var dragIdx = allLines.indexOf(touchEl);
+          var targetIdx = allLines.indexOf(overEl);
+          if (dragIdx < targetIdx) {
+            container.insertBefore(touchEl, overEl.nextSibling);
+          } else {
+            container.insertBefore(touchEl, overEl);
+          }
+        }
+        touchEl.classList.remove('dragging');
+        container.querySelectorAll('.conv-line').forEach(function (l) { l.classList.remove('over'); });
+        touchEl = null;
+      });
+    });
+
+    // Check buttons
+    parts[2].querySelectorAll('.conv-check').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var ci = parseInt(btn.dataset.ci);
+        var card = document.getElementById('cc' + ci);
+        if (card.dataset.done) return;
+        card.dataset.done = '1';
+
+        var lines = document.getElementById('cl' + ci).querySelectorAll('.conv-line');
+        var allCorrect = true;
+        lines.forEach(function (line, li) {
+          var orig = parseInt(line.dataset.orig);
+          if (orig === li) {
+            line.classList.add('conv-line--correct');
+          } else {
+            line.classList.add('conv-line--wrong');
+            allCorrect = false;
+          }
+        });
+
+        var result = document.getElementById('cr' + ci);
+        if (allCorrect) {
+          scores[2]++;
+          result.className = 'conv-result';
+          result.style.color = 'var(--green)';
+          result.textContent = '완벽해요! ✓';
+        } else {
+          result.className = 'conv-result';
+          result.style.color = 'var(--red)';
+          result.textContent = '순서를 확인해보세요';
+          // Show correct order after 1.5s
+          setTimeout(function () {
+            var container = document.getElementById('cl' + ci);
+            var sorted = Array.prototype.slice.call(lines).sort(function (a, b) {
+              return parseInt(a.dataset.orig) - parseInt(b.dataset.orig);
+            });
+            sorted.forEach(function (l) {
+              l.classList.remove('conv-line--wrong');
+              l.classList.add('conv-line--correct');
+              container.appendChild(l);
+            });
+            result.textContent = '정답 순서로 정렬했어요';
+            result.style.color = 'var(--ac)';
+          }, 1500);
+        }
+
+        btn.disabled = true;
+        btn.style.background = '#ccc';
+        partDone[2] = true;
+        updateScore();
+      });
+    });
+  }
+
+  // ============ PART 4: SPEED ROUND ============
+  function buildSpeed() {
+    var html = '<div class="part__header"><div class="part__num">PART 4</div><div class="part__title">스피드 라운드</div><div class="part__desc">60초 안에 최대한 많이 맞추세요!</div></div>';
+    html += '<div class="start-screen" id="speedStart"><p style="font-size:15px;color:var(--gray);margin-bottom:8px;">한국어를 보고 영어로 입력하세요.<br>정확하지 않아도 비슷하면 정답!</p><button class="start-btn" id="speedStartBtn">시작하기</button></div>';
+    html += '<div id="speedGame" style="display:none"><div class="speed-top"><div class="speed-timer" id="speedTimer">60</div><div class="speed-score" id="speedScore">0 / ' + speedData.length + '</div></div>';
+    html += '<div class="speed-card" id="speedCard"><div class="speed-card__session" id="speedSession"></div><div class="speed-card__q" id="speedQ"></div><input class="speed-card__input" id="speedInput" autocomplete="off" autocapitalize="off" placeholder="영어로 입력"><button class="speed-card__skip" id="speedSkip">모르겠어요 → 넘기기</button></div></div>';
+    html += '<div class="result-screen" id="speedResult" style="display:none"></div>';
+
+    parts[3].innerHTML = html;
+    totals[3] = speedData.length;
+
+    var timer, timeLeft, speedIdx, speedAnswered;
+    var pool;
+
+    document.getElementById('speedStartBtn').addEventListener('click', startSpeed);
+
+    function startSpeed() {
+      document.getElementById('speedStart').style.display = 'none';
+      document.getElementById('speedGame').style.display = '';
+      document.getElementById('speedResult').style.display = 'none';
+
+      timeLeft = 60;
+      speedIdx = 0;
+      speedAnswered = 0;
+      scores[3] = 0;
+      pool = shuffle(speedData.slice());
+
+      showSpeedCard();
+      updateScore();
+
+      timer = setInterval(function () {
+        timeLeft--;
+        var el = document.getElementById('speedTimer');
+        el.textContent = timeLeft;
+        if (timeLeft <= 10) el.classList.add('speed-timer--warn');
+        if (timeLeft <= 0) endSpeed();
+      }, 1000);
+
+      document.getElementById('speedInput').focus();
+    }
+
+    function showSpeedCard() {
+      if (speedIdx >= pool.length) { endSpeed(); return; }
+      var item = pool[speedIdx];
+      document.getElementById('speedSession').textContent = item.session;
+      document.getElementById('speedQ').textContent = item.q;
+      document.getElementById('speedInput').value = '';
+      document.getElementById('speedInput').className = 'speed-card__input';
+      document.getElementById('speedInput').focus();
+    }
+
+    document.getElementById('speedInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        checkSpeed();
+      }
+    });
+
+    document.getElementById('speedSkip').addEventListener('click', function () {
+      showFlash('✗', false);
+      speedIdx++;
+      speedAnswered++;
+      document.getElementById('speedScore').textContent = scores[3] + ' / ' + speedAnswered;
+      showSpeedCard();
+    });
+
+    function checkSpeed() {
+      var input = document.getElementById('speedInput');
+      var val = input.value.trim().toLowerCase().replace(/[?.!,]/g, '');
+      if (!val) return;
+
+      var item = pool[speedIdx];
+      var isCorrect = item.a.some(function (ans) {
+        return normalize(val) === normalize(ans) || normalize(ans).indexOf(normalize(val)) !== -1 || normalize(val).indexOf(normalize(ans)) !== -1;
+      });
+
+      if (isCorrect) {
+        scores[3]++;
+        showFlash('✓', true);
+      } else {
+        showFlash(item.a[0], false);
+      }
+
+      speedIdx++;
+      speedAnswered++;
+      document.getElementById('speedScore').textContent = scores[3] + ' / ' + speedAnswered;
+      updateScore();
+      showSpeedCard();
+    }
+
+    function endSpeed() {
+      clearInterval(timer);
+      document.getElementById('speedGame').style.display = 'none';
+      partDone[3] = true;
+      totals[3] = speedAnswered || pool.length;
+
+      var pct = speedAnswered > 0 ? Math.round(scores[3] / speedAnswered * 100) : 0;
+      var grade = pct >= 90 ? '완벽해요! 🎉' : pct >= 70 ? '잘했어요! 👏' : pct >= 50 ? '괜찮아요! 💪' : '더 연습해봐요! 📚';
+
+      // Session breakdown
+      var sessionScores = {};
+      pool.forEach(function (item, i) {
+        if (i >= speedAnswered) return;
+        if (!sessionScores[item.session]) sessionScores[item.session] = { total: 0, correct: 0 };
+        sessionScores[item.session].total++;
+      });
+
+      var resultHtml = '<h2>스피드 라운드 결과</h2><div class="result-score">' + scores[3] + ' / ' + speedAnswered + '</div><p style="font-size:18px;margin-bottom:20px;">' + grade + '</p>';
+      resultHtml += '<button class="result-btn" id="speedRetry">다시 도전</button>';
+
+      var resultEl = document.getElementById('speedResult');
+      resultEl.innerHTML = resultHtml;
+      resultEl.style.display = '';
+
+      document.getElementById('speedRetry').addEventListener('click', function () {
+        startSpeed();
+      });
+
+      updateScore();
+    }
+  }
+
+  function showFlash(text, isCorrect) {
+    var el = document.createElement('div');
+    el.className = 'speed-flash ' + (isCorrect ? 'speed-flash--correct' : 'speed-flash--wrong');
+    el.textContent = text;
+    document.body.appendChild(el);
+    setTimeout(function () { el.remove(); }, 700);
+  }
+
+  function normalize(s) {
+    return s.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+  }
+
+  function shuffle(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // ============ INIT ============
+  buildQuiz();
+  buildFill();
+  buildConv();
+  buildSpeed();
+  updateScore();
+
+})();
+</script>
+</body>
+</html>
