@@ -33,6 +33,7 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
 .nav__btn--active { border-color: var(--ac); color: var(--ac); background: #eafafa; }
 .nav__btn--done { border-color: var(--green); color: var(--green); background: #eafaf0; }
 .nav__btn:hover { border-color: var(--ac); }
+.nav__btn--locked { opacity: .4; pointer-events: none; }
 
 /* --- Part container --- */
 .part { display: none; }
@@ -48,13 +49,18 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
 .quiz-card { background: var(--card); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; box-shadow: var(--shadow); }
 .quiz-card__num { font-size: 12px; color: var(--gray); font-weight: 600; margin-bottom: 8px; }
 .quiz-card__q { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
-.quiz-card__session { font-size: 12px; color: var(--ac); margin-bottom: 16px; }
+.quiz-card__session { font-size: 12px; color: var(--ac); margin-bottom: 4px; }
+.quiz-card__multi { font-size: 12px; color: var(--red); margin-bottom: 12px; font-weight: 600; }
 .quiz-opts { display: flex; flex-direction: column; gap: 8px; }
 .quiz-opt { padding: 12px 16px; border: 2px solid #e8e8e8; border-radius: 10px; background: #fafafa; font-size: 15px; cursor: pointer; transition: all .2s; text-align: left; }
 .quiz-opt:hover { border-color: var(--ac); background: #f0fafa; }
+.quiz-opt--selected { border-color: var(--ac); background: #e0f5f5; }
 .quiz-opt--correct { border-color: var(--green) !important; background: #eafaf0 !important; color: var(--green); font-weight: 600; }
 .quiz-opt--wrong { border-color: var(--red) !important; background: #fdeaea !important; color: var(--red); opacity: .7; }
+.quiz-opt--missed { border-color: var(--green) !important; background: #eafaf0 !important; color: var(--green); opacity: .6; }
 .quiz-opt--disabled { pointer-events: none; }
+.quiz-submit { margin-top: 10px; padding: 8px 20px; background: var(--ac); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: none; }
+.quiz-submit:hover { background: var(--ac2); }
 
 /* --- Fill blank (Part 2) --- */
 .fill-card { background: var(--card); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; box-shadow: var(--shadow); }
@@ -96,19 +102,20 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
 
 /* --- Speed round (Part 4) --- */
 .speed-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.speed-timer { font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; }
-.speed-timer--warn { color: var(--red); }
+.speed-progress { font-size: 18px; font-weight: 700; color: var(--gray); }
 .speed-score { font-size: 18px; font-weight: 700; color: var(--ac); }
-.speed-card { background: var(--card); border-radius: var(--radius); padding: 32px; box-shadow: var(--shadow); text-align: center; min-height: 200px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.speed-card { background: var(--card); border-radius: var(--radius); padding: 32px; box-shadow: var(--shadow); text-align: center; min-height: 220px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 .speed-card__session { font-size: 12px; color: var(--ac); margin-bottom: 8px; }
 .speed-card__q { font-size: 20px; font-weight: 700; margin-bottom: 24px; }
 .speed-card__input { width: 100%; max-width: 400px; padding: 12px 16px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 16px; text-align: center; outline: none; }
 .speed-card__input:focus { border-color: var(--ac); }
+.speed-card__input--correct { border-color: var(--green); background: #eafaf0; }
+.speed-card__input--wrong { border-color: var(--red); background: #fdeaea; }
 .speed-card__skip { margin-top: 12px; background: none; border: none; color: var(--gray); font-size: 14px; cursor: pointer; text-decoration: underline; }
-.speed-flash { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 48px; font-weight: 800; pointer-events: none; animation: flashPop .6s ease forwards; z-index: 99; }
-.speed-flash--correct { color: var(--green); }
-.speed-flash--wrong { color: var(--red); }
-@keyframes flashPop { 0% { opacity:1; transform:translate(-50%,-50%) scale(1); } 100% { opacity:0; transform:translate(-50%,-70%) scale(1.3); } }
+.speed-card__answer { margin-top: 14px; font-size: 16px; font-weight: 600; color: var(--red); min-height: 24px; }
+.speed-card__btns { margin-top: 14px; display: flex; gap: 10px; }
+.speed-next-btn { padding: 10px 24px; background: var(--ac); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.speed-next-btn:hover { background: var(--ac2); }
 
 /* --- Start / Result screen --- */
 .start-screen, .result-screen { text-align: center; padding: 40px 20px; }
@@ -116,10 +123,17 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
 .start-btn:hover, .result-btn:hover { background: var(--ac2); }
 .result-screen h2 { font-size: 24px; margin-bottom: 8px; }
 .result-score { font-size: 48px; font-weight: 800; color: var(--ac); margin: 16px 0; }
-.result-breakdown { text-align: left; max-width: 400px; margin: 20px auto; }
-.result-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
-.result-row__label { color: var(--gray); }
-.result-row__val { font-weight: 700; }
+
+/* --- Wrong note (Part 5) --- */
+.wrong-card { background: var(--card); border-radius: var(--radius); padding: 20px; margin-bottom: 12px; box-shadow: var(--shadow); border-left: 4px solid var(--red); }
+.wrong-card__part { font-size: 12px; color: var(--ac); font-weight: 700; margin-bottom: 4px; }
+.wrong-card__q { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.wrong-card__your { font-size: 14px; color: var(--red); margin-bottom: 4px; }
+.wrong-card__correct { font-size: 14px; color: var(--green); font-weight: 600; }
+.perfect-msg { text-align: center; padding: 60px 20px; }
+.perfect-msg__icon { font-size: 48px; margin-bottom: 16px; }
+.perfect-msg__title { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+.perfect-msg__sub { font-size: 15px; color: var(--gray); }
 
 /* --- Progress bar --- */
 .progress { height: 4px; background: #e8e8e8; border-radius: 4px; margin-bottom: 24px; overflow: hidden; }
@@ -147,26 +161,21 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
     <button class="nav__btn nav__btn--active" data-part="0">상황 퀴즈</button>
     <button class="nav__btn" data-part="1">빈칸 채우기</button>
     <button class="nav__btn" data-part="2">대화 정렬</button>
-    <button class="nav__btn" data-part="3">스피드 라운드</button>
+    <button class="nav__btn" data-part="3">영작 라운드</button>
+    <button class="nav__btn nav__btn--locked" data-part="4">오답 노트</button>
   </div>
 
-  <!-- Part 1: Situation Quiz -->
   <div class="part part--active" id="part0"></div>
-
-  <!-- Part 2: Fill the Blank -->
   <div class="part" id="part1"></div>
-
-  <!-- Part 3: Conversation Sort -->
   <div class="part" id="part2"></div>
-
-  <!-- Part 4: Speed Round -->
   <div class="part" id="part3"></div>
+  <div class="part" id="part4"></div>
 </div>
 
 <div class="score-bar">
   <div class="score-inner">
     <div class="score-text" id="scoreText">0 / 0</div>
-    <button class="score-next" id="scoreNext">다음 파트 →</button>
+    <button class="score-next" id="scoreNext">다음 파트 &rarr;</button>
   </div>
 </div>
 
@@ -176,36 +185,36 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
 
   // ============ DATA ============
   var quizData = [
-    { q: '카페 직원이 너무 빨리 말해서 못 알아들었을 때', session: 'S1', answer: 'Can you say that again?', opts: ['Can you say that again?', 'Good question.', 'That looks great on you!', 'Would you mind closing the door?'] },
-    { q: '갑자기 질문을 받았는데 바로 대답이 안 떠오를 때', session: 'S2', answer: 'Hmm, give me a second.', opts: ['I totally agree.', 'Hmm, give me a second.', 'Sorry to bother you, but...', 'I have no idea.'] },
-    { q: '친구 의견에 정중하게 반대하고 싶을 때', session: 'S3', answer: 'I see your point, but I think differently.', opts: ['Could you repeat that?', 'I see your point, but I think differently.', 'You\'re really talented at this!', 'Hold on, let me think.'] },
-    { q: '친구가 새 옷을 입고 왔는데 잘 어울릴 때', session: 'S4', answer: 'That looks very great on you!', opts: ['A little slower, please.', 'I\'d love to, but...', 'That looks very great on you!', 'What do you think?'] },
-    { q: '카페에서 잠깐 자리 비울 때 옆 사람에게 짐 좀 봐달라고 할 때', session: 'S5', answer: 'Could you watch my stuff for a minute?', opts: ['Could you watch my stuff for a minute?', 'Sounds good!', 'I\'m not really sure about that.', 'You just made my day!'] },
-    { q: '상대방이 한 말을 좀 더 천천히 말해달라고 할 때', session: 'S1', answer: 'A little slower, please.', opts: ['That\'s exactly what I was thinking.', 'A little slower, please.', 'I appreciate that!', 'Do me a favor.'] },
-    { q: '상대방의 질문을 되돌리고 싶을 때', session: 'S2', answer: 'What do you think?', opts: ['What do you think?', 'Sure, no problem!', 'Not bad at all!', 'I definitely disagree on that.'] },
-    { q: '회의에서 팀원 의견에 완전히 동의할 때', session: 'S3', answer: 'I totally agree with you on that.', opts: ['Could you help me with this?', 'I have no idea.', 'I totally agree with you on that.', 'Really? What makes you say that?'] },
-    { q: '누군가 칭찬해줬을 때 자연스럽게 반응하기', session: 'S4', answer: 'Oh, that\'s so nice of you!', opts: ['If you don\'t mind...', 'Oh, that\'s so nice of you!', 'I\'m not sure I agree with that.', 'Can you say that again?'] },
-    { q: '부탁하기 전에 쿠션 한마디 던지고 싶을 때', session: 'S5', answer: 'Sorry to bother you, but...', opts: ['Good question. Let me think about that.', 'That means a lot.', 'Sorry to bother you, but...', 'Sounds good!'] },
-    { q: '외국인이 말한 게 하나도 이해 안 될 때', session: 'S1', answer: 'I have no idea.', opts: ['I have no idea.', 'How about you?', 'That\'s absolutely right.', 'I hate to ask, but...'] },
-    { q: '부탁을 받았는데 흔쾌히 수락할 때', session: 'S5', answer: 'Sure, no problem!', opts: ['Hold on, let me think.', 'Sure, no problem!', 'I\'m not really sure about that.', 'That looks very great on you!'] },
+    { q: '카페 직원이 뭐라 했는데 아예 못 들었을 때', session: 'S1', answers: ['Can you say that again?', 'Could you repeat that?'], opts: ['Can you say that again?', 'Could you repeat that?', 'Good question. Let me think about that.', 'I totally agree with you on that.'] },
+    { q: '갑자기 질문을 받았는데 바로 대답이 안 떠오를 때', session: 'S2', answers: ['Hmm, give me a second.'], opts: ['Hmm, give me a second.', 'I have no idea.', 'That looks very great on you!', 'A little slower, please.'] },
+    { q: '친구가 "이 식당 별로야"라고 했는데 나는 생각이 다를 때', session: 'S3', answers: ['I see your point, but I think differently.'], opts: ['I see your point, but I think differently.', "That's exactly what I was thinking.", 'Sounds good!', 'How about you?'] },
+    { q: '친구가 새 옷을 입고 왔는데 잘 어울릴 때', session: 'S4', answers: ['That looks very great on you!'], opts: ['That looks very great on you!', "You're really talented at this!", 'I appreciate that!', 'Could you help me with this?'] },
+    { q: '카페에서 잠깐 자리 비울 때 옆 사람에게 짐 좀 봐달라고 할 때', session: 'S5', answers: ['Could you watch my stuff for a minute?'], opts: ['Could you watch my stuff for a minute?', 'I totally agree with you on that.', 'Not bad at all!', 'What do you think?'] },
+    { q: '외국인이 말하는 속도가 너무 빨라서 천천히 말해달라고 할 때', session: 'S1', answers: ['A little slower, please.', 'Could you speak a little more slowly, please?'], opts: ['A little slower, please.', 'Could you speak a little more slowly, please?', "I'd love to, but I can't right now.", 'You just made my day!'] },
+    { q: '"너는 어떻게 생각해?"라고 질문을 되돌리고 싶을 때', session: 'S2', answers: ['What do you think?', 'How about you?'], opts: ['What do you think?', 'How about you?', 'Can you say that again?', 'Sure, no problem!'] },
+    { q: '회의에서 동료 의견에 완전 동의할 때', session: 'S3', answers: ['I totally agree with you on that.'], opts: ['I totally agree with you on that.', 'I see your point, but I think differently.', 'Give me a second.', 'Would you mind closing the door?'] },
+    { q: '칭찬 받았을 때 고마움을 표현하고 싶을 때', session: 'S4', answers: ["Oh, that's so nice of you!", 'I appreciate that!'], opts: ["Oh, that's so nice of you!", 'I appreciate that!', 'I have no idea.', 'Would you mind closing the door?'] },
+    { q: '모르는 사람에게 부탁하기 전에 한마디 먼저 꺼내고 싶을 때', session: 'S5', answers: ['Sorry to bother you, but could you help me?'], opts: ['Sorry to bother you, but could you help me?', "That's absolutely right.", 'A little slower, please.', 'You just made my day!'] },
+    { q: '상대방 말이 진짜 하나도 이해가 안 돼서 모르겠다고 할 때', session: 'S1', answers: ['I have no idea.'], opts: ['I have no idea.', "You're really talented at this!", 'Sounds good!', 'Hold on, let me think.'] },
+    { q: '부탁을 받았는데 사정이 있어서 정중하게 거절할 때', session: 'S5', answers: ["I'd love to, but I can't right now.", "I'm sorry, I can't right now."], opts: ["I'd love to, but I can't right now.", "I'm sorry, I can't right now.", "That's exactly what I was thinking.", 'Can you say that again?'] },
   ];
 
   var fillData = [
-    { context: 'S1 — 못 들었을 때', sentence: 'Can you _____ that again?', blank: 'say', hint: 's' },
-    { context: 'S2 — 시간 벌기', sentence: 'Good question. Let me _____ about that.', blank: 'think', hint: 't' },
-    { context: 'S3 — 정중한 반대', sentence: 'I see your _____, but I think differently.', blank: 'point', hint: 'p' },
-    { context: 'S4 — 칭찬하기', sentence: "You're really _____ at this!", blank: 'talented', hint: 't' },
-    { context: 'S5 — 부탁하기', sentence: 'Would you _____ closing the door?', blank: 'mind', hint: 'm' },
-    { context: 'S1 — 천천히 말해달라고', sentence: 'A little _____, please.', blank: 'slower', hint: 's' },
-    { context: 'S2 — 질문 되돌리기', sentence: "I'm not sure. What would you _____?", blank: 'do', hint: 'd' },
-    { context: 'S3 — 강한 동의', sentence: "That's _____ right!", blank: 'absolutely', hint: 'a' },
-    { context: 'S4 — 칭찬 받기', sentence: 'You just made my _____!', blank: 'day', hint: 'd' },
-    { context: 'S5 — 쿠션 표현', sentence: 'I _____ to ask, but...', blank: 'hate', hint: 'h' },
+    { context: 'S1', sentence: 'Can you _____ that again?', blank: 'say', hint: 's' },
+    { context: 'S2', sentence: 'Good question. Let me _____ about that.', blank: 'think', hint: 't' },
+    { context: 'S3', sentence: 'I see your _____, but I think differently.', blank: 'point', hint: 'p' },
+    { context: 'S4', sentence: "You're really _____ at this!", blank: 'talented', hint: 't' },
+    { context: 'S5', sentence: 'Would you _____ closing the door?', blank: 'mind', hint: 'm' },
+    { context: 'S1', sentence: 'A little _____, please.', blank: 'slower', hint: 's' },
+    { context: 'S2', sentence: "I'm not sure. What would you _____?", blank: 'do', hint: 'd' },
+    { context: 'S3', sentence: "That's _____ right!", blank: 'absolutely', hint: 'a' },
+    { context: 'S4', sentence: 'You just made my _____!', blank: 'day', hint: 'd' },
+    { context: 'S5', sentence: 'I _____ to ask, but could you do me a favor?', blank: 'hate', hint: 'h' },
   ];
 
   var convData = [
     {
-      situation: '카페에서 — 주문이 안 들려서 다시 물어보고, 생각할 시간을 번 뒤 주문하기',
+      situation: '카페에서 주문이 안 들려서 다시 물어보고, 생각할 시간을 번 뒤 주문하기',
       correct: [
         { role: 'A', text: 'What can I get for you today?' },
         { role: 'B', text: 'Can you say that again? A little slower, please.' },
@@ -234,43 +243,46 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
   ];
 
   var speedData = [
-    { q: '다시 말해줄래?', a: ['can you say that again', 'could you say that again', 'could you repeat that'], session: 'S1' },
-    { q: '좀 천천히요', a: ['a little slower please', 'a little slower, please'], session: 'S1' },
-    { q: '잘 모르겠어요', a: ["i have no idea", "i'm not really sure about that", "i'm not sure"], session: 'S1' },
-    { q: '좋은 질문이네요, 생각 좀 할게요', a: ['good question let me think about that', 'good question. let me think about that'], session: 'S2' },
-    { q: '잠깐만요', a: ['give me a second', 'hmm give me a second', 'hold on let me think', 'hold on, let me think'], session: 'S2' },
-    { q: '너는 어떻게 생각해?', a: ['what do you think', 'how about you'], session: 'S2' },
-    { q: '완전 동의해!', a: ['i totally agree', 'i totally agree with you on that', 'sounds good'], session: 'S3' },
-    { q: '네 말은 이해하지만 생각이 달라', a: ['i see your point but i think differently', 'i see your point, but i think differently'], session: 'S3' },
-    { q: '너한테 진짜 잘 어울린다!', a: ['that looks very great on you', 'that looks great on you'], session: 'S4' },
-    { q: '너 이거 진짜 잘한다!', a: ["you're really talented at this", "you're really good at this", 'youre really talented at this'], session: 'S4' },
-    { q: '와 정말 고마워요!', a: ['i appreciate that', "that's so nice of you", "oh that's so nice of you"], session: 'S4' },
-    { q: '이것 좀 도와주실 수 있으세요?', a: ['could you help me with this', 'do you think you could give me a hand'], session: 'S5' },
-    { q: '귀찮게 해서 죄송한데...', a: ['sorry to bother you but', 'sorry to bother you, but', 'i hate to ask but', 'i hate to ask, but'], session: 'S5' },
-    { q: '그럼요, 문제없어요!', a: ['sure no problem', 'sure, no problem'], session: 'S5' },
-    { q: '그러고 싶지만...', a: ["i'd love to but", "i'd love to, but", "id love to but"], session: 'S5' },
+    { q: '다시 말해줄래?', a: ['can you say that again', 'could you say that again', 'could you repeat that'], display: 'Can you say that again?', session: 'S1' },
+    { q: '좀 천천히요', a: ['a little slower please', 'a little slower, please', 'could you speak a little more slowly please'], display: 'A little slower, please.', session: 'S1' },
+    { q: '잘 모르겠어요', a: ['i have no idea', "i'm not really sure about that", "i'm not sure"], display: 'I have no idea.', session: 'S1' },
+    { q: '좋은 질문이네요, 생각 좀 할게요', a: ['good question let me think about that', 'good question. let me think about that'], display: 'Good question. Let me think about that.', session: 'S2' },
+    { q: '잠깐만요', a: ['give me a second', 'hmm give me a second', 'hold on let me think', 'hold on, let me think'], display: 'Hmm, give me a second.', session: 'S2' },
+    { q: '너는 어떻게 생각해?', a: ['what do you think', 'how about you'], display: 'What do you think?', session: 'S2' },
+    { q: '완전 동의해!', a: ['i totally agree', 'i totally agree with you on that', 'sounds good'], display: 'I totally agree with you on that.', session: 'S3' },
+    { q: '네 말은 이해하지만 생각이 달라', a: ['i see your point but i think differently', 'i see your point, but i think differently'], display: 'I see your point, but I think differently.', session: 'S3' },
+    { q: '너한테 진짜 잘 어울린다!', a: ['that looks very great on you', 'that looks great on you'], display: 'That looks very great on you!', session: 'S4' },
+    { q: '너 이거 진짜 잘한다!', a: ["you're really talented at this", "you're really good at this", 'youre really talented at this'], display: "You're really talented at this!", session: 'S4' },
+    { q: '와 정말 고마워요!', a: ['i appreciate that', "that's so nice of you", "oh that's so nice of you"], display: 'I appreciate that!', session: 'S4' },
+    { q: '이것 좀 도와주실 수 있으세요?', a: ['could you help me with this', 'do you think you could give me a hand'], display: 'Could you help me with this?', session: 'S5' },
+    { q: '귀찮게 해서 죄송한데, 부탁 하나만 할게요', a: ['sorry to bother you but could you do me a favor', 'sorry to bother you but', 'i hate to ask but could you do me a favor', 'sorry to bother you, but could you do me a favor'], display: 'Sorry to bother you, but could you do me a favor?', session: 'S5' },
+    { q: '그럼요, 문제없어요!', a: ['sure no problem', 'sure, no problem'], display: 'Sure, no problem!', session: 'S5' },
+    { q: '그러고 싶지만, 지금은 안 돼요', a: ["i'd love to but i can't right now", "i'd love to, but i can't right now", "id love to but i cant right now", "i'm sorry i can't right now"], display: "I'd love to, but I can't right now.", session: 'S5' },
   ];
 
   // ============ STATE ============
   var currentPart = 0;
-  var scores = [0, 0, 0, 0];
-  var totals = [quizData.length, fillData.length, convData.length, 0];
-  var partDone = [false, false, false, false];
+  var scores = [0, 0, 0, 0, 0];
+  var totals = [quizData.length, fillData.length, convData.length, speedData.length, 0];
+  var partDone = [false, false, false, false, false];
+  var wrongItems = [];
 
   var navBtns = document.querySelectorAll('.nav__btn');
-  var parts = [document.getElementById('part0'), document.getElementById('part1'), document.getElementById('part2'), document.getElementById('part3')];
+  var parts = [document.getElementById('part0'), document.getElementById('part1'), document.getElementById('part2'), document.getElementById('part3'), document.getElementById('part4')];
   var scoreText = document.getElementById('scoreText');
   var scoreNext = document.getElementById('scoreNext');
 
   // ============ NAV ============
   navBtns.forEach(function (btn) {
     btn.addEventListener('click', function () {
-      switchPart(parseInt(btn.dataset.part));
+      var idx = parseInt(btn.dataset.part);
+      if (btn.classList.contains('nav__btn--locked')) return;
+      switchPart(idx);
     });
   });
 
   scoreNext.addEventListener('click', function () {
-    if (currentPart < 3) switchPart(currentPart + 1);
+    if (currentPart < 4) switchPart(currentPart + 1);
   });
 
   function switchPart(idx) {
@@ -282,67 +294,136 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
       p.classList.toggle('part--active', i === idx);
     });
     updateScore();
-    scoreNext.style.display = idx === 3 ? 'none' : '';
+    scoreNext.style.display = (idx >= 3) ? 'none' : '';
   }
 
   function updateScore() {
-    var t = totals[currentPart];
-    if (currentPart === 3 && !partDone[3]) {
+    if (currentPart === 4) {
+      scoreText.textContent = wrongItems.length > 0 ? wrongItems.length + '개 오답' : '전부 정답!';
+    } else if (currentPart === 3 && !partDone[3]) {
       scoreText.textContent = '준비됨';
     } else {
-      scoreText.textContent = scores[currentPart] + ' / ' + t + ' 정답';
+      scoreText.textContent = scores[currentPart] + ' / ' + totals[currentPart] + ' 정답';
     }
-    if (partDone[currentPart] && currentPart < 3) {
+    if (partDone[currentPart] && currentPart < 4) {
       navBtns[currentPart].classList.add('nav__btn--done');
+    }
+    checkUnlockWrongNote();
+  }
+
+  function checkUnlockWrongNote() {
+    if (partDone[0] && partDone[1] && partDone[2] && partDone[3]) {
+      navBtns[4].classList.remove('nav__btn--locked');
+      if (!partDone[4]) {
+        partDone[4] = true;
+        buildWrongNote();
+      }
     }
   }
 
-  // ============ PART 1: QUIZ ============
+  // ============ PART 1: QUIZ (multi-answer support) ============
   function buildQuiz() {
     var html = '<div class="part__header"><div class="part__num">PART 1</div><div class="part__title">상황 퀴즈</div><div class="part__desc">상황에 맞는 영어 표현을 골라보세요</div></div><div class="progress"><div class="progress__bar" id="quizProgress"></div></div>';
     var answered = 0;
 
     quizData.forEach(function (item, qi) {
+      var isMulti = item.answers.length > 1;
       var shuffled = shuffle(item.opts.slice());
-      html += '<div class="quiz-card" id="qc' + qi + '"><div class="quiz-card__num">Q' + (qi + 1) + '</div><div class="quiz-card__q">' + item.q + '</div><div class="quiz-card__session">' + item.session + '</div><div class="quiz-opts">';
-      shuffled.forEach(function (opt, oi) {
+      html += '<div class="quiz-card" id="qc' + qi + '"><div class="quiz-card__num">Q' + (qi + 1) + '</div><div class="quiz-card__q">' + item.q + '</div><div class="quiz-card__session">' + item.session + '</div>';
+      if (isMulti) html += '<div class="quiz-card__multi">복수 정답 (' + item.answers.length + '개)</div>';
+      html += '<div class="quiz-opts">';
+      shuffled.forEach(function (opt) {
         html += '<button class="quiz-opt" data-qi="' + qi + '" data-val="' + escHtml(opt) + '">' + opt + '</button>';
       });
-      html += '</div></div>';
+      html += '</div>';
+      if (isMulti) html += '<button class="quiz-submit" data-qi="' + qi + '">제출</button>';
+      html += '</div>';
     });
 
     parts[0].innerHTML = html;
 
+    // Single-answer: click to answer
+    // Multi-answer: click to select, then submit
     parts[0].querySelectorAll('.quiz-opt').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var qi = parseInt(btn.dataset.qi);
         var card = document.getElementById('qc' + qi);
         if (card.dataset.done) return;
-        card.dataset.done = '1';
+        var item = quizData[qi];
+        var isMulti = item.answers.length > 1;
 
-        var val = btn.dataset.val;
-        var correct = quizData[qi].answer;
-        var allOpts = card.querySelectorAll('.quiz-opt');
-
-        allOpts.forEach(function (o) {
-          o.classList.add('quiz-opt--disabled');
-          if (o.dataset.val === correct) o.classList.add('quiz-opt--correct');
-        });
-
-        if (val === correct) {
-          scores[0]++;
+        if (isMulti) {
+          btn.classList.toggle('quiz-opt--selected');
+          var submitBtn = card.querySelector('.quiz-submit');
+          var selected = card.querySelectorAll('.quiz-opt--selected');
+          submitBtn.style.display = selected.length > 0 ? '' : 'none';
         } else {
-          btn.classList.add('quiz-opt--wrong');
+          finishQuizCard(qi, [btn.dataset.val]);
         }
-
-        answered++;
-        document.getElementById('quizProgress').style.width = (answered / quizData.length * 100) + '%';
-        updateScore();
-
-        if (answered === quizData.length) partDone[0] = true;
-        updateScore();
       });
     });
+
+    parts[0].querySelectorAll('.quiz-submit').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var qi = parseInt(btn.dataset.qi);
+        var card = document.getElementById('qc' + qi);
+        if (card.dataset.done) return;
+        var selected = Array.prototype.slice.call(card.querySelectorAll('.quiz-opt--selected')).map(function (o) { return o.dataset.val; });
+        finishQuizCard(qi, selected);
+      });
+    });
+
+    function finishQuizCard(qi, selected) {
+      var card = document.getElementById('qc' + qi);
+      card.dataset.done = '1';
+      var item = quizData[qi];
+      var allOpts = card.querySelectorAll('.quiz-opt');
+      var submitBtn = card.querySelector('.quiz-submit');
+      if (submitBtn) submitBtn.style.display = 'none';
+
+      var correctSet = {};
+      item.answers.forEach(function (a) { correctSet[a] = true; });
+      var selectedSet = {};
+      selected.forEach(function (s) { selectedSet[s] = true; });
+
+      var allCorrect = true;
+      // Check: did they select exactly the right ones?
+      item.answers.forEach(function (a) {
+        if (!selectedSet[a]) allCorrect = false;
+      });
+      selected.forEach(function (s) {
+        if (!correctSet[s]) allCorrect = false;
+      });
+
+      allOpts.forEach(function (o) {
+        o.classList.remove('quiz-opt--selected');
+        o.classList.add('quiz-opt--disabled');
+        var val = o.dataset.val;
+        if (correctSet[val] && selectedSet[val]) {
+          o.classList.add('quiz-opt--correct');
+        } else if (correctSet[val] && !selectedSet[val]) {
+          o.classList.add('quiz-opt--missed');
+        } else if (!correctSet[val] && selectedSet[val]) {
+          o.classList.add('quiz-opt--wrong');
+        }
+      });
+
+      if (allCorrect) {
+        scores[0]++;
+      } else {
+        wrongItems.push({
+          part: 'PART 1 상황 퀴즈',
+          q: item.q,
+          yourAnswer: selected.join(', ') || '(선택 안 함)',
+          correct: item.answers.join(', ')
+        });
+      }
+
+      answered++;
+      document.getElementById('quizProgress').style.width = (answered / quizData.length * 100) + '%';
+      if (answered === quizData.length) partDone[0] = true;
+      updateScore();
+    }
   }
 
   // ============ PART 2: FILL BLANK ============
@@ -354,7 +435,7 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
       var display = item.sentence.replace('_____', '<span class="blank" id="blank' + fi + '">' + item.blank + '</span>');
       html += '<div class="fill-card" id="fc' + fi + '"><div class="fill-card__num">Q' + (fi + 1) + '</div><div class="fill-card__context">' + item.context + '</div><div class="fill-card__q">' + display + '</div>';
       html += '<div class="fill-row"><input class="fill-input" id="fi' + fi + '" placeholder="빈칸에 들어갈 단어" autocomplete="off" autocapitalize="off"><button class="fill-btn" data-fi="' + fi + '">확인</button></div>';
-      html += '<div class="fill-hint" data-fi="' + fi + '">💡 힌트 보기</div>';
+      html += '<div class="fill-hint" data-fi="' + fi + '">힌트 보기</div>';
       html += '<div class="fill-result" id="fr' + fi + '"></div></div>';
     });
 
@@ -366,17 +447,14 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
 
     parts[1].querySelectorAll('.fill-input').forEach(function (inp) {
       inp.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
-          var fi = parseInt(inp.id.replace('fi', ''));
-          checkFill(fi);
-        }
+        if (e.key === 'Enter') checkFill(parseInt(inp.id.replace('fi', '')));
       });
     });
 
     parts[1].querySelectorAll('.fill-hint').forEach(function (hint) {
       hint.addEventListener('click', function () {
         var fi = parseInt(hint.dataset.fi);
-        hint.textContent = '힌트: 첫 글자는 "' + fillData[fi].hint + '"';
+        hint.textContent = '첫 글자: ' + fillData[fi].hint;
       });
     });
 
@@ -396,11 +474,17 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
         scores[1]++;
         input.classList.add('fill-input--correct');
         result.className = 'fill-result fill-result--correct';
-        result.textContent = '정답! ✓';
+        result.textContent = '정답!';
       } else {
         input.classList.add('fill-input--wrong');
         result.className = 'fill-result fill-result--wrong';
         result.textContent = '정답: ' + fillData[fi].blank;
+        wrongItems.push({
+          part: 'PART 2 빈칸 채우기',
+          q: fillData[fi].sentence.replace('_____', '______'),
+          yourAnswer: val || '(미입력)',
+          correct: fillData[fi].blank
+        });
       }
 
       blank.classList.add('blank--revealed');
@@ -416,6 +500,7 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
   // ============ PART 3: CONVERSATION SORT ============
   function buildConv() {
     var html = '<div class="part__header"><div class="part__num">PART 3</div><div class="part__title">대화 정렬</div><div class="part__desc">대화 순서를 맞게 드래그해서 정렬하세요</div></div>';
+    var convAnswered = 0;
 
     convData.forEach(function (conv, ci) {
       var shuffled = shuffle(conv.correct.map(function (line, li) {
@@ -431,7 +516,6 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
 
     parts[2].innerHTML = html;
 
-    // Drag and drop
     convData.forEach(function (conv, ci) {
       var container = document.getElementById('cl' + ci);
       var dragEl = null;
@@ -469,13 +553,11 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
         container.querySelectorAll('.conv-line').forEach(function (l) { l.classList.remove('over'); });
       });
 
-      // Touch drag support
+      // Touch
       var touchEl = null;
-      var touchClone = null;
       container.addEventListener('touchstart', function (e) {
         touchEl = e.target.closest('.conv-line');
-        if (!touchEl) return;
-        touchEl.classList.add('dragging');
+        if (touchEl) touchEl.classList.add('dragging');
       }, { passive: true });
       container.addEventListener('touchmove', function (e) {
         if (!touchEl) return;
@@ -505,7 +587,6 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
       });
     });
 
-    // Check buttons
     parts[2].querySelectorAll('.conv-check').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var ci = parseInt(btn.dataset.ci);
@@ -515,8 +596,10 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
 
         var lines = document.getElementById('cl' + ci).querySelectorAll('.conv-line');
         var allCorrect = true;
+        var userOrder = [];
         lines.forEach(function (line, li) {
           var orig = parseInt(line.dataset.orig);
+          userOrder.push(line.querySelector('.conv-line__text').textContent);
           if (orig === li) {
             line.classList.add('conv-line--correct');
           } else {
@@ -528,14 +611,17 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
         var result = document.getElementById('cr' + ci);
         if (allCorrect) {
           scores[2]++;
-          result.className = 'conv-result';
           result.style.color = 'var(--green)';
-          result.textContent = '완벽해요! ✓';
+          result.textContent = '완벽해요!';
         } else {
-          result.className = 'conv-result';
           result.style.color = 'var(--red)';
           result.textContent = '순서를 확인해보세요';
-          // Show correct order after 1.5s
+          wrongItems.push({
+            part: 'PART 3 대화 정렬',
+            q: convData[ci].situation,
+            yourAnswer: userOrder.join(' → '),
+            correct: convData[ci].correct.map(function (l) { return l.text; }).join(' → ')
+          });
           setTimeout(function () {
             var container = document.getElementById('cl' + ci);
             var sorted = Array.prototype.slice.call(lines).sort(function (a, b) {
@@ -548,57 +634,40 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
             });
             result.textContent = '정답 순서로 정렬했어요';
             result.style.color = 'var(--ac)';
-          }, 1500);
+          }, 2000);
         }
 
         btn.disabled = true;
         btn.style.background = '#ccc';
-        partDone[2] = true;
+        convAnswered++;
+        if (convAnswered === convData.length) partDone[2] = true;
         updateScore();
       });
     });
   }
 
-  // ============ PART 4: SPEED ROUND ============
+  // ============ PART 4: 영작 라운드 (no timer, 15 questions) ============
   function buildSpeed() {
-    var html = '<div class="part__header"><div class="part__num">PART 4</div><div class="part__title">스피드 라운드</div><div class="part__desc">60초 안에 최대한 많이 맞추세요!</div></div>';
-    html += '<div class="start-screen" id="speedStart"><p style="font-size:15px;color:var(--gray);margin-bottom:8px;">한국어를 보고 영어로 입력하세요.<br>정확하지 않아도 비슷하면 정답!</p><button class="start-btn" id="speedStartBtn">시작하기</button></div>';
-    html += '<div id="speedGame" style="display:none"><div class="speed-top"><div class="speed-timer" id="speedTimer">60</div><div class="speed-score" id="speedScore">0 / ' + speedData.length + '</div></div>';
-    html += '<div class="speed-card" id="speedCard"><div class="speed-card__session" id="speedSession"></div><div class="speed-card__q" id="speedQ"></div><input class="speed-card__input" id="speedInput" autocomplete="off" autocapitalize="off" placeholder="영어로 입력"><button class="speed-card__skip" id="speedSkip">모르겠어요 → 넘기기</button></div></div>';
+    var html = '<div class="part__header"><div class="part__num">PART 4</div><div class="part__title">영작 라운드</div><div class="part__desc">한국어를 보고 영어로 써보세요 (15문제)</div></div>';
+    html += '<div id="speedGame"><div class="speed-top"><div class="speed-progress" id="speedProgress">1 / ' + speedData.length + '</div><div class="speed-score" id="speedScore">0점</div></div>';
+    html += '<div class="speed-card" id="speedCard"><div class="speed-card__session" id="speedSession"></div><div class="speed-card__q" id="speedQ"></div><input class="speed-card__input" id="speedInput" autocomplete="off" autocapitalize="off" placeholder="영어로 입력"><div class="speed-card__answer" id="speedAnswer"></div><div class="speed-card__btns" id="speedBtns"><button class="fill-btn" id="speedSubmit">확인</button><button class="speed-card__skip" id="speedSkip">모르겠어요</button></div></div></div>';
     html += '<div class="result-screen" id="speedResult" style="display:none"></div>';
 
     parts[3].innerHTML = html;
     totals[3] = speedData.length;
 
-    var timer, timeLeft, speedIdx, speedAnswered;
-    var pool;
+    var speedIdx = 0;
+    var pool = shuffle(speedData.slice());
 
-    document.getElementById('speedStartBtn').addEventListener('click', startSpeed);
+    showSpeedCard();
 
-    function startSpeed() {
-      document.getElementById('speedStart').style.display = 'none';
-      document.getElementById('speedGame').style.display = '';
-      document.getElementById('speedResult').style.display = 'none';
-
-      timeLeft = 60;
-      speedIdx = 0;
-      speedAnswered = 0;
-      scores[3] = 0;
-      pool = shuffle(speedData.slice());
-
-      showSpeedCard();
-      updateScore();
-
-      timer = setInterval(function () {
-        timeLeft--;
-        var el = document.getElementById('speedTimer');
-        el.textContent = timeLeft;
-        if (timeLeft <= 10) el.classList.add('speed-timer--warn');
-        if (timeLeft <= 0) endSpeed();
-      }, 1000);
-
-      document.getElementById('speedInput').focus();
-    }
+    document.getElementById('speedSubmit').addEventListener('click', checkSpeed);
+    document.getElementById('speedInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') checkSpeed();
+    });
+    document.getElementById('speedSkip').addEventListener('click', function () {
+      skipSpeed();
+    });
 
     function showSpeedCard() {
       if (speedIdx >= pool.length) { endSpeed(); return; }
@@ -607,25 +676,20 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
       document.getElementById('speedQ').textContent = item.q;
       document.getElementById('speedInput').value = '';
       document.getElementById('speedInput').className = 'speed-card__input';
+      document.getElementById('speedAnswer').textContent = '';
+      document.getElementById('speedSubmit').style.display = '';
+      document.getElementById('speedSkip').style.display = '';
+      document.getElementById('speedProgress').textContent = (speedIdx + 1) + ' / ' + pool.length;
+      document.getElementById('speedInput').disabled = false;
       document.getElementById('speedInput').focus();
+      // Remove any existing next button
+      var oldNext = document.getElementById('speedNextBtn');
+      if (oldNext) oldNext.remove();
     }
-
-    document.getElementById('speedInput').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') {
-        checkSpeed();
-      }
-    });
-
-    document.getElementById('speedSkip').addEventListener('click', function () {
-      showFlash('✗', false);
-      speedIdx++;
-      speedAnswered++;
-      document.getElementById('speedScore').textContent = scores[3] + ' / ' + speedAnswered;
-      showSpeedCard();
-    });
 
     function checkSpeed() {
       var input = document.getElementById('speedInput');
+      if (input.disabled) return;
       var val = input.value.trim().toLowerCase().replace(/[?.!,]/g, '');
       if (!val) return;
 
@@ -634,60 +698,116 @@ body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
         return normalize(val) === normalize(ans) || normalize(ans).indexOf(normalize(val)) !== -1 || normalize(val).indexOf(normalize(ans)) !== -1;
       });
 
+      input.disabled = true;
+      document.getElementById('speedSubmit').style.display = 'none';
+      document.getElementById('speedSkip').style.display = 'none';
+
+      var answerEl = document.getElementById('speedAnswer');
       if (isCorrect) {
         scores[3]++;
-        showFlash('✓', true);
+        input.classList.add('speed-card__input--correct');
+        answerEl.style.color = 'var(--green)';
+        answerEl.textContent = '정답!';
       } else {
-        showFlash(item.a[0], false);
+        input.classList.add('speed-card__input--wrong');
+        answerEl.style.color = 'var(--red)';
+        answerEl.textContent = '정답: ' + item.display;
+        wrongItems.push({
+          part: 'PART 4 영작 라운드',
+          q: item.q,
+          yourAnswer: input.value.trim() || '(미입력)',
+          correct: item.display
+        });
       }
 
-      speedIdx++;
-      speedAnswered++;
-      document.getElementById('speedScore').textContent = scores[3] + ' / ' + speedAnswered;
+      document.getElementById('speedScore').textContent = scores[3] + '점';
       updateScore();
-      showSpeedCard();
+      showNextButton();
+    }
+
+    function skipSpeed() {
+      var item = pool[speedIdx];
+      var input = document.getElementById('speedInput');
+      input.disabled = true;
+      document.getElementById('speedSubmit').style.display = 'none';
+      document.getElementById('speedSkip').style.display = 'none';
+
+      var answerEl = document.getElementById('speedAnswer');
+      answerEl.style.color = 'var(--red)';
+      answerEl.textContent = '정답: ' + item.display;
+
+      wrongItems.push({
+        part: 'PART 4 영작 라운드',
+        q: item.q,
+        yourAnswer: '(넘김)',
+        correct: item.display
+      });
+
+      updateScore();
+      showNextButton();
+    }
+
+    function showNextButton() {
+      var btns = document.getElementById('speedBtns');
+      var nextBtn = document.createElement('button');
+      nextBtn.className = 'speed-next-btn';
+      nextBtn.id = 'speedNextBtn';
+      nextBtn.textContent = speedIdx < pool.length - 1 ? '다음 문제' : '결과 보기';
+      btns.appendChild(nextBtn);
+      nextBtn.addEventListener('click', function () {
+        speedIdx++;
+        if (speedIdx >= pool.length) {
+          endSpeed();
+        } else {
+          showSpeedCard();
+        }
+      });
     }
 
     function endSpeed() {
-      clearInterval(timer);
       document.getElementById('speedGame').style.display = 'none';
       partDone[3] = true;
-      totals[3] = speedAnswered || pool.length;
+      totals[3] = pool.length;
 
-      var pct = speedAnswered > 0 ? Math.round(scores[3] / speedAnswered * 100) : 0;
-      var grade = pct >= 90 ? '완벽해요! 🎉' : pct >= 70 ? '잘했어요! 👏' : pct >= 50 ? '괜찮아요! 💪' : '더 연습해봐요! 📚';
+      var pct = Math.round(scores[3] / pool.length * 100);
+      var grade = pct >= 90 ? '완벽해요!' : pct >= 70 ? '잘했어요!' : pct >= 50 ? '괜찮아요!' : '더 연습해봐요!';
 
-      // Session breakdown
-      var sessionScores = {};
-      pool.forEach(function (item, i) {
-        if (i >= speedAnswered) return;
-        if (!sessionScores[item.session]) sessionScores[item.session] = { total: 0, correct: 0 };
-        sessionScores[item.session].total++;
-      });
-
-      var resultHtml = '<h2>스피드 라운드 결과</h2><div class="result-score">' + scores[3] + ' / ' + speedAnswered + '</div><p style="font-size:18px;margin-bottom:20px;">' + grade + '</p>';
-      resultHtml += '<button class="result-btn" id="speedRetry">다시 도전</button>';
+      var resultHtml = '<h2>영작 라운드 결과</h2><div class="result-score">' + scores[3] + ' / ' + pool.length + '</div><p style="font-size:18px;margin-bottom:20px;">' + grade + '</p>';
+      resultHtml += '<button class="result-btn" id="goWrongNote">오답 노트 보기</button>';
 
       var resultEl = document.getElementById('speedResult');
       resultEl.innerHTML = resultHtml;
       resultEl.style.display = '';
 
-      document.getElementById('speedRetry').addEventListener('click', function () {
-        startSpeed();
+      document.getElementById('goWrongNote').addEventListener('click', function () {
+        switchPart(4);
       });
 
       updateScore();
     }
   }
 
-  function showFlash(text, isCorrect) {
-    var el = document.createElement('div');
-    el.className = 'speed-flash ' + (isCorrect ? 'speed-flash--correct' : 'speed-flash--wrong');
-    el.textContent = text;
-    document.body.appendChild(el);
-    setTimeout(function () { el.remove(); }, 700);
+  // ============ PART 5: WRONG NOTE ============
+  function buildWrongNote() {
+    var html = '<div class="part__header"><div class="part__num">REVIEW</div><div class="part__title">오답 노트</div><div class="part__desc">틀린 문제를 모아서 복습하세요</div></div>';
+
+    if (wrongItems.length === 0) {
+      html += '<div class="perfect-msg"><div class="perfect-msg__icon">!</div><div class="perfect-msg__title">전부 맞았어요</div><div class="perfect-msg__sub">틀린 문제가 없습니다</div></div>';
+    } else {
+      wrongItems.forEach(function (item, i) {
+        html += '<div class="wrong-card">';
+        html += '<div class="wrong-card__part">' + item.part + '</div>';
+        html += '<div class="wrong-card__q">' + item.q + '</div>';
+        html += '<div class="wrong-card__your">내 답: ' + item.yourAnswer + '</div>';
+        html += '<div class="wrong-card__correct">정답: ' + item.correct + '</div>';
+        html += '</div>';
+      });
+    }
+
+    parts[4].innerHTML = html;
   }
 
+  // ============ UTILS ============
   function normalize(s) {
     return s.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
   }
