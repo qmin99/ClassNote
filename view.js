@@ -577,7 +577,8 @@
         sessionSelect.style.display = '';
 
         if (sessionLabel) {
-            sessionLabel.textContent = 'Session ' + (currentSessionIdx + 1);
+            var sNum = viewSessions[currentSessionIdx].num || (currentSessionIdx + 1);
+            sessionLabel.textContent = 'Session ' + sNum;
         }
 
         var html = '';
@@ -585,7 +586,7 @@
             var title = s.title || ('Session ' + (i + 1));
             var active = i === currentSessionIdx ? ' view-session-select__item--active' : '';
             html += '<button class="view-session-select__item' + active + '" data-session="' + i + '">'
-                + '<span class="view-session-select__num">' + (i + 1) + '</span>'
+                + '<span class="view-session-select__num">' + (s.num || (i + 1)) + '</span>'
                 + '<span>' + title + '</span>'
                 + '</button>';
         });

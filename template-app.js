@@ -5352,7 +5352,8 @@
             sessionsData.push({
                 html: html,
                 title: session.title || '',
-                subtitle: session.subtitle || ''
+                subtitle: session.subtitle || '',
+                num: session.num || ''
             });
         });
 
