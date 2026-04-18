@@ -3559,7 +3559,7 @@
                 syncEditablesToSession();
                 course.sessions.splice(idx, 1);
                 // Renumber remaining sessions
-                course.sessions.forEach(function (s, i) { s.num = i + 1; });
+                course.sessions.forEach(function (s, i) { s.num = i < 5 ? i + 1 : i + 2; });
                 // Adjust active index
                 if (state.sessionIdx >= course.sessions.length) {
                     state.sessionIdx = course.sessions.length - 1;
@@ -3602,7 +3602,7 @@
                 syncEditablesToSession();
                 var moved = course.sessions.splice(dragIdx, 1)[0];
                 course.sessions.splice(dropIdx, 0, moved);
-                course.sessions.forEach(function (s, i) { s.num = i + 1; });
+                course.sessions.forEach(function (s, i) { s.num = i < 5 ? i + 1 : i + 2; });
                 // Adjust active index
                 if (state.sessionIdx === dragIdx) {
                     state.sessionIdx = dropIdx;
@@ -3625,7 +3625,8 @@
                 syncEditablesToSession();
                 var lastSession = course.sessions[course.sessions.length - 1];
                 var newSession = JSON.parse(JSON.stringify(lastSession));
-                newSession.num = course.sessions.length + 1;
+                var newIdx = course.sessions.length;
+                newSession.num = newIdx < 5 ? newIdx + 1 : newIdx + 2;
                 newSession.title = 'Session ' + newSession.num;
                 // Clear content but keep structure
                 clearSessionContent(newSession);
@@ -3979,7 +3980,8 @@
         syncEditablesToSession();
         var original = course.sessions[sessionIdx];
         var copy = JSON.parse(JSON.stringify(original));
-        copy.num = course.sessions.length + 1;
+        var copyIdx = course.sessions.length;
+        copy.num = copyIdx < 5 ? copyIdx + 1 : copyIdx + 2;
         copy.title = original.title + ' (복사)';
         course.sessions.push(copy);
         state.courseId = courseId;
