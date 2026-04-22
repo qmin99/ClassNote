@@ -3563,7 +3563,7 @@
                 syncEditablesToSession();
                 course.sessions.splice(idx, 1);
                 // Renumber remaining sessions
-                course.sessions.forEach(function (s, i) { s.num = i < 5 ? i + 1 : i + 2; });
+                course.sessions.forEach(function (s, i) { s.num = _sessNumForIdx(i); });
                 // Adjust active index
                 if (state.sessionIdx >= course.sessions.length) {
                     state.sessionIdx = course.sessions.length - 1;
@@ -3606,7 +3606,7 @@
                 syncEditablesToSession();
                 var moved = course.sessions.splice(dragIdx, 1)[0];
                 course.sessions.splice(dropIdx, 0, moved);
-                course.sessions.forEach(function (s, i) { s.num = i < 5 ? i + 1 : i + 2; });
+                course.sessions.forEach(function (s, i) { s.num = _sessNumForIdx(i); });
                 // Adjust active index
                 if (state.sessionIdx === dragIdx) {
                     state.sessionIdx = dropIdx;
@@ -3629,8 +3629,7 @@
                 syncEditablesToSession();
                 var lastSession = course.sessions[course.sessions.length - 1];
                 var newSession = JSON.parse(JSON.stringify(lastSession));
-                var newIdx = course.sessions.length;
-                newSession.num = newIdx < 5 ? newIdx + 1 : newIdx + 2;
+                newSession.num = _sessNumForIdx(course.sessions.length);
                 newSession.title = 'Session ' + newSession.num;
                 // Clear content but keep structure
                 clearSessionContent(newSession);
@@ -3984,8 +3983,7 @@
         syncEditablesToSession();
         var original = course.sessions[sessionIdx];
         var copy = JSON.parse(JSON.stringify(original));
-        var copyIdx = course.sessions.length;
-        copy.num = copyIdx < 5 ? copyIdx + 1 : copyIdx + 2;
+        copy.num = _sessNumForIdx(course.sessions.length);
         copy.title = original.title + ' (복사)';
         course.sessions.push(copy);
         state.courseId = courseId;
@@ -4995,6 +4993,11 @@
     var _courseSaveTimer = null;
     var _courseSaving = false;
 
+    // 정민경 코스(8h1cqo8l)는 Session 6이 review.html이라 에디터에서 건너뜀
+    function _sessNumForIdx(idx) {
+        return (currentCourseDocId === '8h1cqo8l' && idx >= 5) ? idx + 2 : idx + 1;
+    }
+
     function saveCourseToFirestore(immediate) {
         if (!db) return;
         // Only auto-save if courseDocId already exists (created during first deploy)
@@ -5041,7 +5044,7 @@
                             var d = ss._date || '';
                             var m = d.match(/(\d+)년\s*(\d+)월\s*(\d+)일/);
                             var formatted = m ? m[1] + '.' + (m[2].length < 2 ? '0' + m[2] : m[2]) + '.' + (m[3].length < 2 ? '0' + m[3] : m[3]) : d.replace(/년\s*/g, '.').replace(/월\s*/g, '.').replace(/일/, '');
-                            var num = ss.num || (i < 5 ? i + 1 : i + 2);
+                            var num = ss.num || _sessNumForIdx(i);
                             return { title: ss.title || '', date: formatted, num: String(num) };
                         });
                         // studentName과 매칭되는 학생에게 세션 동기화
@@ -6307,7 +6310,7 @@
                 var dt = ss.date || '';
                 var dm = dt.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})$/);
                 if (dm) dt = dm[1] + '.' + (dm[2].length < 2 ? '0' + dm[2] : dm[2]) + '.' + (dm[3].length < 2 ? '0' + dm[3] : dm[3]);
-                var displayNum = ss.num || (ss.origIdx < 5 ? ss.origIdx + 1 : ss.origIdx + 2);
+                var displayNum = ss.num || (ss.origIdx + 1);
                 sessHTML += '<div class="smb__sess-item" data-sess-idx="' + ss.origIdx + '" style="cursor:pointer"><div class="smb__sess-num" style="background:' + bg + '">' + displayNum + '</div><span class="smb__sess-title">' + esc(ss.title) + '</span><span class="smb__sess-date">' + esc(dt) + '</span></div>';
             });
 
