@@ -7,14 +7,45 @@
     <meta property="og:title" content="클래스노트 수업자료">
     <meta property="og:description" content="선생님이 공유한 수업자료입니다. 클릭해서 확인하세요.">
     <meta property="og:type" content="website">
+    <meta property="og:image" content="https://class-note-material.netlify.app/screenshots/classnote-logo.png">
+    <meta property="og:image:width" content="442">
+    <meta property="og:image:height" content="154">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="클래스노트 수업자료">
+    <meta name="twitter:image" content="https://class-note-material.netlify.app/screenshots/classnote-logo.png">
     <meta name="theme-color" content="#f7f7f7">
     <title>클래스노트</title>
-    <link rel="icon" href="https://fav.farm/📑">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <link rel="apple-touch-icon" href="/icon-192.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&family=Lora:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="template-styles.css">
     <link rel="stylesheet" href="view.css">
+    <script>
+    /* QA PATCH — global error capture (2026-04-22). Replace console log with Sentry later. */
+    (function () {
+        var CAP_KEY = '__cn_errors';
+        function record(kind, data) {
+            try {
+                var arr = JSON.parse(sessionStorage.getItem(CAP_KEY) || '[]');
+                arr.push({ kind: kind, at: location.href, ua: navigator.userAgent.substring(0, 120), ts: Date.now(), data: data });
+                while (arr.length > 50) arr.shift();
+                sessionStorage.setItem(CAP_KEY, JSON.stringify(arr));
+            } catch (e) {}
+            try { console.warn('[CN_CAPTURED_' + kind + ']', data); } catch (e) {}
+        }
+        window.addEventListener('error', function (e) {
+            record('error', { msg: e.message, url: e.filename, line: e.lineno, col: e.colno });
+        });
+        window.addEventListener('unhandledrejection', function (e) {
+            var reason = e.reason && (e.reason.message || e.reason.toString()) || 'unknown';
+            record('unhandledrejection', { reason: String(reason).substring(0, 300) });
+        });
+    })();
+    </script>
 </head>
 <body>
     <!-- Header -->

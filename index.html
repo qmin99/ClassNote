@@ -5,10 +5,303 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>클래스노트 — 과외 선생님을 위한 수업자료 템플릿</title>
     <meta name="description" content="5분 만에 전문 수업자료를 완성하세요. 과목별 맞춤 템플릿으로 수업 준비 시간을 줄이고, 퀄리티는 높이세요.">
+    <meta property="og:title" content="클래스노트 — 과외 선생님을 위한 수업자료 템플릿">
+    <meta property="og:description" content="5분 만에 전문 수업자료를 완성하세요. 과목별 맞춤 템플릿.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://class-note-material.netlify.app/icon-512.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="클래스노트">
+    <meta name="twitter:image" content="https://class-note-material.netlify.app/icon-512.png">
+    <script>
+    /* QA PATCH — global error capture (2026-04-22). Replace console log with Sentry later. */
+    (function () {
+        var CAP_KEY = '__cn_errors';
+        function record(kind, data) {
+            try {
+                var arr = JSON.parse(sessionStorage.getItem(CAP_KEY) || '[]');
+                arr.push({ kind: kind, at: location.href, ua: navigator.userAgent.substring(0, 120), ts: Date.now(), data: data });
+                while (arr.length > 50) arr.shift();
+                sessionStorage.setItem(CAP_KEY, JSON.stringify(arr));
+            } catch (e) {}
+            try { console.warn('[CN_CAPTURED_' + kind + ']', data); } catch (e) {}
+        }
+        window.addEventListener('error', function (e) {
+            record('error', { msg: e.message, url: e.filename, line: e.lineno, col: e.colno });
+        });
+        window.addEventListener('unhandledrejection', function (e) {
+            var reason = e.reason && (e.reason.message || e.reason.toString()) || 'unknown';
+            record('unhandledrejection', { reason: String(reason).substring(0, 300) });
+        });
+    })();
+    </script>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+    <link rel="apple-touch-icon" href="/icon-192.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* === How section: 4 steps === */
+        .how__steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+        /* === Pricing badge fix === */
+        .pricing__card { align-items: center; display: flex; flex-direction: column; }
+        .pricing__card-features { flex: 1; }
+        .pricing__card .btn { margin-top: auto; }
+        .pricing__card-badge {
+            position: absolute;
+            top: -11px; left: 50%;
+            transform: translateX(-50%);
+        }
+        .pricing__card--featured { padding-top: 28px; }
+
+        /* === Theme orbit selector === */
+        .theme-orbit {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0;
+            margin-bottom: 24px;
+            position: relative;
+        }
+        .theme-orbit__track {
+            display: flex;
+            align-items: center;
+            background: #f5f5f5;
+            border-radius: 40px;
+            padding: 5px 6px;
+            gap: 4px;
+            border: 1px solid #e8e8e8;
+        }
+        .theme-orb {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            border: 2.5px solid transparent;
+            cursor: pointer;
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            padding: 0;
+            background: none;
+        }
+        .theme-orb__fill {
+            display: block;
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            background: var(--orb-color);
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .theme-orb:hover { transform: scale(1.15); }
+        .theme-orb:hover .theme-orb__fill { box-shadow: 0 0 12px var(--orb-glow); }
+        .theme-orb.active {
+            transform: scale(1.25);
+            border-color: var(--orb-color);
+            background: #fff;
+        }
+        .theme-orb.active .theme-orb__fill {
+            box-shadow: 0 0 16px var(--orb-glow), 0 0 4px var(--orb-glow);
+        }
+        .theme-orb__label {
+            position: absolute;
+            bottom: -18px; left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.6rem;
+            font-weight: 600;
+            color: var(--text-lighter);
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .theme-orb.active .theme-orb__label,
+        .theme-orb:hover .theme-orb__label {
+            opacity: 1;
+            color: var(--text-muted);
+        }
+
+        /* === Mini template cards — matches actual product step 3 preview === */
+        .templates__grid { grid-template-columns: repeat(3, 1fr); }
+        .template-card__preview {
+            aspect-ratio: 3 / 4.2;
+            padding: 10px 8px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .tpl {
+            background: #fff;
+            border-radius: 4px;
+            padding: 10px 10px 8px;
+            width: 100%;
+            text-align: left;
+            font-family: var(--font-body);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+        }
+        /* --- Header: matches p-header in actual product --- */
+        .tpl__hd {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 6px; padding-bottom: 5px;
+            border-bottom: 1.5px solid var(--tpl-c, #111);
+        }
+        .tpl__hd-left { flex: 1; }
+        .tpl__tag { font-size: 5.5px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--tpl-c, #111); margin-bottom: 1px; }
+        .tpl__title { font-size: 9.5px; font-weight: 700; color: var(--text); margin-bottom: 1px; letter-spacing: -0.2px; line-height: 1.25; }
+        .tpl__sub { font-size: 6px; color: #aaa; }
+        .tpl__hd-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+        .tpl__badge { font-size: 5.5px; font-weight: 700; letter-spacing: 0.3px; padding: 1.5px 5px; border: 1px solid var(--tpl-c, #111); border-radius: 2px; color: var(--tpl-c, #111); }
+        .tpl__meta { font-size: 5px; color: #aaa; text-align: right; line-height: 1.5; }
+
+        /* --- Sections --- */
+        .tpl__sec { margin-bottom: 5px; }
+        .tpl__sec:last-child { margin-bottom: 0; }
+        .tpl__sh {
+            display: flex; align-items: center; gap: 3px;
+            margin-bottom: 3px;
+            border-bottom: 1px solid var(--tpl-c, #111);
+            padding-bottom: 2px;
+        }
+        .tpl__num {
+            font-size: 5.5px; font-weight: 800; color: #fff;
+            background: var(--tpl-c, #111);
+            padding: 1px 3px; border-radius: 2px;
+        }
+        .tpl__name { font-size: 7px; font-weight: 700; color: var(--text); }
+
+        /* Phrase list — bordered rows like .pl in product */
+        .tpl__phrases {
+            border: 0.5px solid #e8e8e8; border-radius: 2px; overflow: hidden;
+            box-shadow: 0 0.5px 2px rgba(0,0,0,0.03);
+        }
+        .tpl__item {
+            font-size: 6.5px; line-height: 1.5; color: #444;
+            padding: 2.5px 5px;
+            border-bottom: 0.5px solid #eee;
+            background: #fff;
+        }
+        .tpl__item:last-child { border-bottom: none; }
+
+        /* Vocab grid — 3-column like .vg in product */
+        .tpl__vg {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px;
+        }
+        .tpl__vi {
+            padding: 3px 4px;
+            border: 0.5px solid #e8e8e8; border-radius: 2px;
+            background: #fff;
+            box-shadow: 0 0.5px 2px rgba(0,0,0,0.03);
+        }
+        .tpl__vi-t { font-size: 6px; font-weight: 600; color: var(--text); margin-bottom: 0.5px; }
+        .tpl__vi-d { font-size: 5px; color: #999; }
+
+        /* Scenario card — matches .sc in product */
+        .tpl__scard {
+            padding: 4px 5px;
+            border: 0.5px solid #e8e8e8; border-radius: 2px;
+            background: #fff;
+            box-shadow: 0 0.5px 2px rgba(0,0,0,0.03);
+        }
+        .tpl__scard-label { font-size: 4.5px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #bbb; margin-bottom: 1px; }
+        .tpl__scard-title { font-size: 6px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+        .tpl__scard-dialog {
+            font-size: 5.5px; font-style: italic; color: #666;
+            padding: 2px 0 2px 5px;
+            border-left: 1.5px solid var(--tpl-c, #111);
+            line-height: 1.4;
+        }
+
+        /* ═══ Modern variant ═══ */
+        .tpl.modern { background: color-mix(in srgb, var(--tpl-c, #2da5b6) 4%, #fff); }
+        .tpl.modern .tpl__hd { border-bottom: none; padding-bottom: 6px; }
+        .tpl.modern .tpl__tag { font-size: 5px; opacity: 0.5; }
+        .tpl.modern .tpl__title { font-weight: 800; letter-spacing: -0.3px; }
+        .tpl.modern .tpl__badge { border: none; background: var(--tpl-c, #2da5b6); color: #fff; border-radius: 2px; font-size: 5px; padding: 1.5px 4px; }
+        .tpl.modern .tpl__sh { border-bottom: none; padding-bottom: 0; }
+        .tpl.modern .tpl__num {
+            background: none; color: var(--tpl-c, #2da5b6);
+            padding: 0; font-size: 6.5px; font-weight: 900;
+        }
+        .tpl.modern .tpl__sec {
+            background: #fff; border: 1px solid color-mix(in srgb, var(--tpl-c) 8%, transparent);
+            border-radius: 4px; padding: 5px 6px; margin-bottom: 4px;
+            box-shadow: 0 0.5px 2px rgba(0,0,0,0.02);
+        }
+        .tpl.modern .tpl__phrases { border: none; box-shadow: none; display: flex; flex-direction: column; gap: 2px; }
+        .tpl.modern .tpl__item {
+            border: 0.5px solid color-mix(in srgb, var(--tpl-c) 15%, transparent);
+            border-radius: 3px; background: rgba(255,255,255,0.85); padding: 2px 5px;
+        }
+        .tpl.modern .tpl__item:last-child { border-bottom: 0.5px solid color-mix(in srgb, var(--tpl-c) 15%, transparent); }
+        .tpl.modern .tpl__vi {
+            border-color: color-mix(in srgb, var(--tpl-c) 15%, transparent);
+            border-radius: 3px; background: rgba(255,255,255,0.85); box-shadow: none;
+        }
+        .tpl.modern .tpl__vi-t { color: var(--tpl-c, #2da5b6); font-weight: 700; }
+        .tpl.modern .tpl__scard {
+            border-color: color-mix(in srgb, var(--tpl-c) 8%, transparent);
+            border-radius: 3px; background: rgba(255,255,255,0.85); box-shadow: none;
+        }
+        .tpl.modern .tpl__scard-label { color: var(--tpl-c); opacity: 0.6; }
+        .tpl.modern .tpl__scard-dialog {
+            border-left: none; border: 0.5px solid #eee; border-radius: 3px;
+            padding: 2px 5px; background: rgba(255,255,255,0.85);
+        }
+
+        /* ═══ Compact variant ═══ */
+        .tpl.compact .tpl__hd { border-bottom: 1px solid var(--text, #1a1a1a); margin-bottom: 4px; padding-bottom: 3px; }
+        .tpl.compact .tpl__tag { font-size: 4.5px; opacity: 0.45; letter-spacing: 1px; }
+        .tpl.compact .tpl__title { font-size: 8px; font-weight: 800; letter-spacing: -0.2px; }
+        .tpl.compact .tpl__sub { font-size: 5px; }
+        .tpl.compact .tpl__badge { font-size: 4.5px; padding: 1px 4px; border-radius: 1px; border-width: 0.5px; }
+        .tpl.compact .tpl__meta { font-size: 4.5px; }
+        .tpl.compact .tpl__sh { border-bottom: none; padding-bottom: 0; display: inline-flex; margin-bottom: 2px; gap: 0; }
+        .tpl.compact .tpl__num {
+            font-size: 5px; padding: 1px 2px 1px 4px;
+            border-radius: 2px 0 0 2px;
+            background: color-mix(in srgb, var(--tpl-c) 8%, #f5f5f5);
+            color: var(--tpl-c, #111);
+        }
+        .tpl.compact .tpl__name {
+            font-size: 5.5px; font-weight: 800; letter-spacing: 0.3px;
+            color: var(--tpl-c, #111); text-transform: uppercase;
+            background: color-mix(in srgb, var(--tpl-c) 8%, #f5f5f5);
+            padding: 1px 4px 1px 2px; border-radius: 0 2px 2px 0;
+        }
+        .tpl.compact .tpl__sec {
+            margin-bottom: 3px; padding-bottom: 3px;
+            border-bottom: 0.5px solid #eee;
+        }
+        .tpl.compact .tpl__sec:last-child { border-bottom: none; padding-bottom: 0; }
+        .tpl.compact .tpl__phrases { border: none; box-shadow: none; padding-left: 6px; }
+        .tpl.compact .tpl__item {
+            font-size: 5.5px; padding: 1px 0 1px 6px; position: relative;
+            border: none; background: none;
+        }
+        .tpl.compact .tpl__item::before { content: "·"; position: absolute; left: 0; color: #bbb; font-weight: 900; }
+        .tpl.compact .tpl__vg { grid-template-columns: 1fr 1fr; gap: 0; }
+        .tpl.compact .tpl__vi {
+            border: none; border-bottom: 0.5px solid #eee; border-radius: 0;
+            box-shadow: none; padding: 2px 4px; display: flex; gap: 3px; align-items: baseline; background: none;
+        }
+        .tpl.compact .tpl__vi:nth-child(odd) { border-right: 0.5px solid #eee; }
+        .tpl.compact .tpl__vi-t { font-size: 5px; font-weight: 700; }
+        .tpl.compact .tpl__vi-d { font-size: 4.5px; }
+        .tpl.compact .tpl__scard {
+            border: none; border-radius: 0; box-shadow: none; padding: 2px 0; background: none;
+        }
+        .tpl.compact .tpl__scard-label { font-size: 4px; opacity: 0.4; }
+        .tpl.compact .tpl__scard-title { font-size: 5px; }
+        .tpl.compact .tpl__scard-dialog {
+            font-size: 5px; border-left: none; padding: 2px 4px; font-style: normal;
+        }
+
+        @media (max-width: 768px) {
+            .how__steps { grid-template-columns: repeat(2, 1fr); }
+            .templates__grid { grid-template-columns: 1fr; max-width: 280px; margin: 0 auto; }
+            .theme-orb { width: 28px; height: 28px; }
+        }
+    </style>
 </head>
 <body>
     <!-- Nav -->
@@ -61,8 +354,17 @@
                         <span class="hero__mockup-url">classnote.app</span>
                     </div>
                     <div class="hero__mockup-screen">
-                        <img src="screenshots/05-onboarding-step3-design.png" alt="ClassNote 에디터 화면">
+                        <img src="screenshots/mcAiu.png" data-step="0" alt="Step 1 - 기본 정보">
+                        <img src="screenshots/f3YC9.png" data-step="1" alt="Step 2 - 과목">
+                        <img src="screenshots/TrnmS.png" data-step="2" class="active" alt="Step 3 - 디자인">
+                        <img src="screenshots/T7RM6.png" data-step="3" alt="Step 4 - 콘텐츠">
                     </div>
+                </div>
+                <div class="hero__step-dots">
+                    <button class="hero__step-dot" data-step="0" aria-label="Step 1"></button>
+                    <button class="hero__step-dot" data-step="1" aria-label="Step 2"></button>
+                    <button class="hero__step-dot active" data-step="2" aria-label="Step 3"></button>
+                    <button class="hero__step-dot" data-step="3" aria-label="Step 4"></button>
                 </div>
             </div>
         </div>
@@ -135,47 +437,70 @@
         </div>
     </section>
 
-    <!-- How It Works -->
+    <!-- How It Works — 4 steps matching actual onboarding -->
     <section class="how">
         <div class="how__inner">
-            <p class="section-eyebrow anim-blur">간단한 3단계</p>
+            <p class="section-eyebrow anim-blur">간단한 4단계</p>
             <h2 class="section-title anim-blur">클릭 몇 번이면 수업자료 완성</h2>
             <div class="how__steps stagger-group">
                 <div class="how__step">
                     <div class="how__step-num">01</div>
-                    <h3 class="how__step-title">과목·대상 선택</h3>
-                    <p class="how__step-desc">과목과 학년을 선택하면 맞춤 템플릿 추천</p>
+                    <h3 class="how__step-title">기본 정보</h3>
+                    <p class="how__step-desc">선생님 이름과 학원 로고를 입력하세요</p>
                     <div class="how__step-visual">
-                        <div class="step-chip-group">
-                            <span class="step-chip step-chip--active">수학</span>
-                            <span class="step-chip">영어</span>
-                            <span class="step-chip">국어</span>
+                        <div class="step-editor">
+                            <div class="step-editor__field">
+                                <span class="step-editor__label">선생님 이름</span>
+                                <span class="step-editor__input">이규민 선생님</span>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="how__step">
                     <div class="how__step-num">02</div>
-                    <h3 class="how__step-title">내용 커스터마이즈</h3>
-                    <p class="how__step-desc">단원명, 문제 입력 후 테마 색상 선택</p>
+                    <h3 class="how__step-title">과목·유형 선택</h3>
+                    <p class="how__step-desc">과목, 대상, 난이도를 설정합니다</p>
                     <div class="how__step-visual">
-                        <div class="step-editor">
-                            <div class="step-editor__field">
-                                <span class="step-editor__label">단원명</span>
-                                <span class="step-editor__input">일차함수의 그래프</span>
-                            </div>
+                        <div class="step-chip-group">
+                            <span class="step-chip step-chip--active">영어</span>
+                            <span class="step-chip">수학</span>
+                            <span class="step-chip">국어</span>
                         </div>
                     </div>
                 </div>
                 <div class="how__step">
                     <div class="how__step-num">03</div>
-                    <h3 class="how__step-title">다운로드·프린트</h3>
-                    <p class="how__step-desc">PDF로 다운로드하거나 바로 프린트·공유</p>
+                    <h3 class="how__step-title">디자인 선택</h3>
+                    <p class="how__step-desc">테마 컬러, 레이아웃, 폰트를 고릅니다</p>
                     <div class="how__step-visual">
-                        <div class="step-download">
-                            <svg viewBox="0 0 24 24" fill="none" width="14" height="14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                            </svg>
-                            <span>수업자료_일차함수.pdf</span>
+                        <div style="display:flex;gap:4px;align-items:center;">
+                            <span style="width:14px;height:14px;border-radius:50%;background:#111;border:2px solid #fff;box-shadow:0 0 0 1.5px #111;"></span>
+                            <span style="width:14px;height:14px;border-radius:50%;background:#2da5b6;"></span>
+                            <span style="width:14px;height:14px;border-radius:50%;background:#1d8a5e;"></span>
+                            <span style="width:14px;height:14px;border-radius:50%;background:#8b3a8b;"></span>
+                            <span style="width:14px;height:14px;border-radius:50%;background:#d4572a;"></span>
+                            <span style="width:14px;height:14px;border-radius:50%;background:#506d85;"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="how__step">
+                    <div class="how__step-num">04</div>
+                    <h3 class="how__step-title">섹션 구성</h3>
+                    <p class="how__step-desc">핵심 문장, 롤플레이 등 원하는 섹션만 토글</p>
+                    <div class="how__step-visual">
+                        <div style="display:flex;flex-direction:column;gap:3px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.65rem;color:var(--text);">
+                                <span>핵심 문장</span>
+                                <span style="width:24px;height:14px;background:var(--accent);border-radius:7px;position:relative;display:inline-block;"><span style="position:absolute;right:2px;top:2px;width:10px;height:10px;background:#fff;border-radius:50%;"></span></span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.65rem;color:var(--text);">
+                                <span>핵심 표현</span>
+                                <span style="width:24px;height:14px;background:var(--accent);border-radius:7px;position:relative;display:inline-block;"><span style="position:absolute;right:2px;top:2px;width:10px;height:10px;background:#fff;border-radius:50%;"></span></span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.65rem;color:#ccc;">
+                                <span>대화문</span>
+                                <span style="width:24px;height:14px;background:#ddd;border-radius:7px;position:relative;display:inline-block;"><span style="position:absolute;left:2px;top:2px;width:10px;height:10px;background:#fff;border-radius:50%;"></span></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -183,98 +508,145 @@
         </div>
     </section>
 
-    <!-- Template Preview -->
+    <!-- Template Preview — Real layouts + themes -->
     <section class="templates" id="templates">
         <div class="templates__inner">
-            <p class="section-eyebrow anim-blur">템플릿 미리보기</p>
-            <h2 class="section-title anim-blur">모든 과목, 모든 스타일</h2>
+            <p class="section-eyebrow anim-blur">레이아웃 미리보기</p>
+            <h2 class="section-title anim-blur">3가지 레이아웃, 6가지 테마</h2>
 
-            <div class="templates__themes anim-scroll">
-                <button class="theme-btn theme-btn--active" data-theme="warm">웜톤</button>
-                <button class="theme-btn" data-theme="cool">쿨톤</button>
-                <button class="theme-btn" data-theme="mono">모노</button>
-                <button class="theme-btn" data-theme="pastel">파스텔</button>
+            <div class="theme-orbit anim-scroll">
+                <div class="theme-orbit__track" id="tplColors">
+                    <button class="theme-orb active" data-color="ink" style="--orb-color:#111;--orb-glow:rgba(0,0,0,0.2);">
+                        <span class="theme-orb__fill"></span><span class="theme-orb__label">잉크</span>
+                    </button>
+                    <button class="theme-orb" data-color="teal" style="--orb-color:#2da5b6;--orb-glow:rgba(45,165,182,0.35);">
+                        <span class="theme-orb__fill"></span><span class="theme-orb__label">틸</span>
+                    </button>
+                    <button class="theme-orb" data-color="forest" style="--orb-color:#1d8a5e;--orb-glow:rgba(29,138,94,0.35);">
+                        <span class="theme-orb__fill"></span><span class="theme-orb__label">포레스트</span>
+                    </button>
+                    <button class="theme-orb" data-color="plum" style="--orb-color:#8b3a8b;--orb-glow:rgba(139,58,139,0.35);">
+                        <span class="theme-orb__fill"></span><span class="theme-orb__label">플럼</span>
+                    </button>
+                    <button class="theme-orb" data-color="ember" style="--orb-color:#d4572a;--orb-glow:rgba(212,87,42,0.35);">
+                        <span class="theme-orb__fill"></span><span class="theme-orb__label">엠버</span>
+                    </button>
+                    <button class="theme-orb" data-color="steel" style="--orb-color:#506d85;--orb-glow:rgba(80,109,133,0.35);">
+                        <span class="theme-orb__fill"></span><span class="theme-orb__label">스틸</span>
+                    </button>
+                </div>
             </div>
 
-            <div class="templates__grid stagger-group">
-                <div class="template-card" data-subject="math">
-                    <div class="template-card__preview">
-                        <div class="template-card__page">
-                            <div class="tc__header">
-                                <div class="tc__badge tc__badge--math">수학</div>
-                                <div class="tc__title-line"></div>
+            <div class="templates__grid stagger-group" id="tplGrid">
+                <!-- Classic -->
+                <div class="template-card">
+                    <div class="template-card__preview" style="background:linear-gradient(145deg,#eae9e5,#d9d8d4);border-color:#d5d5d2;">
+                        <div class="tpl" id="tplClassic">
+                            <div class="tpl__hd">
+                                <div class="tpl__title">First Day at a Company</div>
+                                <div class="tpl__sub">첫 출근 - 첫 인사, 자기소개</div>
                             </div>
-                            <div class="tc__body">
-                                <div class="tc__lines">
-                                    <div class="tc__line tc__line--w90"></div>
-                                    <div class="tc__line tc__line--w70"></div>
-                                    <div class="tc__line tc__line--w80"></div>
+                            <div class="tpl__sec">
+                                <div class="tpl__sh"><span class="tpl__num">01</span><span class="tpl__name">핵심 문장</span></div>
+                                <div class="tpl__item">"Hey, I just joined the team."</div>
+                                <div class="tpl__item">"Nice to finally meet you in person."</div>
+                                <div class="tpl__item">"I'm not sure at the moment, but I'll get back to you."</div>
+                            </div>
+                            <div class="tpl__sec">
+                                <div class="tpl__sh"><span class="tpl__num">02</span><span class="tpl__name">핵심 표현</span></div>
+                                <div class="tpl__vg">
+                                    <div class="tpl__vi"><div class="tpl__vi-t">Meet in person</div><div class="tpl__vi-d">직접 만나다</div></div>
+                                    <div class="tpl__vi"><div class="tpl__vi-t">Dive into</div><div class="tpl__vi-d">본격적으로 시작하다</div></div>
+                                    <div class="tpl__vi"><div class="tpl__vi-t">Get the hang of</div><div class="tpl__vi-d">감을 잡다</div></div>
+                                </div>
+                            </div>
+                            <div class="tpl__sec">
+                                <div class="tpl__sh"><span class="tpl__num">03</span><span class="tpl__name">롤플레이 시나리오</span></div>
+                                <div class="tpl__scard">
+                                    <div class="tpl__scard-label">SCENARIO 01</div>
+                                    <div class="tpl__scard-title">첫 출근날 아침</div>
+                                    <div class="tpl__scard-dialog">"Hey! You must be the new hire, welcome!"</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <p class="template-card__name">수학 학습지</p>
+                    <p class="template-card__name">클래식</p>
                 </div>
 
-                <div class="template-card" data-subject="english">
-                    <div class="template-card__preview">
-                        <div class="template-card__page">
-                            <div class="tc__header">
-                                <div class="tc__badge tc__badge--eng">영어</div>
-                                <div class="tc__title-line"></div>
+                <!-- Modern -->
+                <div class="template-card">
+                    <div class="template-card__preview" style="background:linear-gradient(145deg,#eae9e5,#d9d8d4);border-color:#d5d5d2;">
+                        <div class="tpl modern" id="tplModern">
+                            <div class="tpl__hd">
+                                <div class="tpl__title">First Day at a Company</div>
+                                <div class="tpl__sub">첫 출근 - 첫 인사, 자기소개</div>
                             </div>
-                            <div class="tc__body">
-                                <div class="tc__lines">
-                                    <div class="tc__line tc__line--w90"></div>
-                                    <div class="tc__line tc__line--w85"></div>
-                                    <div class="tc__line tc__line--w80"></div>
+                            <div class="tpl__sec">
+                                <div class="tpl__sh"><span class="tpl__num">01</span><span class="tpl__name">핵심 문장</span></div>
+                                <div class="tpl__item">"Hey, I just joined the team."</div>
+                                <div class="tpl__item">"Nice to finally meet you in person."</div>
+                                <div class="tpl__item">"I'm not sure at the moment, but I'll get back to you."</div>
+                            </div>
+                            <div class="tpl__sec">
+                                <div class="tpl__sh"><span class="tpl__num">02</span><span class="tpl__name">핵심 표현</span></div>
+                                <div class="tpl__vg">
+                                    <div class="tpl__vi"><div class="tpl__vi-t">Meet in person</div><div class="tpl__vi-d">직접 만나다</div></div>
+                                    <div class="tpl__vi"><div class="tpl__vi-t">Dive into</div><div class="tpl__vi-d">본격적으로 시작하다</div></div>
+                                    <div class="tpl__vi"><div class="tpl__vi-t">Get the hang of</div><div class="tpl__vi-d">감을 잡다</div></div>
+                                </div>
+                            </div>
+                            <div class="tpl__sec">
+                                <div class="tpl__sh"><span class="tpl__num">03</span><span class="tpl__name">롤플레이 시나리오</span></div>
+                                <div class="tpl__scard">
+                                    <div class="tpl__scard-label">SCENARIO 01</div>
+                                    <div class="tpl__scard-title">첫 출근날 아침</div>
+                                    <div class="tpl__scard-dialog">"Hey! You must be the new hire, welcome!"</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <p class="template-card__name">영어 워크시트</p>
+                    <p class="template-card__name">모던</p>
                 </div>
 
-                <div class="template-card" data-subject="korean">
-                    <div class="template-card__preview">
-                        <div class="template-card__page">
-                            <div class="tc__header">
-                                <div class="tc__badge tc__badge--kor">국어</div>
-                                <div class="tc__title-line"></div>
+                <!-- Compact -->
+                <div class="template-card">
+                    <div class="template-card__preview" style="background:linear-gradient(145deg,#eae9e5,#d9d8d4);border-color:#d5d5d2;">
+                        <div class="tpl compact" id="tplCompact">
+                            <div class="tpl__hd">
+                                <div class="tpl__title">First Day at a Company</div>
+                                <div class="tpl__sub">첫 출근 - 첫 인사, 자기소개</div>
                             </div>
-                            <div class="tc__body">
-                                <div class="tc__lines">
-                                    <div class="tc__line tc__line--w80"></div>
-                                    <div class="tc__line tc__line--w70"></div>
+                            <div class="tpl__sec">
+                                <div class="tpl__sh"><span class="tpl__num">01</span><span class="tpl__name">핵심 문장</span></div>
+                                <div class="tpl__item">"Hey, I just joined the team."</div>
+                                <div class="tpl__item">"Nice to finally meet you in person."</div>
+                                <div class="tpl__item">"I'm not sure at the moment, but I'll get back to you."</div>
+                            </div>
+                            <div class="tpl__sec">
+                                <div class="tpl__sh"><span class="tpl__num">02</span><span class="tpl__name">핵심 표현</span></div>
+                                <div class="tpl__vg">
+                                    <div class="tpl__vi"><div class="tpl__vi-t">Meet in person</div><div class="tpl__vi-d">직접 만나다</div></div>
+                                    <div class="tpl__vi"><div class="tpl__vi-t">Dive into</div><div class="tpl__vi-d">본격적으로 시작하다</div></div>
+                                    <div class="tpl__vi"><div class="tpl__vi-t">Get the hang of</div><div class="tpl__vi-d">감을 잡다</div></div>
+                                </div>
+                            </div>
+                            <div class="tpl__sec">
+                                <div class="tpl__sh"><span class="tpl__num">03</span><span class="tpl__name">롤플레이 시나리오</span></div>
+                                <div class="tpl__scard">
+                                    <div class="tpl__scard-label">SCENARIO 01</div>
+                                    <div class="tpl__scard-title">첫 출근날 아침</div>
+                                    <div class="tpl__scard-dialog">"Hey! You must be the new hire, welcome!"</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <p class="template-card__name">국어 분석지</p>
-                </div>
-
-                <div class="template-card" data-subject="science">
-                    <div class="template-card__preview">
-                        <div class="template-card__page">
-                            <div class="tc__header">
-                                <div class="tc__badge tc__badge--sci">과학</div>
-                                <div class="tc__title-line"></div>
-                            </div>
-                            <div class="tc__body">
-                                <div class="tc__lines">
-                                    <div class="tc__line tc__line--w70"></div>
-                                    <div class="tc__line tc__line--w80"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="template-card__name">과학 실험지</p>
+                    <p class="template-card__name">컴팩트</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Pricing -->
+    <!-- Pricing — product-aligned -->
     <section class="pricing" id="pricing">
         <div class="pricing__inner">
             <p class="section-eyebrow anim-blur">합리적인 가격</p>
@@ -282,15 +654,16 @@
 
             <div class="pricing__grid stagger-group">
                 <div class="pricing__card">
-                    <h3 class="pricing__card-name">무료</h3>
+                    <h3 class="pricing__card-name">스타터</h3>
                     <div class="pricing__card-price">
                         <span class="pricing__card-amount">₩0</span>
                         <span class="pricing__card-period">/월</span>
                     </div>
                     <ul class="pricing__card-features">
-                        <li>기본 템플릿 3개</li>
-                        <li>월 5회 다운로드</li>
-                        <li>워터마크 포함</li>
+                        <li>영어·수학·국어 기본 템플릿</li>
+                        <li>클래식 레이아웃</li>
+                        <li>잉크 테마 컬러</li>
+                        <li>월 3회 PDF 다운로드</li>
                     </ul>
                     <a href="#cta" class="btn btn--outline">무료로 시작</a>
                 </div>
@@ -299,14 +672,15 @@
                     <div class="pricing__card-badge">인기</div>
                     <h3 class="pricing__card-name">베이직</h3>
                     <div class="pricing__card-price">
-                        <span class="pricing__card-amount" data-monthly="₩9,900" data-yearly="₩8,250">₩9,900</span>
+                        <span class="pricing__card-amount">₩9,900</span>
                         <span class="pricing__card-period">/월</span>
                     </div>
                     <ul class="pricing__card-features">
-                        <li>전체 템플릿 이용</li>
-                        <li>무제한 다운로드</li>
-                        <li>워터마크 제거</li>
-                        <li>PDF 내보내기</li>
+                        <li>3가지 레이아웃 전체</li>
+                        <li>6가지 테마</li>
+                        <li>산세리프·세리프·모노 폰트</li>
+                        <li>무제한 PDF 다운로드</li>
+                        <li>학생 공유 링크 생성</li>
                     </ul>
                     <a href="#cta" class="btn btn--primary">시작하기</a>
                 </div>
@@ -314,14 +688,15 @@
                 <div class="pricing__card">
                     <h3 class="pricing__card-name">프로</h3>
                     <div class="pricing__card-price">
-                        <span class="pricing__card-amount" data-monthly="₩19,900" data-yearly="₩16,580">₩19,900</span>
+                        <span class="pricing__card-amount">₩19,900</span>
                         <span class="pricing__card-period">/월</span>
                     </div>
                     <ul class="pricing__card-features">
                         <li>베이직 전체 포함</li>
-                        <li>로고·이름 삽입</li>
-                        <li>학생별 자료 관리</li>
-                        <li>커스텀 컬러 테마</li>
+                        <li>학원 로고·브랜드 삽입</li>
+                        <li>세션별 자료 관리</li>
+                        <li>학생별 맞춤 배포</li>
+                        <li>인쇄 최적화 출력</li>
                     </ul>
                     <a href="#cta" class="btn btn--outline">시작하기</a>
                 </div>
@@ -361,7 +736,7 @@
             </div>
             <div class="footer__divider"></div>
             <div class="footer__bottom">
-                <p class="footer__copy">© 2026 클래스노트</p>
+                <p class="footer__copy">&copy; 2026 클래스노트</p>
                 <div class="footer__links">
                     <a href="#">이용약관</a>
                     <a href="#">개인정보</a>
@@ -372,5 +747,31 @@
     </footer>
 
     <script src="script.js?v=3"></script>
+    <script>
+    // Theme orbit switcher
+    (function() {
+        var colorMap = {
+            ink: '#111',
+            teal: '#2da5b6',
+            forest: '#1d8a5e',
+            plum: '#8b3a8b',
+            ember: '#d4572a',
+            steel: '#506d85'
+        };
+        var orbs = document.querySelectorAll('.theme-orb');
+        var tpls = document.querySelectorAll('.tpl');
+
+        function setTheme(color) {
+            orbs.forEach(function(o) { o.classList.toggle('active', o.dataset.color === color); });
+            tpls.forEach(function(t) { t.style.setProperty('--tpl-c', colorMap[color]); });
+        }
+
+        orbs.forEach(function(o) {
+            o.addEventListener('click', function() { setTheme(this.dataset.color); });
+        });
+
+        setTheme('ink');
+    })();
+    </script>
 </body>
 </html>

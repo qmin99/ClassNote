@@ -1,0 +1,40 @@
+# Netlify configuration for class-note-material
+# Safe-by-default headers + legacy test page redirects
+
+[build]
+  publish = "."
+
+# Security headers applied to all pages
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=()"
+
+# HSTS for the site (Netlify already serves HTTPS)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+
+# Block dev / experimental pages from production
+[[redirects]]
+  from = "/test.html"
+  to = "/index.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/steps.html"
+  to = "/index.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/preview.html"
+  to = "/index.html"
+  status = 301
+  force = true
+
