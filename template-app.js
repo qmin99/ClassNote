@@ -5037,11 +5037,12 @@
                     // 코스 세션 → studentBook 세션 자동 동기화
                     var all = StudentStore.getAll() || [];
                     if (course.sessions && course.sessions.length && all.length) {
-                        var synced = course.sessions.map(function (ss) {
+                        var synced = course.sessions.map(function (ss, i) {
                             var d = ss._date || '';
                             var m = d.match(/(\d+)년\s*(\d+)월\s*(\d+)일/);
                             var formatted = m ? m[1] + '.' + (m[2].length < 2 ? '0' + m[2] : m[2]) + '.' + (m[3].length < 2 ? '0' + m[3] : m[3]) : d.replace(/년\s*/g, '.').replace(/월\s*/g, '.').replace(/일/, '');
-                            return { title: ss.title || '', date: formatted };
+                            var num = ss.num || (i < 5 ? i + 1 : i + 2);
+                            return { title: ss.title || '', date: formatted, num: String(num) };
                         });
                         // studentName과 매칭되는 학생에게 세션 동기화
                         for (var si = 0; si < all.length; si++) {
@@ -6292,7 +6293,7 @@
             var sessHTML = '';
             // 원래 번호 부여 후 최신순 정렬 (최신이 위)
             var numbered = s.sessions.map(function (ss, i) {
-                return { title: ss.title, date: ss.date, origIdx: i };
+                return { title: ss.title, date: ss.date, origIdx: i, num: ss.num };
             });
             numbered.sort(function (a, b) {
                 return (b.date || '').localeCompare(a.date || '');
@@ -6306,7 +6307,8 @@
                 var dt = ss.date || '';
                 var dm = dt.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})$/);
                 if (dm) dt = dm[1] + '.' + (dm[2].length < 2 ? '0' + dm[2] : dm[2]) + '.' + (dm[3].length < 2 ? '0' + dm[3] : dm[3]);
-                sessHTML += '<div class="smb__sess-item" data-sess-idx="' + ss.origIdx + '" style="cursor:pointer"><div class="smb__sess-num" style="background:' + bg + '">' + (ss.origIdx + 1) + '</div><span class="smb__sess-title">' + esc(ss.title) + '</span><span class="smb__sess-date">' + esc(dt) + '</span></div>';
+                var displayNum = ss.num || (ss.origIdx < 5 ? ss.origIdx + 1 : ss.origIdx + 2);
+                sessHTML += '<div class="smb__sess-item" data-sess-idx="' + ss.origIdx + '" style="cursor:pointer"><div class="smb__sess-num" style="background:' + bg + '">' + displayNum + '</div><span class="smb__sess-title">' + esc(ss.title) + '</span><span class="smb__sess-date">' + esc(dt) + '</span></div>';
             });
 
             return '<div class="smb__left">' +
