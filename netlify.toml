@@ -38,8 +38,3 @@
   status = 301
   force = true
 
-[[redirects]]
-  from = "/indexfix.html"
-  to = "/index.html"
-  status = 301
-  force = true
