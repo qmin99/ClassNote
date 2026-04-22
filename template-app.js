@@ -3034,7 +3034,11 @@
         return h;
     }
 
-    function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+    function esc(s) {
+        var d = document.createElement('div');
+        d.textContent = s == null ? '' : String(s);
+        return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
 
     // =========================================
     // ITEM CRUD — RUNTIME LOGIC
@@ -4489,6 +4493,124 @@
     els.studentName.addEventListener('input', onInputChange);
     els.sessionDate.addEventListener('change', onInputChange);
 
+    // =========================================
+    // DRAFT SYSTEM (P0-4 mitigation) — saves full editor snapshot every 200ms
+    // Independent of classnote_autosave_* (per-session) and Firestore.
+    // Triggers restore banner on reload if draft exists and is fresh.
+    // =========================================
+    var DRAFT_KEY = 'classnote_draft_v1';
+    var _draftTimer;
+
+    function saveDraftNow() {
+        try {
+            syncEditablesToSession();
+            var course = getCourse();
+            if (!course) return;
+            var payload = {
+                ts: Date.now(),
+                courseId: state.courseId,
+                sessionIdx: state.sessionIdx,
+                teacherName: state.teacherName,
+                studentName: state.studentName,
+                theme: state.theme,
+                date: state.date,
+                sessions: course.sessions,
+                classnote: window.__classnote || null
+            };
+            var json = JSON.stringify(payload);
+            if (json.length < 4 * 1024 * 1024) { // 4MB guard
+                localStorage.setItem(DRAFT_KEY, json);
+            }
+        } catch (e) { /* quota or cycle */ }
+    }
+
+    function scheduleDraftSave() {
+        clearTimeout(_draftTimer);
+        _draftTimer = setTimeout(saveDraftNow, 200);
+    }
+
+    document.addEventListener('input', function (e) {
+        if (e.target.closest('.page') || e.target.closest('.cbar') || e.target.closest('.sidebar')) {
+            scheduleDraftSave();
+        }
+    });
+    window.addEventListener('beforeunload', function () {
+        clearTimeout(_draftTimer);
+        saveDraftNow();
+    });
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) { clearTimeout(_draftTimer); saveDraftNow(); }
+    });
+
+    function showDraftRestoreBanner(draft) {
+        if (document.getElementById('__draftRestoreBanner')) return;
+        var minsAgo = Math.max(1, Math.round((Date.now() - draft.ts) / 60000));
+        var banner = document.createElement('div');
+        banner.id = '__draftRestoreBanner';
+        banner.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#fff8e1;color:#111;padding:12px 18px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.18);z-index:100000;font-size:14px;display:flex;gap:12px;align-items:center;border:1px solid #ffe082;font-family:inherit;max-width:92vw';
+        var msg = document.createElement('span');
+        msg.textContent = '저장되지 않은 편집 내용이 있어요 (' + minsAgo + '분 전).';
+        var restoreBtn = document.createElement('button');
+        restoreBtn.type = 'button';
+        restoreBtn.textContent = '복원';
+        restoreBtn.style.cssText = 'background:#1d8a5e;color:#fff;border:0;padding:7px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px';
+        var discardBtn = document.createElement('button');
+        discardBtn.type = 'button';
+        discardBtn.textContent = '무시';
+        discardBtn.style.cssText = 'background:transparent;color:#666;border:1px solid #ddd;padding:7px 12px;border-radius:6px;cursor:pointer;font-size:13px';
+        banner.appendChild(msg);
+        banner.appendChild(restoreBtn);
+        banner.appendChild(discardBtn);
+        document.body.appendChild(banner);
+
+        restoreBtn.addEventListener('click', function () {
+            try {
+                var obEl = document.getElementById('onboarding');
+                if (obEl) obEl.style.display = 'none';
+                document.body.classList.remove('ob-active');
+
+                if (draft.classnote) window.__classnote = draft.classnote;
+                if (draft.courseId) state.courseId = draft.courseId;
+                if (typeof draft.sessionIdx === 'number') state.sessionIdx = draft.sessionIdx;
+                if (typeof draft.teacherName === 'string') state.teacherName = draft.teacherName;
+                if (typeof draft.studentName === 'string') state.studentName = draft.studentName;
+                if (draft.theme) state.theme = draft.theme;
+                if (draft.date) state.date = draft.date;
+
+                var course = getCourse();
+                if (course && Array.isArray(draft.sessions)) {
+                    course.sessions = draft.sessions;
+                }
+                if (typeof renderNav === 'function') renderNav();
+                if (typeof renderPage === 'function') renderPage();
+            } catch (e) { /* partial restore */ }
+            banner.remove();
+        });
+        discardBtn.addEventListener('click', function () {
+            try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+            banner.remove();
+        });
+        setTimeout(function () { if (banner.parentNode) banner.remove(); }, 60000);
+    }
+
+    function checkDraftOnLoad() {
+        try {
+            var raw = localStorage.getItem(DRAFT_KEY);
+            if (!raw) return;
+            var d = JSON.parse(raw);
+            if (!d || !d.ts || Date.now() - d.ts > 7 * 24 * 3600 * 1000) {
+                localStorage.removeItem(DRAFT_KEY);
+                return;
+            }
+            // Show banner after DOM is ready
+            if (document.body) {
+                showDraftRestoreBanner(d);
+            } else {
+                document.addEventListener('DOMContentLoaded', function () { showDraftRestoreBanner(d); });
+            }
+        } catch (e) { /* corrupt */ }
+    }
+
     // --- Autosave (every 5s after last edit) ---
     var autosaveTimer;
     var autosaveEl = document.getElementById('autosaveStatus');
@@ -5451,6 +5573,21 @@
             showDeployModal('error', { message: '시간이 초과되었습니다. 네트워크를 확인 후 다시 시도해주세요.' });
         }, 30000);
 
+        // Firestore 1MB document limit — pre-flight size check
+        try {
+            var publishedSize = JSON.stringify(deployDocData).length;
+            var courseSize = JSON.stringify(courseDocData).length;
+            var FIRESTORE_LIMIT = 900 * 1024; // safety margin (actual: 1MB)
+            if (publishedSize > FIRESTORE_LIMIT || courseSize > FIRESTORE_LIMIT) {
+                clearTimeout(deployTimeout);
+                if (isFirstCourse) currentCourseDocId = null;
+                showDeployModal('error', {
+                    message: '자료 크기가 너무 큽니다 (' + Math.round(Math.max(publishedSize, courseSize) / 1024) + 'KB). 세션을 나누거나 이미지 용량을 줄여주세요.'
+                });
+                return;
+            }
+        } catch (e) { /* stringify 실패 → batch에 맡김 */ }
+
         // Save both: published note + course data
         var batch = db.batch();
         batch.set(db.collection('published_notes').doc(slug), deployDocData, { merge: true });
@@ -5719,6 +5856,8 @@
     }
     // Run check now (in case editor is already visible)
     checkAutosave();
+    // Draft restore (P0-4) — works even when onboarding is still visible
+    checkDraftOnLoad();
 
     // =========================================
     // WELCOME MODAL (2-step flow)
@@ -6054,6 +6193,22 @@
         },
         add: function (obj) {
             var arr = this.getAll() || [];
+            // Sanitize / length-limit common user-input string fields
+            ['name','course','level','freq','nextClass','memo','genderLabel','ageGroup'].forEach(function (k) {
+                if (typeof obj[k] === 'string') {
+                    obj[k] = obj[k].trim().substring(0, 200);
+                }
+            });
+            if (typeof obj.name === 'string' && obj.name.length > 40) obj.name = obj.name.substring(0, 40);
+            if (typeof obj.memo === 'string' && obj.memo.length > 1000) obj.memo = obj.memo.substring(0, 1000);
+            if (Array.isArray(obj.sessions)) {
+                obj.sessions = obj.sessions.slice(0, 100).map(function (ss) {
+                    return {
+                        title: typeof ss.title === 'string' ? ss.title.trim().substring(0, 120) : '',
+                        date: typeof ss.date === 'string' ? ss.date.trim().substring(0, 30) : ''
+                    };
+                });
+            }
             obj.id = this._genId();
             obj.createdAt = Date.now();
             arr.push(obj);
@@ -6151,41 +6306,41 @@
                 var dt = ss.date || '';
                 var dm = dt.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})$/);
                 if (dm) dt = dm[1] + '.' + (dm[2].length < 2 ? '0' + dm[2] : dm[2]) + '.' + (dm[3].length < 2 ? '0' + dm[3] : dm[3]);
-                sessHTML += '<div class="smb__sess-item" data-sess-idx="' + ss.origIdx + '" style="cursor:pointer"><div class="smb__sess-num" style="background:' + bg + '">' + (ss.origIdx + 1) + '</div><span class="smb__sess-title">' + ss.title + '</span><span class="smb__sess-date">' + dt + '</span></div>';
+                sessHTML += '<div class="smb__sess-item" data-sess-idx="' + ss.origIdx + '" style="cursor:pointer"><div class="smb__sess-num" style="background:' + bg + '">' + (ss.origIdx + 1) + '</div><span class="smb__sess-title">' + esc(ss.title) + '</span><span class="smb__sess-date">' + esc(dt) + '</span></div>';
             });
 
             return '<div class="smb__left">' +
-                '<div class="smb__avatar-ring"><img class="smb__avatar-img" src="' + s.avatar + '" alt="' + s.name + '"><div class="smb__avatar-hint"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg></div></div>' +
-                '<h2 class="smb__student-name">' + s.name + '</h2>' +
+                '<div class="smb__avatar-ring"><img class="smb__avatar-img" src="' + esc(s.avatar) + '" alt="' + esc(s.name) + '"><div class="smb__avatar-hint"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg></div></div>' +
+                '<h2 class="smb__student-name">' + esc(s.name) + '</h2>' +
                 '<div class="smb__badges">' +
-                    '<span class="smb__student-badge">' + gIcon + ' ' + s.genderLabel + '</span>' +
-                    '<span class="smb__student-badge smb__student-badge--age">' + s.ageGroup + '</span>' +
+                    '<span class="smb__student-badge">' + gIcon + ' ' + esc(s.genderLabel) + '</span>' +
+                    '<span class="smb__student-badge smb__student-badge--age">' + esc(s.ageGroup) + '</span>' +
                 '</div>' +
                 '<div class="smb__next-class">' +
                     '<span class="smb__nc-label">' + calIcon + ' 다음 수업</span>' +
-                    '<p class="smb__nc-date">' + s.nextClass + '</p>' +
+                    '<p class="smb__nc-date">' + esc(s.nextClass) + '</p>' +
                 '</div>' +
                 '<div class="smb__btns">' +
                     '<button class="smb__btn smb__btn--edit">' + penIcon + ' 수업편집</button>' +
                     '<button class="smb__btn smb__btn--link">' + linkIcon + ' 학생 페이지</button>' +
                 '</div>' +
-                '<button class="smb__btn--delete" data-delete-id="' + s.id + '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> 삭제</button>' +
+                '<button class="smb__btn--delete" data-delete-id="' + esc(s.id) + '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> 삭제</button>' +
             '</div>' +
             '<div class="smb__right">' +
                 '<h3 class="smb__info-title">학생 정보</h3>' +
                 '<div class="smb__info-grid">' +
                     '<div class="smb__info-row">' +
-                        '<div class="smb__info-cell"><p class="smb__info-label">이름</p><p class="smb__info-value">' + s.name + '</p></div>' +
-                        '<div class="smb__info-cell"><p class="smb__info-label">과목</p><p class="smb__info-value">' + s.course + '</p></div>' +
+                        '<div class="smb__info-cell"><p class="smb__info-label">이름</p><p class="smb__info-value">' + esc(s.name) + '</p></div>' +
+                        '<div class="smb__info-cell"><p class="smb__info-label">과목</p><p class="smb__info-value">' + esc(s.course) + '</p></div>' +
                     '</div>' +
                     '<div class="smb__info-row">' +
-                        '<div class="smb__info-cell"><p class="smb__info-label">레벨</p><p class="smb__info-value">' + s.level + '</p></div>' +
-                        '<div class="smb__info-cell"><p class="smb__info-label">수업 빈도</p><p class="smb__info-value">' + s.freq + '</p></div>' +
+                        '<div class="smb__info-cell"><p class="smb__info-label">레벨</p><p class="smb__info-value">' + esc(s.level) + '</p></div>' +
+                        '<div class="smb__info-cell"><p class="smb__info-label">수업 빈도</p><p class="smb__info-value">' + esc(s.freq) + '</p></div>' +
                     '</div>' +
                 '</div>' +
                 '<div class="smb__divider"></div>' +
                 '<p class="smb__memo-label">메모</p>' +
-                '<div class="smb__memo-box" contenteditable="true" data-student-id="' + s.id + '">' + s.memo + '</div>' +
+                '<div class="smb__memo-box" contenteditable="true" data-student-id="' + esc(s.id) + '">' + esc(s.memo) + '</div>' +
                 '<div class="smb__divider"></div>' +
                 '<p class="smb__sess-label">수업 세션</p>' +
                 '<div class="smb__sess-list' + compactCls + '">' + sessHTML + '</div>' +
@@ -6210,7 +6365,7 @@
 
             // Avatars
             smbAvatars.innerHTML = students.map(function (s) {
-                return '<img class="smb__av" src="' + s.avatar + '" alt="' + s.name + '">';
+                return '<img class="smb__av" src="' + esc(s.avatar) + '" alt="' + esc(s.name) + '">';
             }).join('');
 
             // Build all pages
@@ -6319,15 +6474,15 @@
                 '<div class="smb__detail-spine"></div>' +
                 /* Avatar glow + ring */
                 '<div class="smb__detail-glow"></div>' +
-                '<div class="smb__detail-avatar"><img src="' + s.avatar + '" alt="' + s.name + '"><div class="smb__detail-check">' + checkIcon + '</div></div>' +
-                '<div class="smb__detail-name">' + s.name + '</div>' +
-                '<div class="smb__detail-badge">' + gIcon + ' ' + s.genderLabel + '</div>' +
+                '<div class="smb__detail-avatar"><img src="' + esc(s.avatar) + '" alt="' + esc(s.name) + '"><div class="smb__detail-check">' + checkIcon + '</div></div>' +
+                '<div class="smb__detail-name">' + esc(s.name) + '</div>' +
+                '<div class="smb__detail-badge">' + gIcon + ' ' + esc(s.genderLabel) + '</div>' +
                 /* Cards — absolute positioned at 4 corners */
                 '<div class="smb__detail-cards">' +
-                    '<div class="smb__detail-card smb__detail-card--tl"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#2ABFBF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><span class="smb__detail-card-label">과목</span><span class="smb__detail-card-value">' + s.course + '</span></div>' +
-                    '<div class="smb__detail-card smb__detail-card--tr"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#F0A030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span class="smb__detail-card-label">레벨</span><span class="smb__detail-card-value">' + s.level + '</span></div>' +
-                    '<div class="smb__detail-card smb__detail-card--bl"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#6C63FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="smb__detail-card-label">수업 빈도</span><span class="smb__detail-card-value">' + s.freq + '</span></div>' +
-                    '<div class="smb__detail-card smb__detail-card--br"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#F06292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="smb__detail-card-label">메모</span><span class="smb__detail-card-value">' + (s.memo.length > 12 ? s.memo.substring(0, 12) + '...' : s.memo) + '</span></div>' +
+                    '<div class="smb__detail-card smb__detail-card--tl"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#2ABFBF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><span class="smb__detail-card-label">과목</span><span class="smb__detail-card-value">' + esc(s.course) + '</span></div>' +
+                    '<div class="smb__detail-card smb__detail-card--tr"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#F0A030" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><span class="smb__detail-card-label">레벨</span><span class="smb__detail-card-value">' + esc(s.level) + '</span></div>' +
+                    '<div class="smb__detail-card smb__detail-card--bl"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#6C63FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="smb__detail-card-label">수업 빈도</span><span class="smb__detail-card-value">' + esc(s.freq) + '</span></div>' +
+                    '<div class="smb__detail-card smb__detail-card--br"><svg class="smb__detail-card-icon" viewBox="0 0 24 24" fill="none" stroke="#F06292" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="smb__detail-card-label">메모</span><span class="smb__detail-card-value">' + esc((s.memo || '').length > 12 ? (s.memo || '').substring(0, 12) + '...' : (s.memo || '')) + '</span></div>' +
                 '</div>' +
                 /* Action buttons */
                 '<div class="smb__detail-actions">' +

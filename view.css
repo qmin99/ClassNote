@@ -146,11 +146,11 @@ body{
     flex-shrink:0;
 }
 .view-header__tool{
-    width:32px;height:32px;border-radius:8px;
+    width:44px;height:44px;border-radius:8px;
     border:none;background:transparent;
     cursor:pointer;
     display:flex;align-items:center;justify-content:center;
-    color:#aaa;transition:all .15s;
+    color:#767676;transition:all .15s;
     font-size:12px;font-weight:600;
 }
 .view-header__tool:hover{color:#333;background:rgba(0,0,0,.05)}
@@ -279,9 +279,9 @@ body{
     .view-header__inner{padding:8px 12px;gap:6px}
     .view-header__brand{display:none}
     .view-header__meta{display:none}
-    .view-header__tool{width:30px;height:30px;border-radius:6px}
-    .view-session-select__trigger{font-size:12px;padding:5px 8px 5px 10px}
-    .view-page-nav__btn{width:30px;height:30px}
+    .view-header__tool{width:44px;height:44px;border-radius:6px}
+    .view-session-select__trigger{font-size:12px;padding:5px 8px 5px 10px;min-height:36px}
+    .view-page-nav__btn{width:44px;height:44px}
     .view-page-nav__badge{font-size:11px;min-width:40px;padding:0 4px}
 }
 
@@ -457,3 +457,23 @@ body{
 .prb__placeholder{color:#aaa;font-size:.85em}
 .prb__ans{color:var(--ac,#2ABFBF);font-size:.92em;font-style:italic;transition:opacity .25s}
 .prb__ans--hidden{display:none}
+
+/* ============================================
+   QA PATCH 2026-04-22 — a11y + motion
+   ============================================ */
+:focus-visible{
+    outline:2px solid var(--ac,#2ABFBF)!important;
+    outline-offset:2px!important;
+}
+:focus:not(:focus-visible){outline:none}
+
+@media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{
+        animation-duration:.01ms!important;
+        animation-iteration-count:1!important;
+        transition-duration:.01ms!important;
+        scroll-behavior:auto!important;
+    }
+    .view-header{transition:none!important}
+    .page--enter{animation:none!important}
+}

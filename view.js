@@ -420,8 +420,25 @@
         if (slug && typeof firebase !== 'undefined' && typeof CLASSNOTE_FIREBASE !== 'undefined') {
             showLoading();
             if (!firebase.apps.length) firebase.initializeApp(CLASSNOTE_FIREBASE);
+
+            var settled = false;
+            var loadTimeout = setTimeout(function () {
+                if (settled) return;
+                settled = true;
+                var cached = getCachedNote(slug);
+                if (cached) {
+                    showOfflineBanner();
+                    callback(cached);
+                } else {
+                    callback(null, 'network');
+                }
+            }, 10000);
+
             firebase.firestore().collection('published_notes').doc(slug).get()
                 .then(function (doc) {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(loadTimeout);
                     if (doc.exists) {
                         var data = doc.data();
                         cacheNote(slug, data);
@@ -431,6 +448,9 @@
                     }
                 })
                 .catch(function (err) {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(loadTimeout);
                     console.error('Firestore load failed:', err.code || '', err.message || err);
                     var cached = getCachedNote(slug);
                     if (cached) {

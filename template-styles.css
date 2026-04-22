@@ -10,9 +10,9 @@
     --white: #fff;
     --text: #111;
     --t2: #444;
-    --t3: #888;
-    --t4: #767676;
-    --t5: #959595;
+    --t3: #707070; /* WCAG AA: 4.8:1 vs #fff (was #888, 3.54:1) */
+    --t4: #767676; /* WCAG AA: 4.54:1 vs #fff */
+    --t5: #767676; /* WCAG AA: 4.54:1 vs #fff (was #959595, 3.00:1) */
     --bd: #e4e4e4;
     --bd2: #efefef;
     --font: 'Inter','Noto Sans KR',sans-serif;
@@ -2810,4 +2810,65 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 }
 .smb__detail--open .smb__detail-sparkle{
     animation:smbSparkleIn .8s .3s cubic-bezier(.16,1,.3,1) both, smbSparkleFloat 4s 1.2s ease-in-out infinite;
+}
+
+/* ============================================
+   QA PATCH 2026-04-22 — a11y + touch + motion
+   ============================================ */
+
+/* Focus visibility: override every outline:none with a high-contrast keyboard focus ring */
+:focus-visible{
+    outline:2px solid var(--ac,#111)!important;
+    outline-offset:2px!important;
+    border-radius:inherit;
+}
+/* Mouse users still don't see it */
+:focus:not(:focus-visible){outline:none}
+
+/* Reduced motion respect */
+@media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{
+        animation-duration:.01ms!important;
+        animation-iteration-count:1!important;
+        transition-duration:.01ms!important;
+        scroll-behavior:auto!important;
+    }
+}
+
+/* Touch targets — expand hit area via padding/pseudo, preserve visual size */
+/* CRUD buttons (editor content) */
+.crud-x{
+    position:relative;
+}
+.crud-x::before{
+    content:'';
+    position:absolute;
+    inset:-14px;
+    /* transparent hit area, 44x44 effective */
+}
+.crud-add{
+    min-height:32px;
+    padding:8px 12px;
+}
+/* Theme dots */
+.tdot{
+    position:relative;
+}
+.tdot::before{
+    content:'';
+    position:absolute;
+    inset:-11px;
+}
+/* Page nav buttons in editor */
+#prevBtn, #nextBtn, .p-nav{
+    position:relative;
+}
+#prevBtn::before, #nextBtn::before, .p-nav::before{
+    content:'';
+    position:absolute;
+    inset:-8px;
+}
+/* Save button min-height */
+#saveBtn.cbar__save-btn{
+    min-height:32px;
 }
