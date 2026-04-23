@@ -4985,11 +4985,22 @@
         return slug;
     }
 
+    // --- Write-key generator (Firestore 수정 권한 증명, 20자) ---
+    function generateWriteKey() {
+        var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+        var arr = new Uint8Array(20);
+        crypto.getRandomValues(arr);
+        var key = '';
+        for (var i = 0; i < 20; i++) key += chars[arr[i] % chars.length];
+        return key;
+    }
+
     // =========================================
     // COURSE PERSISTENCE (Firestore)
     // =========================================
 
     var currentCourseDocId = null;
+    var currentWriteKey = null; // Write-key: Firestore 수정 권한 증명용. URL 의 ?k= 에서 로드 또는 생성
     var _courseSaveTimer = null;
     var _courseSaving = false;
 
@@ -5036,6 +5047,7 @@
                     date: state.date
                 },
                 sessions: JSON.parse(JSON.stringify(course.sessions)),
+                writeKey: currentWriteKey || null, // Firestore Rules: 기존 writeKey 와 일치해야 update 허용
                 studentBook: (function () {
                     // 코스 세션 → studentBook 세션 자동 동기화
                     var all = StudentStore.getAll() || [];
@@ -5109,6 +5121,60 @@
 
                 var data = doc.data();
                 currentCourseDocId = courseDocId;
+
+                // =========================================
+                // Write-key 마이그레이션 & 검증
+                // =========================================
+                var urlKey = new URLSearchParams(location.search).get('k');
+
+                if (!data.writeKey) {
+                    // Case A (Grandfather): 기존 문서에 writeKey 없음 → 자동 생성 + 저장
+                    // "먼저 온 사람" 이 소유자가 됨. 마이그레이션 기간 한정.
+                    var newKey = generateWriteKey();
+                    currentWriteKey = newKey;
+                    db.collection('courses').doc(courseDocId).update({
+                        writeKey: newKey
+                    }).then(function () {
+                        try {
+                            var url = new URL(location.href);
+                            url.searchParams.set('k', newKey);
+                            history.replaceState(null, '', url.toString());
+                        } catch (e) {}
+                        if (typeof _showWriteKeyMigrationToast === 'function') {
+                            _showWriteKeyMigrationToast();
+                        }
+                    }).catch(function (e) {
+                        console.error('writeKey migration failed:', e);
+                    });
+                } else if (urlKey && urlKey === data.writeKey) {
+                    // Case B (정상): URL 의 k 가 저장된 writeKey 와 일치
+                    currentWriteKey = urlKey;
+                } else {
+                    // Case C: URL 에 k 없거나 불일치 — 소유자 여부 heuristic 체크
+                    var isRecent = false;
+                    try {
+                        var rec = JSON.parse(localStorage.getItem('classnote_recent_courses') || '[]');
+                        isRecent = rec.some(function (r) { return r.id === courseDocId; });
+                    } catch (e) {}
+                    if (isRecent) {
+                        // 이 기기에서 이 course 를 다뤘던 기록 있음 → 자동 복구 (URL 에 k 재주입)
+                        currentWriteKey = data.writeKey;
+                        try {
+                            var url2 = new URL(location.href);
+                            url2.searchParams.set('k', data.writeKey);
+                            history.replaceState(null, '', url2.toString());
+                        } catch (e) {}
+                        if (typeof _showWriteKeyMigrationToast === 'function') {
+                            _showWriteKeyMigrationToast();
+                        }
+                    } else {
+                        // 소유자 아닌 접근 → 편집 차단 (저장 요청 시 Rules 가 막아줌)
+                        currentWriteKey = null;
+                        if (typeof _showReadOnlyBanner === 'function') {
+                            _showReadOnlyBanner();
+                        }
+                    }
+                }
 
                 // Restore __classnote
                 var cn = data.classnote || {};
@@ -5203,6 +5269,36 @@
             if (recent.length > 10) recent = recent.slice(0, 10);
             localStorage.setItem('classnote_recent_courses', JSON.stringify(recent));
         } catch (e) {}
+    }
+
+    // =========================================
+    // Write-key UI helpers (마이그레이션 토스트 + 읽기전용 배너)
+    // =========================================
+    function _showWriteKeyMigrationToast() {
+        if (document.getElementById('__wkMigrationToast')) return;
+        var toast = document.createElement('div');
+        toast.id = '__wkMigrationToast';
+        toast.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#1d8a5e;color:#fff;padding:12px 20px;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.25);z-index:100001;font-size:13px;display:flex;gap:14px;align-items:center;font-family:inherit;max-width:92vw;line-height:1.5';
+        var msg = document.createElement('span');
+        msg.innerHTML = '🔒 보안 업데이트로 편집 링크가 갱신됐어요.<br>이 URL 을 다시 북마크해주세요.';
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = '확인';
+        btn.style.cssText = 'background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600';
+        btn.addEventListener('click', function () { toast.remove(); });
+        toast.appendChild(msg);
+        toast.appendChild(btn);
+        document.body.appendChild(toast);
+        setTimeout(function () { if (toast.parentNode) toast.remove(); }, 20000);
+    }
+
+    function _showReadOnlyBanner() {
+        if (document.getElementById('__wkReadOnlyBanner')) return;
+        var banner = document.createElement('div');
+        banner.id = '__wkReadOnlyBanner';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#c0392b;color:#fff;padding:10px 16px;text-align:center;font-size:13px;font-weight:600;z-index:100002;font-family:inherit;box-shadow:0 2px 8px rgba(0,0,0,.2)';
+        banner.textContent = '⚠ 편집 권한이 없습니다. 이 수업자료를 수정하려면 선생님용 편집 링크(k= 포함) 로 접속해주세요.';
+        document.body.appendChild(banner);
     }
 
     // --- Capture note data (no side effects) ---
@@ -5526,9 +5622,11 @@
 
         showDeployModal('loading');
 
-        // Create courseDocId on first deploy
+        // Create courseDocId + writeKey on first deploy
         var isFirstCourse = !currentCourseDocId;
         if (isFirstCourse) currentCourseDocId = generateSlug(8);
+        // Generate writeKey if not yet set (첫 배포 or 기존 마이그레이션 안 된 course)
+        if (!currentWriteKey) currentWriteKey = generateWriteKey();
 
         var slug = currentPublishedSlug || generateSlug();
 
@@ -5537,6 +5635,7 @@
             html: legacyNoteData.html,
             settings: settings,
             courseDocId: currentCourseDocId,
+            writeKey: currentWriteKey, // published_notes 도 writeKey 로 수정 권한 제한
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         if (!currentPublishedSlug) {
@@ -5566,6 +5665,7 @@
             },
             sessions: JSON.parse(JSON.stringify(course.sessions)),
             publishedSlug: slug,
+            writeKey: currentWriteKey, // 매 update 요청에 동일 writeKey 실어야 Rules 통과
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         if (isFirstCourse) {
@@ -5601,20 +5701,27 @@
             clearTimeout(deployTimeout);
             currentPublishedSlug = slug;
 
-            // Update URL with ?c= on first deploy
+            // Update URL with ?c= + ?k= on first deploy (or when migrating)
             if (isFirstCourse) {
                 var url = new URL(location.href);
                 url.searchParams.set('c', currentCourseDocId);
+                if (currentWriteKey) url.searchParams.set('k', currentWriteKey);
                 history.replaceState(null, '', url.toString());
                 _saveRecentCourse(currentCourseDocId, course.name);
                 // Save logo to localStorage keyed by courseDocId
                 if (cn.logoData) {
                     try { localStorage.setItem('classnote_logo_' + currentCourseDocId, cn.logoData); } catch (e) {}
                 }
+            } else if (currentWriteKey && !new URLSearchParams(location.search).get('k')) {
+                // Existing course that just got a writeKey — reflect in URL
+                var url3 = new URL(location.href);
+                url3.searchParams.set('k', currentWriteKey);
+                history.replaceState(null, '', url3.toString());
             }
 
             var shareUrl = 'https://class-note-material.netlify.app/view.html?id=' + slug;
             var editorUrl = 'https://class-note-material.netlify.app/templates.html?c=' + currentCourseDocId;
+            if (currentWriteKey) editorUrl += '&k=' + encodeURIComponent(currentWriteKey);
             showDeployModal('success', { url: shareUrl, editorUrl: editorUrl, isFirst: isFirstCourse });
         }).catch(function (err) {
             clearTimeout(deployTimeout);

@@ -1,0 +1,83 @@
+// ClassNote Firestore Security Rules
+// 적용 방법:
+//   1. Firebase Console (https://console.firebase.google.com/project/class-note-cc1b5/firestore/rules)
+//   2. 아래 전문을 복사해서 붙여넣기
+//   3. "게시" 클릭
+//
+// 설계:
+//   - 읽기: 누구나 (학생이 slug 링크로 접근 가능해야 함)
+//   - 생성: 누구나 (온보딩 첫 배포 허용)
+//   - 수정: writeKey 검증 — "기존 writeKey 와 요청 writeKey 일치" 또는 "기존 문서에 writeKey 없음 (grandfather)"
+//   - 삭제: 금지 (소프트 삭제로 처리)
+//
+// Grandfather 모드:
+//   기존에 writeKey 없이 저장된 문서는 "먼저 접속하는 사람" 이 writeKey 를 삽입한다.
+//   마이그레이션 기간(1~2주) 후에는 `!('writeKey' in resource.data)` 조건 제거 권장.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ========================================
+    // published_notes/{slug}  — 학생이 보는 자료
+    // ========================================
+    match /published_notes/{slug} {
+      // 학생 읽기: 누구나
+      allow read: if true;
+
+      // 첫 배포 생성: 누구나 허용 (writeKey 필수)
+      allow create: if
+        request.resource.data.keys().hasAll(['writeKey'])
+        && request.resource.data.writeKey is string
+        && request.resource.data.writeKey.size() >= 16;
+
+      // 재배포(수정): writeKey 일치 시에만
+      allow update: if
+        // Grandfather: 기존 문서에 writeKey 없으면 삽입 허용
+        !('writeKey' in resource.data)
+        // 또는: 저장된 writeKey 와 요청 writeKey 일치
+        || (
+          request.resource.data.writeKey is string
+          && resource.data.writeKey == request.resource.data.writeKey
+        );
+
+      // 삭제 금지 (소프트 삭제만 허용)
+      allow delete: if false;
+    }
+
+    // ========================================
+    // courses/{courseDocId}  — 선생님 편집 데이터
+    // ========================================
+    match /courses/{courseDocId} {
+      // 읽기: 누구나 (에디터 접근, 하지만 k= 없으면 편집 불가)
+      allow read: if true;
+
+      // 첫 생성: writeKey 필수
+      allow create: if
+        request.resource.data.keys().hasAll(['writeKey'])
+        && request.resource.data.writeKey is string
+        && request.resource.data.writeKey.size() >= 16;
+
+      // 수정: writeKey 일치 or grandfather
+      allow update: if
+        // Grandfather: 기존 문서에 writeKey 없으면 누구나 삽입 가능
+        !('writeKey' in resource.data)
+        // 또는: writeKey 일치
+        || (
+          request.resource.data.writeKey is string
+          && resource.data.writeKey == request.resource.data.writeKey
+        );
+
+      // 삭제 금지
+      allow delete: if false;
+    }
+
+    // ========================================
+    // 기타 모든 경로 차단
+    // ========================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
