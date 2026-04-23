@@ -2846,9 +2846,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
     inset:-14px;
     /* transparent hit area, 44x44 effective */
 }
-.crud-add{
-    min-height:32px;
-    padding:8px 12px;
+.crud-add::before{
+    content:'';
+    position:absolute;
+    inset:-14px;
+    /* transparent 44px hit area — doesn't affect layout */
 }
 /* Theme dots */
 .tdot{
