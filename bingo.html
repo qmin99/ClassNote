@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 10 — Expression Bingo</title>
+<style>
+    :root {
+        --bg: #fafbfc;
+        --card: #ffffff;
+        --text: #111;
+        --t2: #444;
+        --t3: #888;
+        --bd: #e4e4e4;
+        --bd2: #efefef;
+
+        /* function colors */
+        --c-review: #506d85;
+        --c-start:  #2da5b6;
+        --c-react:  #d4572a;
+        --c-suggest: #8b3a8b;
+        --c-recover: #1d8a5e;
+
+        --font: 'Inter', 'Noto Sans KR', -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+        min-height: 100vh;
+        padding: 20px 24px 24px;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap {
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+
+    /* ───── TOP BAR (single row: title + score + tier) ───── */
+    .top {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 16px;
+        padding: 16px 22px;
+        background: var(--card);
+        border: 1px solid var(--bd);
+        border-radius: 14px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.02);
+    }
+    .top__title-wrap { min-width: 0; }
+    .top__series {
+        font-size: 11px;
+        color: var(--t3);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+    .top__title {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        margin: 0;
+        font-family: 'Georgia', 'Noto Serif KR', serif;
+        white-space: nowrap;
+    }
+    .top__sub {
+        font-size: 11.5px;
+        color: var(--t3);
+        margin-top: 2px;
+    }
+
+    .top__count {
+        font-size: 36px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+        margin-left: auto;
+    }
+    .top__count .num { color: var(--c-start); }
+    .top__count .slash { color: var(--bd); margin: 0 3px; }
+    .top__count .total { color: var(--t2); font-weight: 500; font-size: 24px; }
+
+    .top__reset {
+        background: transparent;
+        border: 1px solid var(--bd);
+        color: var(--t3);
+        padding: 7px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all .15s;
+    }
+    .top__reset:hover { border-color: var(--text); color: var(--text); }
+
+    /* ───── PROGRESS BAR + BREAKDOWN (thin, below top) ───── */
+    .bar-row {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 18px;
+    }
+    .bar {
+        flex: 1;
+        height: 6px;
+        background: var(--bd2);
+        border-radius: 999px;
+        overflow: hidden;
+    }
+    .bar__fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--c-review), var(--c-start), var(--c-react), var(--c-suggest), var(--c-recover));
+        transition: width .4s cubic-bezier(.16,1,.3,1);
+        border-radius: 999px;
+    }
+    .breakdown {
+        display: flex;
+        gap: 14px;
+        font-size: 12px;
+        color: var(--t3);
+        white-space: nowrap;
+    }
+    .chip {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .chip-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+    }
+    .chip[data-g="review"] .chip-dot { background: var(--c-review); }
+    .chip[data-g="start"] .chip-dot { background: var(--c-start); }
+    .chip[data-g="react"] .chip-dot { background: var(--c-react); }
+    .chip[data-g="suggest"] .chip-dot { background: var(--c-suggest); }
+    .chip[data-g="recover"] .chip-dot { background: var(--c-recover); }
+    .chip b {
+        color: var(--text);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* ───── GROUPS (3-column masonry, densest pack) ───── */
+    .groups {
+        column-count: 3;
+        column-gap: 12px;
+    }
+    @media (max-width: 900px) { .groups { column-count: 2; } }
+    @media (max-width: 580px) { .groups { column-count: 1; } }
+
+    .group {
+        background: var(--card);
+        border: 1px solid var(--bd);
+        border-radius: 12px;
+        padding: 12px 10px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        break-inside: avoid;
+        margin-bottom: 12px;
+    }
+    .group__head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 0 2px;
+    }
+    .group__name {
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .group__name::before {
+        content: '';
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+    .group[data-g="review"] .group__name { color: var(--c-review); }
+    .group[data-g="start"] .group__name { color: var(--c-start); }
+    .group[data-g="react"] .group__name { color: var(--c-react); }
+    .group[data-g="suggest"] .group__name { color: var(--c-suggest); }
+    .group[data-g="recover"] .group__name { color: var(--c-recover); }
+
+    .group__count {
+        font-size: 11px;
+        color: var(--t3);
+        font-variant-numeric: tabular-nums;
+    }
+    .group__count b {
+        color: var(--text);
+        font-weight: 600;
+    }
+    .group.group--cleared .group__count b { color: var(--c-recover); }
+
+    /* ───── CELLS (compact) ───── */
+    .cells {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .cell {
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 8px 10px;
+        background: #fff;
+        border: 1.5px solid var(--bd);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all .18s cubic-bezier(.16,1,.3,1);
+        text-align: left;
+        font-family: inherit;
+        color: var(--text);
+        user-select: none;
+        min-height: 58px;
+    }
+    .cell:hover:not(.cell--checked) {
+        border-color: currentColor;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0,0,0,.05);
+    }
+    .cell:active:not(.cell--checked) { transform: translateY(0); }
+
+    .group[data-g="review"] .cell { color: var(--c-review); }
+    .group[data-g="start"] .cell { color: var(--c-start); }
+    .group[data-g="react"] .cell { color: var(--c-react); }
+    .group[data-g="suggest"] .cell { color: var(--c-suggest); }
+    .group[data-g="recover"] .cell { color: var(--c-recover); }
+
+    .cell__box {
+        width: 16px;
+        height: 16px;
+        border: 2px solid currentColor;
+        border-radius: 4px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        transition: all .22s cubic-bezier(.16,1,.3,1);
+        margin-top: 1px;
+    }
+    .cell__box svg {
+        width: 10px;
+        height: 10px;
+        stroke: #fff;
+        stroke-width: 3.5;
+        fill: none;
+        opacity: 0;
+        transform: scale(.5);
+        transition: opacity .15s, transform .3s cubic-bezier(.5,1.8,.5,1);
+    }
+
+    .cell__text { flex: 1; min-width: 0; }
+    .cell__en {
+        font-weight: 600;
+        font-size: 12.5px;
+        color: var(--text);
+        line-height: 1.32;
+        display: block;
+    }
+
+    /* checked state */
+    .cell--checked {
+        background: color-mix(in srgb, currentColor 7%, white);
+        border-color: color-mix(in srgb, currentColor 40%, var(--bd));
+    }
+    .cell--checked .cell__box {
+        background: currentColor;
+    }
+    .cell--checked .cell__box svg {
+        opacity: 1;
+        transform: scale(1);
+    }
+    .cell--checked .cell__en {
+        color: var(--t2);
+        text-decoration: line-through;
+        text-decoration-color: color-mix(in srgb, currentColor 50%, transparent);
+    }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+    <div class="top">
+        <div class="top__title-wrap">
+            <div class="top__series">Session 10</div>
+            <h1 class="top__title">Expression Bingo</h1>
+            <div class="top__sub">Check each expression as it comes out naturally in conversation.</div>
+        </div>
+        <div class="top__count">
+            <span class="num" id="scoreNum">0</span><span class="slash">/</span><span class="total">20</span>
+        </div>
+        <button class="top__reset" id="btnReset">Reset</button>
+    </div>
+
+    <div class="bar-row">
+        <div class="bar"><div class="bar__fill" id="scoreBar"></div></div>
+        <div class="breakdown">
+            <span class="chip" data-g="review"><span class="chip-dot"></span>Basics <b><span data-ct="review">0</span>/4</b></span>
+            <span class="chip" data-g="start"><span class="chip-dot"></span>Start <b><span data-ct="start">0</span>/3</b></span>
+            <span class="chip" data-g="react"><span class="chip-dot"></span>React <b><span data-ct="react">0</span>/5</b></span>
+            <span class="chip" data-g="suggest"><span class="chip-dot"></span>Suggest <b><span data-ct="suggest">0</span>/4</b></span>
+            <span class="chip" data-g="recover"><span class="chip-dot"></span>Rephrase <b><span data-ct="recover">0</span>/4</b></span>
+        </div>
+    </div>
+
+    <div class="groups" id="groups"></div>
+</div>
+
+<script>
+const EXPRESSIONS = [
+    // S1–5 · Basics review
+    { g: 'review', en: 'Could you repeat that?' },
+    { g: 'review', en: 'Hmm, give me a second.' },
+    { g: 'review', en: 'I see your point, but I think differently.' },
+    { g: 'review', en: "I'd love to, but..." },
+
+    // S9 · Starting a conversation
+    { g: 'start', en: 'So what have you been up to?' },
+    { g: 'start', en: 'Anything new with you?' },
+    { g: 'start', en: "How's everything going?" },
+
+    // S7 · Reacting & follow-up
+    { g: 'react', en: 'It was ___, thanks! How about you?' },
+    { g: 'react', en: 'I think so too. What made you ask?' },
+    { g: 'react', en: 'Oh really? How come?' },
+    { g: 'react', en: 'No way! How did that go?' },
+    { g: 'react', en: 'Same here.' },
+
+    // S8 · Suggesting & adjusting
+    { g: 'suggest', en: "Why don't we ___?" },
+    { g: 'suggest', en: 'How about we ___?' },
+    { g: 'suggest', en: 'What do you think about ___?' },
+    { g: 'suggest', en: 'That sounds good, but what if we ___ instead?' },
+
+    // S9 · Rephrasing & hedging
+    { g: 'recover', en: 'Wait, I mean...' },
+    { g: 'recover', en: 'Actually, let me rephrase that.' },
+    { g: 'recover', en: "I'm not 100% sure, but..." },
+    { g: 'recover', en: "Correct me if I'm wrong, but..." }
+];
+
+const GROUP_META = {
+    review:  { label: 'S1–5 · Basics' },
+    start:   { label: 'S9 · Starting' },
+    react:   { label: 'S7 · React & Follow-up' },
+    suggest: { label: 'S8 · Suggest & Adjust' },
+    recover: { label: 'S9 · Rephrase & Hedge' }
+};
+
+const STORAGE_KEY = 'classnote_bingo_s10_v1';
+
+function loadChecked() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return new Set();
+        return new Set(JSON.parse(raw));
+    } catch { return new Set(); }
+}
+
+function saveChecked(set) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...set])); } catch {}
+}
+
+const checked = loadChecked();
+
+function render() {
+    const groupsEl = document.getElementById('groups');
+    groupsEl.innerHTML = '';
+
+    const byGroup = {};
+    EXPRESSIONS.forEach((e, idx) => {
+        if (!byGroup[e.g]) byGroup[e.g] = [];
+        byGroup[e.g].push({ ...e, idx });
+    });
+
+    Object.keys(GROUP_META).forEach(g => {
+        const meta = GROUP_META[g];
+        const items = byGroup[g] || [];
+        const checkedCount = items.filter(it => checked.has(it.idx)).length;
+
+        const groupEl = document.createElement('div');
+        groupEl.className = 'group' + (checkedCount === items.length ? ' group--cleared' : '');
+        groupEl.setAttribute('data-g', g);
+        groupEl.innerHTML = `
+            <div class="group__head">
+                <div class="group__name">${meta.label}</div>
+                <div class="group__count"><b>${checkedCount}</b>/${items.length}</div>
+            </div>
+            <div class="cells"></div>
+        `;
+        const cellsEl = groupEl.querySelector('.cells');
+
+        items.forEach(item => {
+            const isChecked = checked.has(item.idx);
+            const cellEl = document.createElement('button');
+            cellEl.className = 'cell' + (isChecked ? ' cell--checked' : '');
+            cellEl.setAttribute('data-idx', item.idx);
+            cellEl.innerHTML = `
+                <span class="cell__box">
+                    <svg viewBox="0 0 24 24"><polyline points="4,12 10,18 20,6"/></svg>
+                </span>
+                <span class="cell__text">
+                    <span class="cell__en">${item.en}</span>
+                </span>
+            `;
+            cellEl.addEventListener('click', () => toggle(item.idx));
+            cellsEl.appendChild(cellEl);
+        });
+
+        groupsEl.appendChild(groupEl);
+    });
+
+    updateScore();
+}
+
+function toggle(idx) {
+    if (checked.has(idx)) checked.delete(idx);
+    else checked.add(idx);
+    saveChecked(checked);
+    render();
+}
+
+function updateScore() {
+    const total = checked.size;
+    document.getElementById('scoreNum').textContent = total;
+    document.getElementById('scoreBar').style.width = (total / EXPRESSIONS.length * 100) + '%';
+
+    Object.keys(GROUP_META).forEach(g => {
+        const ct = EXPRESSIONS.filter((e, i) => e.g === g && checked.has(i)).length;
+        const el = document.querySelector(`[data-ct="${g}"]`);
+        if (el) el.textContent = ct;
+    });
+}
+
+document.getElementById('btnReset').addEventListener('click', () => {
+    if (!confirm('Reset all checks?')) return;
+    checked.clear();
+    saveChecked(checked);
+    render();
+});
+
+render();
+</script>
+</body>
+</html>
