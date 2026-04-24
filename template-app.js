@@ -4236,13 +4236,18 @@
 
         // Distribute spare space on each page so content doesn't look dumped at top.
         // This "smart stretches" pages after drag-reorder leaves short pages.
+        // Must temporarily remove min-height to measure true content height.
         allPages.forEach(function (pg, idx) {
             var ps = pg.querySelectorAll('.ps');
             if (ps.length < 2) return;
-            // Reset prior stretch
             ps.forEach(function (p) { p.style.marginBottom = ''; });
-            // Measure
+            var prevMinH = pg.style.minHeight;
+            var prevMaxH = pg.style.maxHeight;
+            pg.style.minHeight = '0';
+            pg.style.maxHeight = 'none';
             var contentH = pg.scrollHeight;
+            pg.style.minHeight = prevMinH;
+            pg.style.maxHeight = prevMaxH;
             var spare = A4_HEIGHT - contentH;
             if (spare > 20) {
                 var extra = Math.min(Math.floor(spare / ps.length), 40);
