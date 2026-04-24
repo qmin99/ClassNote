@@ -4096,6 +4096,7 @@
         var currentH = 0;
         var isFirstPage = true;
         var pageFitLevel = [0];
+        var pageSqueezed = [false]; // once a page has squeezed to fit a section, don't squeeze again — let the rest flow to next page at natural size
 
         sections.forEach(function (sec) {
             var secH = sec.offsetHeight + 18;
@@ -4105,24 +4106,26 @@
                 var squeezed = false;
                 var overflow = (currentH + secH) - limit;
                 var overflowRatio = overflow / (currentH + secH);
+                var curIdx = dist.length - 1;
 
-                if (overflowRatio <= 0.08) {
-                    var candidateSecs = dist[dist.length - 1].concat([sec]);
-                    // Whitespace left on this page if we DON'T squeeze (push sec to next page)
+                // Only attempt squeeze if:
+                //  - overflow is small (≤8%)
+                //  - this page hasn't already been squeezed (prevents cascading shrink)
+                if (overflowRatio <= 0.08 && !pageSqueezed[curIdx]) {
+                    var candidateSecs = dist[curIdx].concat([sec]);
                     var wastedIfNotSqueezed = (limit - currentH) / limit;
                     for (var fl = 1; fl <= 3; fl++) {
                         var fittedH = measurePageAtFit(candidateSecs, fl);
                         if (fittedH <= limit) {
                             var wasted = (limit - fittedH) / limit;
-                            // fit--1 shrinks margins only. Accept if it wastes less than not squeezing.
-                            // fit--2/3 shrinks fonts too — only accept when waste is small (≤8%).
                             if (fl === 1) {
                                 if (wasted > 0.08 && wasted >= wastedIfNotSqueezed) break;
                             } else {
                                 if (wasted > 0.08) break;
                             }
-                            pageFitLevel[dist.length - 1] = fl;
-                            dist[dist.length - 1].push(sec);
+                            pageFitLevel[curIdx] = fl;
+                            pageSqueezed[curIdx] = true;
+                            dist[curIdx].push(sec);
                             currentH = fittedH;
                             squeezed = true;
                             break;
@@ -4133,6 +4136,7 @@
                 if (!squeezed) {
                     dist.push([]);
                     pageFitLevel.push(0);
+                    pageSqueezed.push(false);
                     currentH = 0;
                     isFirstPage = false;
                     dist[dist.length - 1].push(sec);
