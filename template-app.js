@@ -4566,8 +4566,17 @@
     // =========================================
     var DRAFT_KEY = 'classnote_draft_v1';
     var _draftTimer;
+    // Track whether editor has UNSAVED changes. Only persist draft while dirty.
+    // Cleared when Firestore save completes, restore/discard clicked, or explicit save.
+    var _draftDirty = false;
+
+    function clearDraft() {
+        try { localStorage.removeItem(DRAFT_KEY); } catch (e) { /* ignore */ }
+        _draftDirty = false;
+    }
 
     function saveDraftNow() {
+        if (!_draftDirty) return; // no unsaved changes — skip
         try {
             syncEditablesToSession();
             var course = getCourse();
@@ -4591,6 +4600,7 @@
     }
 
     function scheduleDraftSave() {
+        _draftDirty = true;
         clearTimeout(_draftTimer);
         _draftTimer = setTimeout(saveDraftNow, 200);
     }
@@ -4602,10 +4612,10 @@
     });
     window.addEventListener('beforeunload', function () {
         clearTimeout(_draftTimer);
-        saveDraftNow();
+        if (_draftDirty) saveDraftNow();
     });
     document.addEventListener('visibilitychange', function () {
-        if (document.hidden) { clearTimeout(_draftTimer); saveDraftNow(); }
+        if (document.hidden && _draftDirty) { clearTimeout(_draftTimer); saveDraftNow(); }
     });
 
     function showDraftRestoreBanner(draft) {
@@ -4649,11 +4659,15 @@
                 }
                 if (typeof renderNav === 'function') renderNav();
                 if (typeof renderPage === 'function') renderPage();
+                // Mark dirty + kick an immediate save so restored content persists to Firestore.
+                // clearDraft runs only after Firestore save succeeds — until then, keep draft as rescue.
+                _draftDirty = true;
+                if (typeof saveCourseToFirestore === 'function') saveCourseToFirestore(true);
             } catch (e) { /* partial restore */ }
             banner.remove();
         });
         discardBtn.addEventListener('click', function () {
-            try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+            clearDraft();
             banner.remove();
         });
         setTimeout(function () { if (banner.parentNode) banner.remove(); }, 60000);
@@ -5150,6 +5164,10 @@
             db.collection('courses').doc(currentCourseDocId).set(docData, { merge: true })
                 .then(function () {
                     _courseSaving = false;
+                    // Content is now persisted on the server — the local rescue draft
+                    // is no longer needed. Clearing it prevents the "복원/무시" banner
+                    // from re-appearing on reload with stale content.
+                    if (typeof clearDraft === 'function') clearDraft();
                     // Update URL on first save
                     if (isNew) {
                         var url = new URL(location.href);
