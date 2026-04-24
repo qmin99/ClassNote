@@ -4033,8 +4033,9 @@
             else sections.push(child);
         });
 
-        // Try global auto-fit first
-        pageEl.classList.remove('fit--1', 'fit--2', 'fit--3');
+        // Try global auto-fit first. Order: fit--m (margin-only, invisible) →
+        // fit--1 (mild padding) → fit--2 (moderate) → fit--3 (heavy).
+        pageEl.classList.remove('fit--m', 'fit--1', 'fit--2', 'fit--3');
         var trueHeight = pageEl.scrollHeight;
         var globalFit = null;
 
@@ -4042,7 +4043,7 @@
             var overflowPct = (trueHeight - A4_HEIGHT) / A4_HEIGHT;
             // Only try global fit if overflow is modest (≤15%)
             if (overflowPct <= 0.15) {
-                var fitLevels = ['fit--1', 'fit--2', 'fit--3'];
+                var fitLevels = ['fit--m', 'fit--1', 'fit--2', 'fit--3'];
                 for (var fi = 0; fi < fitLevels.length; fi++) {
                     pageEl.classList.add(fitLevels[fi]);
                     trueHeight = pageEl.scrollHeight;
@@ -4062,7 +4063,7 @@
                     if (fi < fitLevels.length - 1) pageEl.classList.remove(fitLevels[fi]);
                 }
                 if (trueHeight > A4_HEIGHT) {
-                    pageEl.classList.remove('fit--1', 'fit--2', 'fit--3');
+                    pageEl.classList.remove('fit--m', 'fit--1', 'fit--2', 'fit--3');
                     trueHeight = pageEl.scrollHeight;
                 }
             }
@@ -4074,16 +4075,19 @@
         }
 
         // Multi-page distribution
-        pageEl.classList.remove('fit--1', 'fit--2', 'fit--3'); // measure at base size
+        pageEl.classList.remove('fit--m', 'fit--1', 'fit--2', 'fit--3'); // measure at base size
         var headerH = header ? header.offsetHeight + 24 : 0;
         var footerH = footer ? footer.offsetHeight + 16 : 0;
         var page1Available = A4_CONTENT - headerH - footerH;
         var pageNAvailable = A4_CONTENT - footerH;
 
-        var fitMargins = [18, 10, 6, 4]; // margin per fit level (0,1,2,3)
+        // Fit level encoding: 0=natural, 1=fit--m (margin-only, invisible),
+        // 2=fit--1 (mild), 3=fit--2 (moderate), 4=fit--3 (heavy)
+        var fitClassName = [null, 'fit--m', 'fit--1', 'fit--2', 'fit--3'];
+        var fitMargins = [18, 10, 10, 6, 4];
 
         function measurePageAtFit(allSecs, fitLevel) {
-            var cls = fitLevel > 0 ? 'fit--' + fitLevel : null;
+            var cls = fitClassName[fitLevel];
             if (cls) pageEl.classList.add(cls);
             var totalH = 0;
             var m = fitMargins[fitLevel] || 18;
@@ -4114,11 +4118,15 @@
                 if (overflowRatio <= 0.08 && !pageSqueezed[curIdx]) {
                     var candidateSecs = dist[curIdx].concat([sec]);
                     var wastedIfNotSqueezed = (limit - currentH) / limit;
-                    for (var fl = 1; fl <= 3; fl++) {
+                    // Iterate through fit levels 1..4 (fit--m → fit--1 → fit--2 → fit--3)
+                    for (var fl = 1; fl <= 4; fl++) {
                         var fittedH = measurePageAtFit(candidateSecs, fl);
                         if (fittedH <= limit) {
                             var wasted = (limit - fittedH) / limit;
-                            if (fl === 1) {
+                            // fit--m (margin-only) and fit--1 (mild): accept generously
+                            //   → fit if wasted space is less than pushing to next page
+                            // fit--2/3 (visible font/padding squeeze): only accept when waste is tiny (≤8%)
+                            if (fl <= 2) {
                                 if (wasted > 0.08 && wasted >= wastedIfNotSqueezed) break;
                             } else {
                                 if (wasted > 0.08) break;
@@ -4181,11 +4189,14 @@
         // Clean up any extra pages from previous render
         wrap.querySelectorAll('.page--extra').forEach(function (p) { p.remove(); });
 
+        // Map fit level integer → CSS class name: 0=none, 1=fit--m, 2=fit--1, 3=fit--2, 4=fit--3
+        var _fitClassName = [null, 'fit--m', 'fit--1', 'fit--2', 'fit--3'];
+
         if (result.count <= 1) {
             // Single page
-            firstPage.classList.remove('fit--1', 'fit--2', 'fit--3');
+            firstPage.classList.remove('fit--m', 'fit--1', 'fit--2', 'fit--3');
             if (result.globalFit) firstPage.classList.add(result.globalFit);
-            if (result.pageFitLevel[0] > 0) firstPage.classList.add('fit--' + result.pageFitLevel[0]);
+            if (result.pageFitLevel[0] > 0 && _fitClassName[result.pageFitLevel[0]]) firstPage.classList.add(_fitClassName[result.pageFitLevel[0]]);
             firstPage.classList.add('page--single');
             nav.classList.remove('page-nav--show');
             pageState = { pages: [firstPage], current: 0, total: 1 };
@@ -4232,8 +4243,8 @@
 
         // First page: keep header + first batch + footer
         firstPage.innerHTML = '';
-        firstPage.classList.remove('fit--1', 'fit--2', 'fit--3');
-        if (pageFitLevel[0] > 0) firstPage.classList.add('fit--' + pageFitLevel[0]);
+        firstPage.classList.remove('fit--m', 'fit--1', 'fit--2', 'fit--3');
+        if (pageFitLevel[0] > 0 && _fitClassName[pageFitLevel[0]]) firstPage.classList.add(_fitClassName[pageFitLevel[0]]);
         if (header) firstPage.appendChild(header.cloneNode(true));
         pages[0].forEach(function (sec) { firstPage.appendChild(sec); });
         if (footer) firstPage.appendChild(footer.cloneNode(true));
@@ -4243,7 +4254,7 @@
             var extra = document.createElement('div');
             var cn = window.__classnote;
             var lc = 'layout--' + ((cn && cn.layout) || 'classic');
-            var fitCls = pageFitLevel[i] > 0 ? ' fit--' + pageFitLevel[i] : '';
+            var fitCls = (pageFitLevel[i] > 0 && _fitClassName[pageFitLevel[i]]) ? ' ' + _fitClassName[pageFitLevel[i]] : '';
             extra.className = 'page page--extra ' + lc + fitCls;
             extra.setAttribute('data-theme', theme);
             extra.style.fontFamily = firstPage.style.fontFamily || '';
@@ -5589,10 +5600,11 @@
         var header = result.header;
         var footer = result.footer;
 
+        var _fitClassName2 = [null, 'fit--m', 'fit--1', 'fit--2', 'fit--3'];
         for (var i = 0; i < result.pages.length; i++) {
             var pgDiv = document.createElement('div');
             pgDiv.className = 'page ' + layoutCls;
-            if (result.pageFitLevel[i] > 0) pgDiv.className += ' fit--' + result.pageFitLevel[i];
+            if (result.pageFitLevel[i] > 0 && _fitClassName2[result.pageFitLevel[i]]) pgDiv.className += ' ' + _fitClassName2[result.pageFitLevel[i]];
             pgDiv.setAttribute('data-theme', theme);
             if (fontVal === 'serif') pgDiv.style.fontFamily = 'var(--serif)';
             else if (fontVal === 'mono') pgDiv.style.fontFamily = 'var(--mono)';

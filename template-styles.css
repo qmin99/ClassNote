@@ -645,7 +645,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .layout--compact .pf{padding-top:6px;border-top:1px solid var(--bd2);opacity:.35}
 
 /* === AUTO-FIT SHRINK LEVELS === */
-/* Level 1: tighter spacing */
+/* Level m: margin-only squeeze — invisible to cell content. Tightens
+   gaps/margins so cell padding/fonts/heights stay at natural sizes.
+   Tried before fit--1 for minor overflows. */
+.page.fit--m .ps{margin-bottom:10px}
+.page.fit--m .p-header{margin-bottom:16px;padding-bottom:10px}
+.page.fit--m .vg{gap:4px}
+.page.fit--m .psh{margin-bottom:4px}
+.page.fit--m .prb{margin-bottom:6px}
+
+/* Level 1: tighter spacing + mild padding/font reduction */
 .page.fit--1 .ps{margin-bottom:10px}
 .page.fit--1 .p-header{margin-bottom:16px;padding-bottom:10px}
 .page.fit--1 .pl li{padding:6px 12px;font-size:11px}
