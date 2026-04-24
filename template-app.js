@@ -4108,13 +4108,19 @@
 
                 if (overflowRatio <= 0.08) {
                     var candidateSecs = dist[dist.length - 1].concat([sec]);
-                    // Strict ≤8% waste gate for all fit levels — prefer natural sizing
-                    // + clean page break over squeeze with whitespace.
+                    // Whitespace left on this page if we DON'T squeeze (push sec to next page)
+                    var wastedIfNotSqueezed = (limit - currentH) / limit;
                     for (var fl = 1; fl <= 3; fl++) {
                         var fittedH = measurePageAtFit(candidateSecs, fl);
                         if (fittedH <= limit) {
                             var wasted = (limit - fittedH) / limit;
-                            if (wasted > 0.08) break;
+                            // fit--1 shrinks margins only. Accept if it wastes less than not squeezing.
+                            // fit--2/3 shrinks fonts too — only accept when waste is small (≤8%).
+                            if (fl === 1) {
+                                if (wasted > 0.08 && wasted >= wastedIfNotSqueezed) break;
+                            } else {
+                                if (wasted > 0.08) break;
+                            }
                             pageFitLevel[dist.length - 1] = fl;
                             dist[dist.length - 1].push(sec);
                             currentH = fittedH;
