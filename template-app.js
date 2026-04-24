@@ -4088,12 +4088,14 @@
 
                 if (overflowRatio <= 0.08) {
                     var candidateSecs = dist[dist.length - 1].concat([sec]);
+                    // Non-squeeze alternative: leave current section on next page, this page has currentH filled
+                    var wastedIfNotSqueezed = (limit - currentH) / limit;
                     for (var fl = 1; fl <= 3; fl++) {
                         var fittedH = measurePageAtFit(candidateSecs, fl);
                         if (fittedH <= limit) {
-                            // Reject if fit leaves >8% whitespace
                             var wasted = (limit - fittedH) / limit;
-                            if (wasted > 0.08) break;
+                            // Only reject squeeze if it leaves MORE waste than not squeezing
+                            if (wasted > 0.08 && wasted >= wastedIfNotSqueezed) break;
                             pageFitLevel[dist.length - 1] = fl;
                             dist[dist.length - 1].push(sec);
                             currentH = fittedH;
