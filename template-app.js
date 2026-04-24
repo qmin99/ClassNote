@@ -3788,7 +3788,27 @@
                 }
             });
 
+            // Document-level dragover so drop events can fire even when the
+            // cursor briefly exits spList (e.g. crossing the page-break divider).
+            document.addEventListener('dragover', function (e) {
+                if (dragItem) e.preventDefault();
+            });
+
             spList.addEventListener('dragend', function () {
+                // Fallback: if drop didn't fire (mouse released outside spList) but placeholder
+                // is inside spList, still apply the reorder.
+                if (dragItem && placeholder.parentNode === spList) {
+                    spList.insertBefore(dragItem, placeholder);
+                    placeholder.parentNode.removeChild(placeholder);
+                    var newOrder = [];
+                    spList.querySelectorAll('.sp__item--draggable').forEach(function (el) {
+                        newOrder.push(el.getAttribute('data-sec-key'));
+                    });
+                    cn.sectionOrder = newOrder;
+                    persistSections();
+                    renderPage();
+                    renderSectionPanel();
+                }
                 if (dragItem) dragItem.classList.remove('sp__item--dragging');
                 if (placeholder.parentNode) placeholder.parentNode.removeChild(placeholder);
                 dragItem = null;
