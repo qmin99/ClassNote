@@ -1349,6 +1349,7 @@
             window.__classnote.sections = obState.sections;
             window.__classnote.sectionNames = obState.sectionNames || {};
             window.__classnote.sectionOrder = obState.sectionOrder || null;
+            window.__classnote.sectionPageBreaks = obState.sectionPageBreaks || {};
             window.__classnote.layout = obState.layout;
             window.__classnote.font = obState.font;
             window.__classnote.subject = obState.subject;
@@ -3664,6 +3665,7 @@
                     ob.sections = cn.sections;
                     ob.sectionNames = cn.sectionNames || {};
                     ob.sectionOrder = cn.sectionOrder || null;
+                    ob.sectionPageBreaks = cn.sectionPageBreaks || null;
                     localStorage.setItem('classnote_onboarding', JSON.stringify(ob));
                 }
             }
@@ -3759,6 +3761,26 @@
         var placeholder = document.createElement('div');
         placeholder.className = 'sp__placeholder';
 
+        // After a drag reorder, rebuild sectionPageBreaks from the DOM.
+        // A section that sits directly after a .sp__page-break divider is marked
+        // as "force a new page starts here". Everything else is cleared.
+        function updateForcePageBreaksFromDOM(spListEl, cn) {
+            if (!cn.sectionPageBreaks) cn.sectionPageBreaks = {};
+            // Start fresh so stale flags (from previous drags) don't leak.
+            var fresh = {};
+            var children = Array.prototype.slice.call(spListEl.children);
+            for (var i = 0; i < children.length; i++) {
+                var el = children[i];
+                if (!el.classList.contains('sp__item--draggable')) continue;
+                var prev = children[i - 1];
+                if (prev && prev.classList.contains('sp__page-break')) {
+                    var key = el.getAttribute('data-sec-key');
+                    if (key) fresh[key] = true;
+                }
+            }
+            cn.sectionPageBreaks = fresh;
+        }
+
         if (spList) {
             spList.addEventListener('dragstart', function (e) {
                 var item = e.target.closest('.sp__item--draggable');
@@ -3805,6 +3827,7 @@
                         newOrder.push(el.getAttribute('data-sec-key'));
                     });
                     cn.sectionOrder = newOrder;
+                    updateForcePageBreaksFromDOM(spList, cn);
                     persistSections();
                     renderPage();
                     renderSectionPanel();
@@ -3830,6 +3853,7 @@
                     newOrder.push(el.getAttribute('data-sec-key'));
                 });
                 cn.sectionOrder = newOrder;
+                updateForcePageBreaksFromDOM(spList, cn);
                 persistSections();
                 renderPage();
                 // Re-render panel to update indices
@@ -3902,6 +3926,7 @@
                     newOrder.push(el.getAttribute('data-sec-key'));
                 });
                 cn.sectionOrder = newOrder;
+                updateForcePageBreaksFromDOM(spList, cn);
                 persistSections();
                 renderPage();
                 renderSectionPanel();
@@ -4102,9 +4127,25 @@
         var pageFitLevel = [0];
         var pageSqueezed = [false]; // once a page has squeezed to fit a section, don't squeeze again — let the rest flow to next page at natural size
 
+        // User-supplied forced page breaks (set via sidebar drag across divider)
+        var cn = window.__classnote || {};
+        var forceBreaks = cn.sectionPageBreaks || {};
+
         sections.forEach(function (sec) {
             var secH = sec.offsetHeight + 18;
             var limit = isFirstPage ? page1Available : pageNAvailable;
+
+            // Honor explicit user-set page break — start a new page before this section.
+            var pshEl = sec.querySelector('.psh[data-sec-key]');
+            var secKey = pshEl ? pshEl.getAttribute('data-sec-key') : null;
+            if (secKey && forceBreaks[secKey] && dist[dist.length - 1].length > 0) {
+                dist.push([]);
+                pageFitLevel.push(0);
+                pageSqueezed.push(false);
+                currentH = 0;
+                isFirstPage = false;
+                limit = pageNAvailable;
+            }
 
             if (currentH + secH > limit && dist[dist.length - 1].length > 0) {
                 var squeezed = false;
@@ -5115,6 +5156,7 @@
                     sections: cn.sections || {},
                     sectionNames: cn.sectionNames || {},
                     sectionOrder: cn.sectionOrder || null,
+                    sectionPageBreaks: cn.sectionPageBreaks || {},
                     layout: cn.layout || 'classic',
                     font: cn.font || 'sans',
                     subject: cn.subject || '',
@@ -5269,6 +5311,7 @@
                 window.__classnote.sections = cn.sections || {};
                 window.__classnote.sectionNames = cn.sectionNames || {};
                 window.__classnote.sectionOrder = cn.sectionOrder || null;
+                window.__classnote.sectionPageBreaks = cn.sectionPageBreaks || {};
                 window.__classnote.layout = cn.layout || 'classic';
                 window.__classnote.font = cn.font || 'sans';
                 window.__classnote.subject = cn.subject || '';
