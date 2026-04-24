@@ -4088,14 +4088,19 @@
 
                 if (overflowRatio <= 0.08) {
                     var candidateSecs = dist[dist.length - 1].concat([sec]);
-                    // Non-squeeze alternative: leave current section on next page, this page has currentH filled
+                    // Whitespace left on this page if we DON'T squeeze (push sec to next page)
                     var wastedIfNotSqueezed = (limit - currentH) / limit;
                     for (var fl = 1; fl <= 3; fl++) {
                         var fittedH = measurePageAtFit(candidateSecs, fl);
                         if (fittedH <= limit) {
                             var wasted = (limit - fittedH) / limit;
-                            // Only reject squeeze if it leaves MORE waste than not squeezing
-                            if (wasted > 0.08 && wasted >= wastedIfNotSqueezed) break;
+                            // fit--1 shrinks margins only. Accept if it wastes less than not squeezing.
+                            // fit--2/3 shrinks fonts too — only accept when waste is small (≤8%).
+                            if (fl === 1) {
+                                if (wasted > 0.08 && wasted >= wastedIfNotSqueezed) break;
+                            } else {
+                                if (wasted > 0.08) break;
+                            }
                             pageFitLevel[dist.length - 1] = fl;
                             dist[dist.length - 1].push(sec);
                             currentH = fittedH;
@@ -4228,6 +4233,27 @@
             wrap.appendChild(extra);
             allPages.push(extra);
         }
+
+        // Distribute spare space on each page so content doesn't look dumped at top.
+        // This "smart stretches" pages after drag-reorder leaves short pages.
+        allPages.forEach(function (pg, idx) {
+            var ps = pg.querySelectorAll('.ps');
+            if (ps.length < 2) return;
+            // Reset prior stretch
+            ps.forEach(function (p) { p.style.marginBottom = ''; });
+            // Measure
+            var contentH = pg.scrollHeight;
+            var spare = A4_HEIGHT - contentH;
+            if (spare > 20) {
+                var extra = Math.min(Math.floor(spare / ps.length), 40);
+                if (extra > 2) {
+                    ps.forEach(function (p) {
+                        var cur = parseInt(window.getComputedStyle(p).marginBottom, 10) || 0;
+                        p.style.marginBottom = (cur + extra) + 'px';
+                    });
+                }
+            }
+        });
 
         // Add page number to bottom center of each page
         var totalP = allPages.length;
