@@ -4001,13 +4001,24 @@
                     if (!sess._sections) sess._sections = {};
                     sess._sections[key] = !wasOn;
                 }
-                // If toggling on, add to end of order
+                // If toggling on, force key to end of order (re-position even if already present)
                 if (!wasOn && cn.sectionOrder) {
-                    if (cn.sectionOrder.indexOf(key) === -1) cn.sectionOrder.push(key);
+                    cn.sectionOrder = cn.sectionOrder.filter(function (k) { return k !== key; });
+                    cn.sectionOrder.push(key);
                 }
                 // If toggling off, remove from order
                 if (wasOn && cn.sectionOrder) {
                     cn.sectionOrder = cn.sectionOrder.filter(function (k) { return k !== key; });
+                }
+                // Auto-seed: if turning ON a section whose data array is empty, push 1 dummy item
+                if (!wasOn && sess) {
+                    var arr = resolveArray(sess, key);
+                    if (Array.isArray(arr) && arr.length === 0) {
+                        var factory = ITEM_FACTORIES[key];
+                        if (factory) arr.push(factory(0));
+                    } else if (arr === null && ITEM_FACTORIES[key]) {
+                        // Lazy storage: ensureArray will create it on next render with correct seed count
+                    }
                 }
                 persistSections();
                 saveCourseToFirestore();
