@@ -4001,23 +4001,45 @@
                     if (!sess._sections) sess._sections = {};
                     sess._sections[key] = !wasOn;
                 }
-                // If toggling on, force key to end of order (re-position even if already present)
-                if (!wasOn && cn.sectionOrder) {
-                    cn.sectionOrder = cn.sectionOrder.filter(function (k) { return k !== key; });
-                    cn.sectionOrder.push(key);
+                // If toggling on, force new key to absolute END of effective order.
+                // Important: missing-from-cn.sectionOrder enabled keys (e.g. paragraphs)
+                // get appended in getEffectiveOrder, so we must rebuild order here using
+                // the current effective order then move the new key to the very end.
+                if (!wasOn) {
+                    if (!cn.sectionOrder) cn.sectionOrder = [];
+                    var subjT = cn.subject, typeT = cn.type;
+                    var subjSects = TYPE_SECTIONS[subjT];
+                    var allSects = subjSects ? subjSects[typeT] : null;
+                    if (allSects) {
+                        var curOrder = getEffectiveOrder(allSects, cn);
+                        cn.sectionOrder = curOrder.filter(function (k) { return k !== key; }).concat([key]);
+                    } else {
+                        cn.sectionOrder = cn.sectionOrder.filter(function (k) { return k !== key; }).concat([key]);
+                    }
                 }
                 // If toggling off, remove from order
                 if (wasOn && cn.sectionOrder) {
                     cn.sectionOrder = cn.sectionOrder.filter(function (k) { return k !== key; });
                 }
-                // Auto-seed: if turning ON a section whose data array is empty, push 1 dummy item
+                // Auto-seed when turning ON a section with no content yet
                 if (!wasOn && sess) {
-                    var arr = resolveArray(sess, key);
-                    if (Array.isArray(arr) && arr.length === 0) {
-                        var factory = ITEM_FACTORIES[key];
-                        if (factory) arr.push(factory(0));
-                    } else if (arr === null && ITEM_FACTORIES[key]) {
-                        // Lazy storage: ensureArray will create it on next render with correct seed count
+                    if (key === 'phrases') {
+                        // Phrases uses custom nested shape (sections array of {num,name,phrases[]})
+                        if (!Array.isArray(sess.sections) || sess.sections.length === 0) {
+                            sess.sections = [{ num: '1', name: '번호 1', phrases: [''] }];
+                        }
+                    } else {
+                        var nonLazy = sess[key];
+                        if (Array.isArray(nonLazy) && nonLazy.length === 0 && ITEM_FACTORIES[key]) {
+                            nonLazy.push(ITEM_FACTORIES[key](0));
+                        } else {
+                            // Lazy storage: empty array prevents ensureArray re-seeding.
+                            // Delete it so renderer's ensureArray repopulates with defaultCount.
+                            var lazyKey = (CRUD_KEY_MAP && CRUD_KEY_MAP[key]) || ('_' + key);
+                            if (Array.isArray(sess[lazyKey]) && sess[lazyKey].length === 0) {
+                                delete sess[lazyKey];
+                            }
+                        }
                     }
                 }
                 persistSections();
@@ -4130,8 +4152,10 @@
 
         if (trueHeight > A4_HEIGHT) {
             var overflowPct = (trueHeight - A4_HEIGHT) / A4_HEIGHT;
-            // Only try global fit if overflow is modest (≤15%)
-            if (overflowPct <= 0.15) {
+            // Only try global fit if overflow is modest (≤25%) — bumped from 15%
+            // so a single tall section (paragraphs etc.) gets squeezed onto one page
+            // instead of leaving the bottom of page 1 empty.
+            if (overflowPct <= 0.25) {
                 var fitLevels = ['fit--m', 'fit--1', 'fit--2', 'fit--3'];
                 for (var fi = 0; fi < fitLevels.length; fi++) {
                     pageEl.classList.add(fitLevels[fi]);
@@ -4218,9 +4242,10 @@
                 var curIdx = dist.length - 1;
 
                 // Only attempt squeeze if:
-                //  - overflow is small (≤8%)
+                //  - overflow is modest (≤18%) — bumped from 8% so paragraphs-style
+                //    tall sections still get a chance to fit instead of leaving page 1 empty
                 //  - this page hasn't already been squeezed (prevents cascading shrink)
-                if (overflowRatio <= 0.08 && !pageSqueezed[curIdx]) {
+                if (overflowRatio <= 0.18 && !pageSqueezed[curIdx]) {
                     var candidateSecs = dist[curIdx].concat([sec]);
                     var wastedIfNotSqueezed = (limit - currentH) / limit;
                     // Iterate through fit levels 1..4 (fit--m → fit--1 → fit--2 → fit--3)
