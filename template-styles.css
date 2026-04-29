@@ -411,6 +411,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .sc__t{font-size:12px;font-weight:600;margin-bottom:7px;color:var(--text);font-family:var(--kr)}
 .sc__p{font-family:var(--serif);font-size:11.5px;font-style:italic;color:var(--t2);padding:7px 11px;border-left:2px solid var(--ac);background:var(--white)}
 
+/* paragraphs (3-step frame) */
+.pgrs{display:flex;flex-direction:column;gap:9px}
+.pgr{position:relative;padding:12px 14px 13px;border:1px solid #e8e8e8;border-radius:5px;background:var(--white);box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.pgr__head{display:flex;align-items:baseline;gap:9px;margin-bottom:8px}
+.pgr__n{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ac);opacity:.75;flex-shrink:0}
+.pgr__t{font-size:12px;font-weight:600;color:var(--text);font-family:var(--kr);flex:1;white-space:pre-line}
+.pgr__steps{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px}
+.pgr__step{padding:7px 9px;border:1px solid var(--bd2);border-radius:3px;background:#fbfbfa;display:flex;flex-direction:column;gap:3px;min-height:50px}
+.pgr__lbl{font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ac);opacity:.7;font-family:var(--kr)}
+.pgr__txt{font-size:11px;line-height:1.55;color:var(--t2);font-family:var(--serif);font-style:italic;white-space:pre-line}
+.pgr__exwrap{padding:8px 11px;border-left:2px solid var(--ac);background:var(--ac-l);border-radius:0 3px 3px 0}
+.pgr__exlbl{font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ac);opacity:.7;margin-bottom:3px;font-family:var(--kr)}
+.pgr__ex{font-family:var(--serif);font-size:11px;line-height:1.7;color:var(--t2);font-style:italic;white-space:pre-line}
+
 /* homework */
 .hwl{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .hwl li{display:flex;gap:9px;padding:9px 12px;border:1px solid #e8e8e8;border-radius:4px;background:var(--white);box-shadow:0 1px 4px rgba(0,0,0,.04)}
@@ -601,6 +615,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .layout--compact .sc__t{font-size:10px;font-weight:600;margin-bottom:3px;font-family:inherit}
 .layout--compact .sc__p{font-size:9.5px;padding:4px 8px;background:none;margin-top:2px;border:none;border-left:none;box-shadow:none;font-style:normal}
 
+/* ── Paragraphs (3-step frame) ── */
+.layout--compact .pgrs{gap:6px}
+.layout--compact .pgr{border:none;border-bottom:1px solid var(--bd2);border-radius:0;box-shadow:none;padding:6px 0;background:none}
+.layout--compact .pgr__head{margin-bottom:5px}
+.layout--compact .pgr__n{font-size:7px;opacity:.5}
+.layout--compact .pgr__t{font-size:10px;font-weight:700}
+.layout--compact .pgr__steps{gap:3px;margin-bottom:5px}
+.layout--compact .pgr__step{padding:5px 7px;min-height:42px;background:none;border:1px solid var(--bd2)}
+.layout--compact .pgr__lbl{font-size:7.5px;opacity:.6}
+.layout--compact .pgr__txt{font-size:9.5px;font-style:normal;line-height:1.5}
+.layout--compact .pgr__exwrap{padding:5px 8px;background:none;border-left:1px solid var(--ac)}
+.layout--compact .pgr__exlbl{font-size:7px;opacity:.5}
+.layout--compact .pgr__ex{font-size:9.5px;line-height:1.55}
+
 /* ── Homework ── */
 /* base .hwl: grid 3col / li: border,radius,shadow,bg */
 .layout--compact .hwl{grid-template-columns:1fr;gap:0}
@@ -679,6 +707,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .page.fit--2 .sc{padding:6px 8px}
 .page.fit--2 .sc__t{font-size:11px}
 .page.fit--2 .sc__p{font-size:10px}
+.page.fit--2 .pgr{padding:9px 12px}
+.page.fit--2 .pgr__step{padding:6px 8px;min-height:46px}
+.page.fit--2 .pgr__txt{font-size:10.5px}
+.page.fit--2 .pgr__ex{font-size:10.5px}
 .page.fit--2 .hwl li{padding:4px 0}
 .page.fit--2 .hw__t{font-size:11px}
 .page.fit--2 .hw__d{font-size:9px}
@@ -708,6 +740,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .page.fit--3 .sc__n{font-size:7px}
 .page.fit--3 .sc__t{font-size:10px}
 .page.fit--3 .sc__p{font-size:9px;padding:3px 7px}
+.page.fit--3 .pgr{padding:7px 10px}
+.page.fit--3 .pgr__head{margin-bottom:5px}
+.page.fit--3 .pgr__t{font-size:11px}
+.page.fit--3 .pgr__step{padding:5px 7px;min-height:40px}
+.page.fit--3 .pgr__txt{font-size:9.5px;line-height:1.5}
+.page.fit--3 .pgr__ex{font-size:9.5px;line-height:1.55}
 .page.fit--3 .hwl li{padding:3px 0}
 .page.fit--3 .hw__t{font-size:10px}
 .page.fit--3 .hw__d{font-size:8px}
@@ -804,6 +842,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 /* Grid items (vocab, scenarios) — x button inside card */
 .vg [data-crud-type] .crud-x,.scs [data-crud-type] .crud-x{top:2px;right:2px}
 .hwl [data-crud-type] .crud-x{top:4px;right:0}
+.pgrs [data-crud-type] .crud-x{top:5px;right:5px}
 
 /* Section-level CRUD (phrase sections) */
 .crud-sec-x{

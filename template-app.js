@@ -184,6 +184,7 @@
         english: {
             conversation: [
                 { key:'phrases', name:'핵심 문장', desc:'각 상황별 핵심 영어 표현', cat:'learn', on:true },
+                { key:'paragraphs', name:'핵심 단락', desc:'2~3 문장 단위 단락 만들기 (When / What / Feel)', cat:'learn', on:false },
                 { key:'vocab', name:'핵심 표현', desc:'주요 단어와 뜻 정리', cat:'learn', on:true },
                 { key:'dialogue', name:'대화문', desc:'A/B 형식 전체 대화 예시', cat:'learn', on:false },
                 { key:'compare', name:'유사 표현 비교', desc:'"I think" vs "I believe" 뉘앙스 차이', cat:'learn', on:false },
@@ -198,6 +199,7 @@
             ],
             daily: [
                 { key:'phrases', name:'핵심 문장', desc:'일상 상황별 핵심 표현', cat:'learn', on:true },
+                { key:'paragraphs', name:'핵심 단락', desc:'2~3 문장 단위 단락 만들기 (When / What / Feel)', cat:'learn', on:false },
                 { key:'vocab', name:'핵심 표현', desc:'주요 단어와 뜻 정리', cat:'learn', on:true },
                 { key:'dialogue', name:'대화문', desc:'A/B 형식 일상 대화 예시', cat:'learn', on:false },
                 { key:'slang', name:'구어체·슬랭', desc:'원어민이 자주 쓰는 캐주얼 표현', cat:'learn', on:false },
@@ -1891,7 +1893,7 @@
     // =========================================
 
     var ITEM_MAX = {
-        phrases: 12, vocab: 12, scenarios: 6, homework: 6,
+        phrases: 12, paragraphs: 5, vocab: 12, scenarios: 6, homework: 6,
         questions: 8, problems: 8, analysis: 8, 'table-rows': 10,
         wordlist: 10, slang: 6, dialogue: 10, mistakes: 6,
         fillblank: 6, 'writing-prb': 6, correct: 6, choice: 4,
@@ -1906,6 +1908,19 @@
 
     var ITEM_FACTORIES = {
         phrases: function () { return '새 표현을 입력하세요.'; },
+        paragraphs: function (i) {
+            var n = (typeof i === 'number') ? i + 1 : 1;
+            return {
+                num: String(n).padStart(2, '0'),
+                topic: '주제',
+                steps: [
+                    { label: 'When',  text: '___' },
+                    { label: 'What',  text: '___' },
+                    { label: 'Feel',  text: '___' }
+                ],
+                example: '모범 단락을 입력하세요.'
+            };
+        },
         vocab: function () { return { term: '단어', def: '뜻' }; },
         scenarios: function () { return { num: '', title: '상황', prompt: '예문을 입력하세요.' }; },
         homework: function () { return { title: '과제 제목', desc: '과제 내용' }; },
@@ -2015,6 +2030,29 @@
                 if (isLast) h += '<button class="crud-add--sec-sib" data-crud-action="add-sec">+ 번호 추가</button>';
                 h += '</div></div>';
             });
+        }
+
+        if (secOn('paragraphs')) {
+            var pg = ensureArray(s, '_paragraphs', 1, ITEM_FACTORIES.paragraphs);
+            var pgSolo = pg.length <= 1 ? ' crud-solo' : '';
+            h += '<div class="ps">' + secH('', '핵심 단락', 'paragraphs');
+            h += '<div class="pgrs">';
+            pg.forEach(function (item, i) {
+                h += '<div class="pgr' + pgSolo + '" data-crud-type="paragraphs" data-crud-idx="' + i + '">';
+                h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
+                h += '<div class="pgr__head"><span class="pgr__n">' + (item.num || String(i + 1).padStart(2, '0')) + '</span><span class="pgr__t"' + E + '>' + (item.topic || '') + '</span></div>';
+                h += '<div class="pgr__steps">';
+                (item.steps || []).forEach(function (step) {
+                    h += '<div class="pgr__step">';
+                    h += '<div class="pgr__lbl"' + E + '>' + (step.label || '') + '</div>';
+                    h += '<div class="pgr__txt"' + E + '>' + (step.text || '') + '</div>';
+                    h += '</div>';
+                });
+                h += '</div>';
+                h += '<div class="pgr__exwrap"><div class="pgr__exlbl">예시</div><div class="pgr__ex"' + E + '>' + (item.example || '') + '</div></div>';
+                h += '</div>';
+            });
+            h += '</div>' + crudAdd('paragraphs', pg.length) + '</div>';
         }
 
         if (secOn('vocab')) {
@@ -3085,6 +3123,21 @@
             return span ? _ctEl(span) : el.textContent.trim();
         },
         vocab: function (el) { return { term: _ct(el, '.vi__t'), def: _ct(el, '.vi__d') }; },
+        paragraphs: function (el, ex) {
+            var steps = [];
+            el.querySelectorAll('.pgr__step').forEach(function (stepEl) {
+                steps.push({
+                    label: _ct(stepEl, '.pgr__lbl'),
+                    text: _ct(stepEl, '.pgr__txt')
+                });
+            });
+            return {
+                num: (ex && ex.num) || '',
+                topic: _ct(el, '.pgr__t'),
+                steps: steps,
+                example: _ct(el, '.pgr__ex')
+            };
+        },
         scenarios: function (el, ex) { return { num: ex.num || '', title: _ct(el, '.sc__t'), prompt: _ct(el, '.sc__p') }; },
         homework: function (el) { return { title: _ct(el, '.hw__t'), desc: _ct(el, '.hw__d') }; },
         'eng-compare': function (el) { return { title: _ct(el, '.sc__t'), desc: _ct(el, '.sc__p') }; },
