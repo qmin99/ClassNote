@@ -399,10 +399,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .pl li:last-child{border-bottom:none}
 
 /* vocab grid */
-.vg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.vi{padding:9px 12px;border:1px solid #e8e8e8;border-radius:4px;background:var(--white);box-shadow:0 1px 4px rgba(0,0,0,.04)}
-.vi__t{font-size:11.5px;font-weight:600;margin-bottom:2px;color:var(--text)}
-.vi__d{font-size:10.5px;color:var(--t3)}
+.vg{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.vi{padding:13px 14px;border:1px solid #e8e8e8;border-radius:4px;background:var(--white);box-shadow:0 1px 4px rgba(0,0,0,.04);min-height:64px;display:flex;flex-direction:column;justify-content:center}
+.vi__t{font-size:12.5px;font-weight:600;margin-bottom:4px;color:var(--text)}
+.vi__d{font-size:11px;color:var(--t3)}
 
 /* scenarios */
 .scs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
