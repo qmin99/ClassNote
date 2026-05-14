@@ -2019,7 +2019,10 @@
                 h += secH(sec.num, sec.name, 'phrases', si).replace('</div>', secXBtn + '</div>');
                 h += '<ul class="pl">';
                 sec.phrases.forEach(function (p, pi) {
-                    var parts = String(p).split('\n');
+                    // Smart split: \n\n separates EN from KO (allowing multi-line EN with internal \n).
+                    // Falls back to single \n for legacy single-line entries.
+                    var str = String(p);
+                    var parts = str.indexOf('\n\n') !== -1 ? str.split('\n\n') : str.split('\n');
                     var en = parts[0] || '';
                     var ko = parts.slice(1).join(' ') || '';
                     h += '<li class="pl__duo"' + solo + ' data-crud-type="phrases" data-crud-sec="' + si + '" data-crud-idx="' + pi + '"><span class="pl__en"' + E + '>' + en + '</span><span class="pl__ko"' + E + '>' + ko + '</span>';
@@ -3118,7 +3121,13 @@
         phrases: function (el) {
             var en = el.querySelector('.pl__en');
             var ko = el.querySelector('.pl__ko');
-            if (en && ko) return _ctEl(en) + '\n' + _ctEl(ko);
+            if (en && ko) {
+                var enText = _ctEl(en);
+                var koText = _ctEl(ko);
+                // If EN has internal newlines, use \n\n separator so renderer can split correctly
+                var sep = enText.indexOf('\n') !== -1 ? '\n\n' : '\n';
+                return enText + sep + koText;
+            }
             var span = el.querySelector('[contenteditable]');
             return span ? _ctEl(span) : el.textContent.trim();
         },
