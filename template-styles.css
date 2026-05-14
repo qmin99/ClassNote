@@ -418,9 +418,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .pgr__n{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ac);opacity:.75;flex-shrink:0}
 .pgr__t{font-size:12px;font-weight:600;color:var(--text);font-family:var(--kr);flex:1;white-space:pre-line}
 .pgr__steps{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px}
-.pgr__step{padding:7px 9px;border:1px solid var(--bd2);border-radius:3px;background:#fbfbfa;display:flex;flex-direction:column;gap:3px;min-height:50px}
+.pgr__step{padding:5px 9px;border:1px solid var(--bd2);border-radius:3px;background:#fbfbfa;display:flex;flex-direction:column;gap:2px;min-height:24px}
 .pgr__lbl{font-size:8.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ac);opacity:.7;font-family:var(--kr)}
 .pgr__txt{font-size:11px;line-height:1.55;color:var(--t2);font-family:var(--serif);font-style:italic;white-space:pre-line}
+.pgr__txt:empty{display:none}
 .pgr__exwrap{padding:8px 11px;border-left:2px solid var(--ac);background:var(--ac-l);border-radius:0 3px 3px 0}
 .pgr__exlbl{font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ac);opacity:.7;margin-bottom:3px;font-family:var(--kr)}
 .pgr__ex{font-family:var(--serif);font-size:11px;line-height:1.7;color:var(--t2);font-style:italic;white-space:pre-line}
