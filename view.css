@@ -439,8 +439,9 @@ body{
 }
 @page{margin:0;size:A4}
 
-/* --- Korean translation toggle (핵심 문장) --- */
+/* --- Korean translation toggle (핵심 문장 + 핵심 표현) --- */
 .pl__ko--hidden{opacity:0;user-select:none;pointer-events:none;transition:opacity .25s ease}
+.vi__d--hidden{opacity:0;user-select:none;pointer-events:none;transition:opacity .25s ease}
 .ko-toggle{
     all:unset;cursor:pointer;order:1;
     color:var(--t3,#999);opacity:.3;
