@@ -395,14 +395,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 
 /* phrase list */
 .pl{list-style:none;border:1px solid #e8e8e8;border-radius:4px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)}
-.pl li{font-size:12.5px;padding:13px 16px;line-height:1.65;color:#1a1a1a;border-bottom:1px solid var(--bd2);background:var(--white);letter-spacing:.01em;min-height:48px}
+.pl li{font-size:13.5px;padding:13px 16px;line-height:1.65;color:#1a1a1a;border-bottom:1px solid var(--bd2);background:var(--white);letter-spacing:.01em;min-height:48px}
 .pl li:last-child{border-bottom:none}
 
 /* vocab grid */
 .vg{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
 .vi{padding:13px 14px;border:1px solid #e8e8e8;border-radius:4px;background:var(--white);box-shadow:0 1px 4px rgba(0,0,0,.04);min-height:64px;display:flex;flex-direction:column;justify-content:center}
-.vi__t{font-size:12.5px;font-weight:600;margin-bottom:4px;color:var(--text)}
-.vi__d{font-size:11px;color:var(--t3)}
+.vi__t{font-size:13.5px;font-weight:600;margin-bottom:4px;color:var(--text)}
+.vi__d{font-size:12px;color:var(--t3)}
 
 /* scenarios */
 .scs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -770,7 +770,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .pl li>span[contenteditable]{display:block}
 .pl__duo{display:flex;align-items:baseline;gap:12px}
 .pl__en{flex:1;white-space:pre-line}
-.pl__ko{flex-shrink:0;font-size:11px;color:var(--t3);text-align:right;white-space:pre-line}
+.pl__ko{flex-shrink:0;font-size:12px;color:var(--t3);text-align:right;white-space:pre-line}
 
 /* Phrase long-press drag reorder */
 .pl__ph{background:var(--ac-l,#e8f8f8);border:1.5px dashed var(--ac,#2ABFBF);border-radius:3px;list-style:none}
