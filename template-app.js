@@ -36,6 +36,7 @@
         'english|daily': 'english',
         'english|reading': 'eng-reading',
         'english|grammar': 'eng-grammar',
+        'english|foundation': 'eng-foundation',
         'math|basic': 'math',
         'math|advanced-math': 'math',
         'math|problem-solving': 'math',
@@ -50,6 +51,7 @@
         'english|daily': 'daily-english',
         'english|reading': 'eng-reading',
         'english|grammar': 'eng-grammar',
+        'english|foundation': 'eng-foundation',
         'math|basic': 'math-main',
         'math|advanced-math': 'math-main',
         'math|problem-solving': 'math-main',
@@ -165,7 +167,8 @@
             { val: 'conversation', label: '비즈니스 회화' },
             { val: 'daily', label: '일상 회화' },
             { val: 'reading', label: '독해' },
-            { val: 'grammar', label: '문법' }
+            { val: 'grammar', label: '문법' },
+            { val: 'foundation', label: '기초 종합' }
         ],
         math: [
             { val: 'basic', label: '기본' },
@@ -239,6 +242,22 @@
                 { key:'homework', name:'숙제', desc:'복습용 과제', cat:'wrap', on:true },
                 { key:'summary', name:'오늘의 요약', desc:'핵심 문법 한줄 정리', cat:'wrap', on:false },
                 { key:'comment', name:'선생님 코멘트', desc:'학생별 피드백', cat:'wrap', on:false }
+            ],
+            foundation: [
+                { key:'rule', name:'문법 개념', desc:'오늘 배울 문법 핵심 설명 (강의)', cat:'learn', on:true },
+                { key:'examples', name:'예문', desc:'개념이 적용된 예문 모음', cat:'learn', on:true },
+                { key:'vocab', name:'오늘의 단어', desc:'단계별 핵심 단어와 뜻', cat:'learn', on:true },
+                { key:'compare', name:'비교 정리', desc:'헷갈리는 개념 나란히 비교', cat:'learn', on:false },
+                { key:'exceptions', name:'예외·주의사항', desc:'틀리기 쉬운 포인트', cat:'learn', on:false },
+                { key:'choice', name:'객관식 문제', desc:'선다형 문법 문제 (진단테스트 유형)', cat:'practice', on:true },
+                { key:'translate', name:'문장 해석', desc:'문장을 읽고 한국어로 해석', cat:'practice', on:true },
+                { key:'writing', name:'문장 만들기', desc:'단어 배열·영작 (직접 산출 연습)', cat:'practice', on:true },
+                { key:'fillblank', name:'빈칸 채우기', desc:'알맞은 형태 채우기', cat:'practice', on:false },
+                { key:'correct', name:'오류 수정', desc:'틀린 문장 찾아 고치기', cat:'practice', on:false },
+                { key:'structure', name:'문장 구조 분석', desc:'주어·동사 찾기, 구조 파악 연습', cat:'practice', on:false },
+                { key:'homework', name:'숙제', desc:'단어 암기 등 복습 과제', cat:'wrap', on:true },
+                { key:'summary', name:'오늘의 요약', desc:'배운 내용 한눈에 정리', cat:'wrap', on:false },
+                { key:'comment', name:'선생님 코멘트', desc:'학생별 피드백 작성란', cat:'wrap', on:false }
             ]
         },
         math: {
@@ -1020,7 +1039,11 @@
             grammar: { mode:'gram', tag:'영어 문법', title:'Present Perfect vs Past Simple', sub:'현재완료와 과거시제 비교',
                 rules:[ {r:'현재완료: have/has + p.p.',e:'"I <u>have lived</u> here for 5 years."'}, {r:'과거시제: 과거 시점 명시',e:'"I <u>lived</u> in Seoul in 2020."'} ],
                 compare:{a:'I have been to Japan.',b:'I went to Japan last year.',diff:'경험 vs 특정 과거'},
-                exercises:[ '"I _____ (live) here since 2019."', '"She _____ (go) to school yesterday."', '"We _____ (know) each other for 10 years."' ] }
+                exercises:[ '"I _____ (live) here since 2019."', '"She _____ (go) to school yesterday."', '"We _____ (know) each other for 10 years."' ] },
+            foundation: { mode:'gram', tag:'영어 전반', title:'Be동사와 일반동사', sub:'문장의 뼈대 — 주어와 동사 찾기',
+                rules:[ {r:'주어 + be동사 + 상태', e:'"I <u>am</u> busy." / "She <u>is</u> a nurse."'}, {r:'주어 + 일반동사 + 목적어', e:'"She <u>studies</u> English every day."'} ],
+                compare:{a:'am / is / are', b:'do / does', diff:'상태는 be동사, 행동은 일반동사'},
+                exercises:[ '"She _____ to Busan last week."  (goes / went / will go)', '"The movie was very _____."  (sad / sadly / sadness)' ] }
         },
         math: {
             basic: { mode:'math', tag:'수학 기본', title:'일차방정식의 풀이', sub:'미지수와 등식의 성질',
@@ -1370,6 +1393,7 @@
                 'english|daily': 'daily-english',
                 'english|reading': 'eng-reading',
                 'english|grammar': 'eng-grammar',
+                'english|foundation': 'eng-foundation',
                 'math|basic': 'math-main',
                 'math|advanced-math': 'math-main',
                 'math|problem-solving': 'math-main',
@@ -1732,6 +1756,30 @@
                                 { q: '빈칸에 알맞은 관계대명사를 쓰시오.\nThe teacher _______ teaches us English is very kind.', sub: '답: _____________' },
                                 { q: '다음 두 문장을 관계대명사를 사용하여 한 문장으로 만드시오.\n• I have a friend. He speaks three languages.', answer: true },
                                 { q: '밑줄 친 관계대명사의 선행사와 격을 쓰시오.\nThe cake <u>which</u> she made was delicious.', sub: '선행사: _________ / 격: _________' }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 'eng-foundation',
+                    name: '영어 전반',
+                    series: '영어 전반',
+                    renderer: 'eng-foundation',
+                    sessions: [
+                        {
+                            num: 1, title: 'Be동사와 일반동사',
+                            subtitle: '문장의 뼈대 — 주어와 동사 찾기',
+                            concept: { title: '문장의 기본 구조', body: '모든 영어 문장의 뼈대는 [주어 + 동사].\n상태를 말할 때는 be동사(am / is / are), 행동을 말할 때는 일반동사를 쓴다.' },
+                            examples: [
+                                { en: 'I <b>am</b> busy today.', note: 'be동사: 상태 (바쁜 상태)' },
+                                { en: 'She <b>studies</b> English every day.', note: '일반동사: 행동 (공부하다)' },
+                                { en: 'The weather <b>is</b> nice.', note: 'be동사: 상태 (날씨가 좋은 상태)' }
+                            ],
+                            vocab: [
+                                { term: 'busy', def: '바쁜' },
+                                { term: 'weather', def: '날씨' },
+                                { term: 'study', def: '공부하다' },
+                                { term: 'every day', def: '매일' }
                             ]
                         }
                     ]
@@ -2511,6 +2559,169 @@
             h += '<div class="ps">' + secH('', '오늘의 요약', 'summary');
             h += '<div class="cb"><div class="cb__t"' + E + '>핵심 문법 한줄 정리</div>';
             h += '<div class="cb__b"' + E + '>• 핵심 포인트</div></div></div>';
+        }
+
+        if (secOn('comment')) {
+            h += '<div class="ps">' + secH('', '선생님 코멘트', 'comment');
+            h += '<div class="cb" style="border-left-color:#1d8a5e"><div class="cb__t" style="color:#1d8a5e"' + E + '>피드백</div>';
+            h += '<div class="cb__b"' + E + '>학생에 대한 피드백을 작성해주세요.</div></div></div>';
+        }
+
+        return h + pageFooter(ctx);
+    };
+
+    // --- English Foundation (기초 종합: 문법 강의 + 진단테스트식 문제) ---
+    renderers['eng-foundation'] = function (s, c, ctx) {
+        var h = pageHeader(c.series, s.title, s.subtitle, s.num, ctx);
+
+        if (secOn('rule')) {
+            if (!s.concept) s.concept = { title: '문법 개념', body: '오늘 배울 개념을 설명해주세요.' };
+            h += '<div class="ps">' + secH('', '문법 개념', 'rule');
+            h += '<div class="cb"><div class="cb__t"' + E + '>' + s.concept.title + '</div><div class="cb__b"' + E + '>' + s.concept.body + '</div></div></div>';
+        }
+
+        if (secOn('examples')) {
+            if (!s.examples || !s.examples.length) s.examples = [{ en: '예문을 입력하세요.', note: '설명' }, { en: '예문을 입력하세요.', note: '설명' }];
+            h += '<div class="ps">' + secH('', '예문', 'examples');
+            h += '<div class="cb" style="padding:0;overflow:hidden">';
+            s.examples.forEach(function (ex, i) {
+                h += '<div style="padding:10px 14px;border-bottom:1px solid var(--bd2)"><div style="font-size:12px;margin-bottom:2px"' + E + '>' + (i + 1) + '. ' + ex.en + '</div><div style="font-size:10px;color:var(--t3)"' + E + '>&nbsp;&nbsp;→ ' + ex.note + '</div></div>';
+            });
+            h += '</div></div>';
+        }
+
+        if (secOn('vocab')) {
+            if (!s.vocab || !s.vocab.length) s.vocab = [{ term: '단어', def: '뜻' }, { term: '단어', def: '뜻' }];
+            var vSolo = s.vocab.length <= 1 ? ' crud-solo' : '';
+            h += '<div class="ps">' + secH('', '오늘의 단어', 'vocab');
+            h += '<div class="vg">';
+            s.vocab.forEach(function (v, i) {
+                h += '<div class="vi' + vSolo + '" data-crud-type="vocab" data-crud-idx="' + i + '"><div class="vi__t"' + E + '>' + v.term + '</div><div class="vi__d"' + E + '>' + v.def + '</div>';
+                h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></div>';
+            });
+            h += '</div>' + crudAdd('vocab', s.vocab.length) + '</div>';
+        }
+
+        if (secOn('compare')) {
+            h += '<div class="ps">' + secH('', '비교 정리', 'compare');
+            h += '<div class="scs">';
+            h += '<div class="sc"><div class="sc__n">A</div><div class="sc__t"' + E + '>표현 A</div><div class="sc__p"' + E + '>설명</div></div>';
+            h += '<div class="sc"><div class="sc__n">B</div><div class="sc__t"' + E + '>표현 B</div><div class="sc__p"' + E + '>설명</div></div>';
+            h += '</div></div>';
+        }
+
+        if (secOn('exceptions')) {
+            h += '<div class="ps">' + secH('', '예외·주의사항', 'exceptions');
+            h += '<div class="cb" style="border-left-color:#f5a623"><div class="cb__t" style="color:#f5a623"' + E + '>주의</div>';
+            h += '<div class="cb__b"' + E + '>예외 케이스를 정리하세요.</div></div></div>';
+        }
+
+        if (secOn('choice')) {
+            var fdCh = ensureArray(s, '_choice', 3, ITEM_FACTORIES.choice);
+            var fdChSolo = fdCh.length <= 1 ? ' crud-solo' : '';
+            h += '<div class="ps">' + secH('', '객관식 문제', 'choice');
+            fdCh.forEach(function (item, i) {
+                h += '<div class="prb' + fdChSolo + '" data-crud-type="choice" data-crud-idx="' + i + '">';
+                h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
+                h += '<div class="prb__h"><div class="prb__n">' + (i + 1) + '</div>';
+                h += '<div class="prb__q"' + E + '>' + item.q + '</div></div>';
+                h += '<div class="prb__ch">';
+                var fdMarks = ['①', '②', '③', '④'];
+                item.options.forEach(function (o, oi) { h += '<div class="prb__c"><span class="prb__cm">' + fdMarks[oi] + '</span><span' + E + '>' + o + '</span></div>'; });
+                h += '</div></div>';
+            });
+            h += crudAdd('choice', fdCh.length) + '</div>';
+        }
+
+        if (secOn('translate')) {
+            var fdTr = ensureArray(s, '_translate', 3, ITEM_FACTORIES.translate);
+            var fdTrSolo = fdTr.length <= 1 ? ' crud-solo' : '';
+            h += '<div class="ps">' + secH('', '문장 해석', 'translate');
+            fdTr.forEach(function (item, i) {
+                h += '<div class="prb' + fdTrSolo + '" data-crud-type="translate" data-crud-idx="' + i + '">';
+                h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
+                h += '<div class="prb__h"><div class="prb__n">' + (i + 1) + '</div>';
+                h += '<div class="prb__q"' + E + '>' + item.q + '</div></div>';
+                h += '<div class="prb__a"' + E + '>해석</div></div>';
+            });
+            h += crudAdd('translate', fdTr.length) + '</div>';
+        }
+
+        if (secOn('writing')) {
+            var fdWr = ensureArray(s, '_writing', 3, function () { return { q: '단어를 배열해 문장을 만드세요.' }; });
+            var fdWrSolo = fdWr.length <= 1 ? ' crud-solo' : '';
+            h += '<div class="ps">' + secH('', '문장 만들기', 'writing');
+            fdWr.forEach(function (item, i) {
+                h += '<div class="prb' + fdWrSolo + '" data-crud-type="writing-prb" data-crud-idx="' + i + '">';
+                h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
+                h += '<div class="prb__h"><div class="prb__n">' + (i + 1) + '</div>';
+                h += '<div class="prb__q"' + E + '>' + item.q + '</div></div>';
+                h += '<div class="prb__a"' + E + '>작성</div></div>';
+            });
+            h += crudAdd('writing-prb', fdWr.length) + '</div>';
+        }
+
+        if (secOn('fillblank')) {
+            var fdFb = ensureArray(s, '_fillblank', 3, function () { return { q: '알맞은 형태를 채우세요. _______' }; });
+            var fdFbSolo = fdFb.length <= 1 ? ' crud-solo' : '';
+            h += '<div class="ps">' + secH('', '빈칸 채우기', 'fillblank');
+            fdFb.forEach(function (item, i) {
+                h += '<div class="prb' + fdFbSolo + '" data-crud-type="fillblank" data-crud-idx="' + i + '">';
+                h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
+                h += '<div class="prb__h"><div class="prb__n">' + (i + 1) + '</div>';
+                h += '<div class="prb__q"' + E + '>' + item.q + '</div></div>';
+                h += '<div class="prb__sub">답: _____________</div></div>';
+            });
+            h += crudAdd('fillblank', fdFb.length) + '</div>';
+        }
+
+        if (secOn('correct')) {
+            var fdCr = ensureArray(s, '_correct', 3, ITEM_FACTORIES.correct);
+            var fdCrSolo = fdCr.length <= 1 ? ' crud-solo' : '';
+            h += '<div class="ps">' + secH('', '오류 수정', 'correct');
+            h += '<div class="cb" style="padding:0;overflow:hidden">';
+            fdCr.forEach(function (item, i) {
+                h += '<div style="padding:10px 14px;border-bottom:1px solid var(--bd2);display:flex;gap:12px;align-items:center;position:relative"' + fdCrSolo + ' data-crud-type="correct" data-crud-idx="' + i + '">';
+                h += '<div style="color:#d4572a;font-weight:700;font-size:11px;flex-shrink:0">✗</div>';
+                h += '<div style="flex:1;font-size:12px"' + E + '>' + item.wrong + '</div>';
+                h += '<div style="color:var(--ac);font-size:14px;flex-shrink:0">→</div>';
+                h += '<div style="color:#1d8a5e;font-weight:700;font-size:11px;flex-shrink:0">✓</div>';
+                h += '<div style="flex:1;font-size:12px"' + E + '>' + item.right + '</div>';
+                h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></div>';
+            });
+            h += '</div>' + crudAdd('correct', fdCr.length) + '</div>';
+        }
+
+        if (secOn('structure')) {
+            var fdSq = ensureArray(s, '_structure', 2, ITEM_FACTORIES['structure-q']);
+            var fdSqSolo = fdSq.length <= 1 ? ' crud-solo' : '';
+            h += '<div class="ps">' + secH('', '문장 구조 분석', 'structure');
+            fdSq.forEach(function (item, i) {
+                h += '<div class="prb' + fdSqSolo + '" data-crud-type="structure-q" data-crud-idx="' + i + '">';
+                h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
+                h += '<div class="prb__h"><div class="prb__n">' + (i + 1) + '</div>';
+                h += '<div class="prb__q"' + E + '>' + item.q + '</div></div>';
+                h += '<div class="prb__a"' + E + '>구조 분석</div></div>';
+            });
+            h += crudAdd('structure-q', fdSq.length) + '</div>';
+        }
+
+        if (secOn('homework')) {
+            var fdHw = (s.homework && s.homework.length) ? s.homework : ensureArray(s, '_homework', 3, ITEM_FACTORIES.homework);
+            var fdHwSolo = fdHw.length <= 1 ? ' crud-solo' : '';
+            h += '<div class="ps">' + secH('', '숙제', 'homework');
+            h += '<ul class="hwl">';
+            fdHw.forEach(function (item, i) {
+                h += '<li' + fdHwSolo + ' data-crud-type="homework" data-crud-idx="' + i + '"><div class="hw__n">' + (i + 1) + '</div><div><div class="hw__t"' + E + '>' + item.title + '</div><div class="hw__d"' + E + '>' + item.desc + '</div></div>';
+                h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></li>';
+            });
+            h += '</ul>' + crudAdd('homework', fdHw.length) + '</div>';
+        }
+
+        if (secOn('summary')) {
+            h += '<div class="ps">' + secH('', '오늘의 요약', 'summary');
+            h += '<div class="cb"><div class="cb__t"' + E + '>오늘 배운 핵심</div>';
+            h += '<div class="cb__b"' + E + '>• 핵심 포인트 1\n• 핵심 포인트 2</div></div></div>';
         }
 
         if (secOn('comment')) {
@@ -5221,9 +5432,12 @@
     var _courseSaveTimer = null;
     var _courseSaving = false;
 
-    // 정민경 코스(8h1cqo8l)는 Session 6이 review.html이라 에디터에서 건너뜀
+    // 정민경 코스(8h1cqo8l)는 번호 건너뜀: Session 6=review.html, Session 18=자료 없이 진행
     function _sessNumForIdx(idx) {
-        return (currentCourseDocId === '8h1cqo8l' && idx >= 5) ? idx + 2 : idx + 1;
+        if (currentCourseDocId !== '8h1cqo8l') return idx + 1;
+        if (idx >= 16) return idx + 3; // 6, 18 둘 다 건너뜀
+        if (idx >= 5)  return idx + 2; // 6 건너뜀
+        return idx + 1;
     }
 
     function saveCourseToFirestore(immediate) {
