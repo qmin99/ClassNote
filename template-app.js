@@ -1944,7 +1944,7 @@
         phrases: 12, paragraphs: 5, vocab: 12, scenarios: 6, homework: 6,
         questions: 8, problems: 8, analysis: 8, 'table-rows': 10,
         wordlist: 10, slang: 6, dialogue: 10, mistakes: 6,
-        fillblank: 6, 'writing-prb': 6, correct: 6, choice: 4,
+        fillblank: 6, 'writing-prb': 6, correct: 6, choice: 4, 'eng-examples': 6,
         transform: 6, truefalse: 6, 'structure-q': 4, translate: 6,
         'example-steps': 6, guided: 6, 'word-prb': 4, speed: 8,
         'mistake-math': 6, 'review-rows': 6, mock: 6,
@@ -1986,6 +1986,7 @@
         transform: function () { return { q: '다음 문장을 변환하세요.' }; },
         truefalse: function () { return { q: '진술문을 입력하세요.' }; },
         'structure-q': function () { return { q: '복잡한 문장을 입력하세요.' }; },
+        'eng-examples': function () { return { en: '예문을 입력하세요.', note: '설명' }; },
         translate: function () { return { q: '문장을 입력하세요.' }; },
         'example-steps': function () { return { step: '풀이 단계' }; },
         guided: function () { return { q: '단계별 안내를 입력하세요.' }; },
@@ -2577,17 +2578,21 @@
         if (secOn('rule')) {
             if (!s.concept) s.concept = { title: '문법 개념', body: '오늘 배울 개념을 설명해주세요.' };
             h += '<div class="ps">' + secH('', '문법 개념', 'rule');
-            h += '<div class="cb"><div class="cb__t"' + E + '>' + s.concept.title + '</div><div class="cb__b"' + E + '>' + s.concept.body + '</div></div></div>';
+            h += '<div class="cb" data-concept-sync="1"><div class="cb__t"' + E + '>' + s.concept.title + '</div><div class="cb__b"' + E + '>' + s.concept.body + '</div></div></div>';
         }
 
         if (secOn('examples')) {
             if (!s.examples || !s.examples.length) s.examples = [{ en: '예문을 입력하세요.', note: '설명' }, { en: '예문을 입력하세요.', note: '설명' }];
+            var fdExSolo = s.examples.length <= 1 ? ' crud-solo' : '';
             h += '<div class="ps">' + secH('', '예문', 'examples');
             h += '<div class="cb" style="padding:0;overflow:hidden">';
             s.examples.forEach(function (ex, i) {
-                h += '<div style="padding:10px 14px;border-bottom:1px solid var(--bd2)"><div style="font-size:12px;margin-bottom:2px"' + E + '>' + (i + 1) + '. ' + ex.en + '</div><div style="font-size:10px;color:var(--t3)"' + E + '>&nbsp;&nbsp;→ ' + ex.note + '</div></div>';
+                h += '<div style="padding:10px 14px;border-bottom:1px solid var(--bd2);position:relative"' + fdExSolo + ' data-crud-type="eng-examples" data-crud-idx="' + i + '">';
+                h += '<div style="font-size:12px;margin-bottom:2px">' + (i + 1) + '. <span class="fx__en"' + E + '>' + ex.en + '</span></div>';
+                h += '<div style="font-size:10px;color:var(--t3)">&nbsp;&nbsp;→ <span class="fx__no"' + E + '>' + ex.note + '</span></div>';
+                h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button></div>';
             });
-            h += '</div></div>';
+            h += '</div>' + crudAdd('eng-examples', s.examples.length) + '</div>';
         }
 
         if (secOn('vocab')) {
@@ -3314,6 +3319,9 @@
         switch (type) {
             case 'phrases': return session.sections && session.sections[secIdx] ? session.sections[secIdx].phrases : null;
             case 'vocab': return session.vocab;
+            case 'eng-examples':
+                if (!session.examples) session.examples = [];
+                return session.examples;
             case 'scenarios': return session.scenarios;
             case 'homework': return session.homework || session._homework;
             case 'questions': return session.questions;
@@ -3339,6 +3347,7 @@
             return span ? _ctEl(span) : el.textContent.trim();
         },
         vocab: function (el) { return { term: _ct(el, '.vi__t'), def: _ct(el, '.vi__d') }; },
+        'eng-examples': function (el) { return { en: _ct(el, '.fx__en'), note: _ct(el, '.fx__no') }; },
         paragraphs: function (el, ex) {
             var steps = [];
             el.querySelectorAll('.pgr__step').forEach(function (stepEl) {
@@ -3468,6 +3477,16 @@
                 arr[idx] = syncer(el, arr[idx]);
             }
         });
+
+        // Sync 문법 개념 box (foundation renderer) — concept title/body
+        var conceptEl = document.querySelector('[data-concept-sync]');
+        if (conceptEl) {
+            if (!session.concept) session.concept = {};
+            var cptT = conceptEl.querySelector('.cb__t');
+            var cptB = conceptEl.querySelector('.cb__b');
+            if (cptT) session.concept.title = _ctEl(cptT);
+            if (cptB) session.concept.body = _ctEl(cptB);
+        }
 
         // Sync page header editables (title, subtitle, series)
         var titleEl = document.querySelector('.p-title[contenteditable]');
