@@ -2577,7 +2577,7 @@
 
         if (secOn('rule')) {
             if (!s.concept) s.concept = { title: '문법 개념', body: '오늘 배울 개념을 설명해주세요.' };
-            // 구조화 렌더: ①②… 로 시작하는 줄 → 규칙 카드(나란히), ★ 줄 → 강조 콜아웃, 나머지 → 도입부
+            // 구조화 렌더: ①②… 줄 → 규칙 카드 (| 구분: 이름|형태|의미|규칙|예문), ★ 줄 → TIP 바, 나머지 → 도입부
             var fcDeco = function (t) {
                 return t.replace(/ = /g, ' <b class="fcb__eq">=</b> ').replace(/ ≠ /g, ' <b class="fcb__eq">≠</b> ')
                         .replace(/^([①②③④⑤])/, '<b class="fcb__num">$1</b>');
@@ -2587,19 +2587,33 @@
                 var t = ln.trim();
                 if (!t) return;
                 if (/^[①②③④⑤]/.test(t)) fcRules.push(t);
-                else if (/^★/.test(t)) fcKeys.push(t);
+                else if (/^★/.test(t)) fcKeys.push(t.replace(/^★\s*/, ''));
                 else fcIntro.push(t);
             });
             h += '<div class="ps">' + secH('', '문법 개념', 'rule');
             h += '<div class="cb" data-concept-sync="1"><div class="cb__t"' + E + '>' + s.concept.title + '</div>';
-            h += '<div class="cb__b fcb"' + E + '>';
-            fcIntro.forEach(function (t) { h += '<div class="fcb__intro">' + t + '</div>'; });
+            h += '<div class="cb__b fcb">';
+            fcIntro.forEach(function (t) { h += '<div class="fcb__intro"' + E + '>' + t + '</div>'; });
             if (fcRules.length) {
                 h += '<div class="fcb__rules">';
-                fcRules.forEach(function (t) { h += '<div class="fcb__rule">' + fcDeco(t) + '</div>'; });
+                fcRules.forEach(function (t) {
+                    var p = t.split('|').map(function (x) { return x.trim(); });
+                    if (p.length >= 4) {
+                        h += '<div class="fcb__rule fcb__rule--card">';
+                        h += '<div class="fcb__rhead"><span class="fcb__name"' + E + '>' + fcDeco(p[0]) + '</span><span class="fcb__forms"' + E + '>' + (p[1] || '') + '</span></div>';
+                        h += '<div class="fcb__mean"' + E + '>' + (p[2] || '') + '</div>';
+                        h += '<div class="fcb__ruleline"' + E + '>' + fcDeco(p[3] || '') + '</div>';
+                        h += '<div class="fcb__ex"' + E + '>' + fcDeco(p[4] || '') + '</div>';
+                        h += '</div>';
+                    } else {
+                        h += '<div class="fcb__rule"' + E + '>' + fcDeco(t) + '</div>';
+                    }
+                });
                 h += '</div>';
             }
-            fcKeys.forEach(function (t) { h += '<div class="fcb__key">' + fcDeco(t) + '</div>'; });
+            fcKeys.forEach(function (t) {
+                h += '<div class="fcb__key"><span class="fcb__badge">TIP</span><span class="fcb__keytxt"' + E + '>' + fcDeco(t) + '</span></div>';
+            });
             h += '</div></div></div>';
         }
 
@@ -3500,14 +3514,35 @@
             }
         });
 
-        // Sync 문법 개념 box (foundation renderer) — concept title/body
+        // Sync 문법 개념 box (foundation renderer) — 구조화 카드를 마커 텍스트로 역직렬화
         var conceptEl = document.querySelector('[data-concept-sync]');
         if (conceptEl) {
             if (!session.concept) session.concept = {};
             var cptT = conceptEl.querySelector('.cb__t');
-            var cptB = conceptEl.querySelector('.cb__b');
             if (cptT) session.concept.title = _ctEl(cptT);
-            if (cptB) session.concept.body = _ctEl(cptB);
+            var cptB = conceptEl.querySelector('.cb__b');
+            if (cptB) {
+                if (cptB.querySelector('.fcb__intro, .fcb__rule, .fcb__keytxt')) {
+                    var cptLines = [];
+                    cptB.querySelectorAll('.fcb__intro').forEach(function (el) {
+                        var v = _ctEl(el); if (v) cptLines.push(v);
+                    });
+                    cptB.querySelectorAll('.fcb__rule').forEach(function (el) {
+                        if (el.classList.contains('fcb__rule--card')) {
+                            var f = [_ct(el, '.fcb__name'), _ct(el, '.fcb__forms'), _ct(el, '.fcb__mean'), _ct(el, '.fcb__ruleline'), _ct(el, '.fcb__ex')];
+                            cptLines.push(f.join(' | ').replace(/(\s*\|\s*)+$/, ''));
+                        } else {
+                            var v2 = _ctEl(el); if (v2) cptLines.push(v2);
+                        }
+                    });
+                    cptB.querySelectorAll('.fcb__keytxt').forEach(function (el) {
+                        var v3 = _ctEl(el); if (v3) cptLines.push('★ ' + v3);
+                    });
+                    session.concept.body = cptLines.join('\n');
+                } else {
+                    session.concept.body = _ctEl(cptB);
+                }
+            }
         }
 
         // Sync page header editables (title, subtitle, series)
@@ -5476,7 +5511,7 @@
     // 정민경 코스(8h1cqo8l)는 번호 건너뜀: Session 6=review.html, Session 18=자료 없이 진행
     function _sessNumForIdx(idx) {
         if (currentCourseDocId !== '8h1cqo8l') return idx + 1;
-        if (idx >= 16) return idx + 3; // 6, 18 둘 다 건너뜀
+        if (idx >= 16) return idx + 4; // 6, 18, 19 건너뜀 (18·19는 자료 없이 진행)
         if (idx >= 5)  return idx + 2; // 6 건너뜀
         return idx + 1;
     }
