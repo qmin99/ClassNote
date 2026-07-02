@@ -2577,8 +2577,30 @@
 
         if (secOn('rule')) {
             if (!s.concept) s.concept = { title: '문법 개념', body: '오늘 배울 개념을 설명해주세요.' };
+            // 구조화 렌더: ①②… 로 시작하는 줄 → 규칙 카드(나란히), ★ 줄 → 강조 콜아웃, 나머지 → 도입부
+            var fcDeco = function (t) {
+                return t.replace(/ = /g, ' <b class="fcb__eq">=</b> ').replace(/ ≠ /g, ' <b class="fcb__eq">≠</b> ')
+                        .replace(/^([①②③④⑤])/, '<b class="fcb__num">$1</b>');
+            };
+            var fcIntro = [], fcRules = [], fcKeys = [];
+            String(s.concept.body || '').split('\n').forEach(function (ln) {
+                var t = ln.trim();
+                if (!t) return;
+                if (/^[①②③④⑤]/.test(t)) fcRules.push(t);
+                else if (/^★/.test(t)) fcKeys.push(t);
+                else fcIntro.push(t);
+            });
             h += '<div class="ps">' + secH('', '문법 개념', 'rule');
-            h += '<div class="cb" data-concept-sync="1"><div class="cb__t"' + E + '>' + s.concept.title + '</div><div class="cb__b"' + E + '>' + s.concept.body + '</div></div></div>';
+            h += '<div class="cb" data-concept-sync="1"><div class="cb__t"' + E + '>' + s.concept.title + '</div>';
+            h += '<div class="cb__b fcb"' + E + '>';
+            fcIntro.forEach(function (t) { h += '<div class="fcb__intro">' + t + '</div>'; });
+            if (fcRules.length) {
+                h += '<div class="fcb__rules">';
+                fcRules.forEach(function (t) { h += '<div class="fcb__rule">' + fcDeco(t) + '</div>'; });
+                h += '</div>';
+            }
+            fcKeys.forEach(function (t) { h += '<div class="fcb__key">' + fcDeco(t) + '</div>'; });
+            h += '</div></div></div>';
         }
 
         if (secOn('examples')) {
