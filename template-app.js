@@ -2209,7 +2209,8 @@
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
                 h += '<div class="prb__h"><div class="prb__n">' + (i + 1) + '</div>';
                 h += '<div class="prb__q"' + E + '>' + item.q + '</div></div>';
-                h += '<div class="prb__sub">답: _____________</div></div>';
+                var _fbAns = item.a ? String(item.a).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+                h += '<div class="prb__sub">답: _____________' + (_fbAns ? ' <span class="prb__ans prb__ans--hidden">→ ' + _fbAns + '</span>' : '') + '</div></div>';
             });
             h += crudAdd('fillblank', fb.length) + '</div>';
         }
@@ -2362,7 +2363,8 @@
                 h += '<button class="crud-x" data-crud-action="remove" aria-label="삭제">&times;</button>';
                 h += '<div class="prb__h"><div class="prb__n">' + (i + 1) + '</div>';
                 h += '<div class="prb__q"' + E + '>' + item.q + '</div></div>';
-                h += '<div class="prb__sub">답: _____________</div></div>';
+                var _fbAns = item.a ? String(item.a).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+                h += '<div class="prb__sub">답: _____________' + (_fbAns ? ' <span class="prb__ans prb__ans--hidden">→ ' + _fbAns + '</span>' : '') + '</div></div>';
             });
             h += crudAdd('fillblank', fb.length) + '</div>';
         }

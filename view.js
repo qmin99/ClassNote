@@ -687,7 +687,8 @@
         // Each section header gets its own eye button that hides/shows its own KO/def.
         var EYE_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
 
-        function wireSection(sectionName, koSelector, hiddenClass) {
+        function wireSection(sectionName, koSelector, hiddenClass, label) {
+            label = label || '해석';
             // Collect all KO elements across all .ps blocks whose header matches sectionName
             var pshEls = Array.prototype.filter.call(
                 container.querySelectorAll('.psh'),
@@ -715,14 +716,14 @@
                 var btn = document.createElement('button');
                 btn.className = 'ko-toggle';
                 btn.innerHTML = EYE_SVG;
-                btn.title = '해석 보기';
+                btn.title = label + ' 보기';
                 btn.addEventListener('click', function () {
                     var isHidden = koEls[0].classList.contains(hiddenClass);
                     koEls.forEach(function (ko) {
                         ko.classList.toggle(hiddenClass, !isHidden);
                     });
                     btn.classList.toggle('ko-toggle--on', isHidden);
-                    btn.title = isHidden ? '해석 숨기기' : '해석 보기';
+                    btn.title = isHidden ? label + ' 숨기기' : label + ' 보기';
                 });
                 psh.appendChild(btn);
             });
@@ -730,6 +731,7 @@
 
         wireSection('핵심 문장', '.pl__ko', 'pl__ko--hidden');
         wireSection('핵심 표현', '.vi__d',  'vi__d--hidden');
+        wireSection('빈칸 채우기', '.prb__ans', 'prb__ans--hidden', '정답');
     }
 
     function setupWritingToggle() {
