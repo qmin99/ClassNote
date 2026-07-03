@@ -147,6 +147,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 }
 .nsi__btn:hover{background:var(--bd2);color:var(--text)}
 .nsi__btn--danger:hover{background:#fef2f2;color:#dc2626}
+/* 학생에게 숨김 (발행 제외) */
+.nsi--hidden .nsi__input{color:var(--t4);text-decoration:line-through;text-decoration-color:var(--t4)}
+.nsi--hidden .nsi__n{opacity:.45}
+.nsi__hidebadge{
+    font-size:9px;font-weight:700;color:var(--t4);letter-spacing:.02em;
+    background:var(--bd2);border-radius:3px;padding:1px 4px;margin-left:4px;flex:0 0 auto;
+}
+.nsi__btn--hide.is-on{color:#d97706;background:#fffbeb}
+.nsi__btn--hide.is-on:hover{background:#fef3c7;color:#d97706}
 
 /* Drag reorder */
 .nsi--dragging{opacity:.4;border-style:dashed}

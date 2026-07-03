@@ -3803,11 +3803,13 @@
         var h = '';
         course.sessions.forEach(function (s, i) {
             var sActive = i === state.sessionIdx;
-            h += '<div class="nsi' + (sActive ? ' nsi--active' : '') + '" data-idx="' + i + '" draggable="true">';
+            h += '<div class="nsi' + (sActive ? ' nsi--active' : '') + (s._noPublish ? ' nsi--hidden' : '') + '" data-idx="' + i + '" draggable="true">';
             h += '<span class="nsi__grip" title="드래그하여 순서 변경">⠿</span>';
             h += '<span class="nsi__n">' + s.num + '</span>';
             h += '<input class="nsi__input" value="' + esc(s.title) + '" data-rename-idx="' + i + '" readonly>';
+            if (s._noPublish) h += '<span class="nsi__hidebadge" title="학생에게 공유되지 않음">숨김</span>';
             h += '<span class="nsi__actions">';
+            h += '<button class="nsi__btn nsi__btn--hide' + (s._noPublish ? ' is-on' : '') + '" data-hide-idx="' + i + '" title="' + (s._noPublish ? '학생에게 공개하기' : '학생에게 숨기기') + '"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>';
             h += '<button class="nsi__btn" data-dup-idx="' + i + '" title="세션 복제"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>';
             if (course.sessions.length > 1) {
                 h += '<button class="nsi__btn nsi__btn--danger" data-del-idx="' + i + '" title="세션 삭제"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
@@ -3921,6 +3923,17 @@
                 hasEdited = false;
                 renderNav();
                 renderPage();
+                saveCourseToFirestore();
+            });
+        });
+
+        // Bind "학생에게 숨기기" toggle (발행 제외)
+        els.courseNav.querySelectorAll('[data-hide-idx]').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var idx = parseInt(this.getAttribute('data-hide-idx'));
+                course.sessions[idx]._noPublish = !course.sessions[idx]._noPublish;
+                renderNav();
                 saveCourseToFirestore();
             });
         });
@@ -6086,8 +6099,9 @@
         var cn = window.__classnote || {};
         var sessionsData = [];
 
-        // Capture all sessions
+        // Capture all sessions (학생에게 숨긴 세션은 발행 제외)
         course.sessions.forEach(function (session) {
+            if (session._noPublish) return;
             var html = captureSessionHtml(session, course);
             sessionsData.push({
                 html: html,
