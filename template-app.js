@@ -3404,7 +3404,7 @@
         scenarios: function (el, ex) { return { num: ex.num || '', title: _ct(el, '.sc__t'), prompt: _ct(el, '.sc__p') }; },
         homework: function (el) { return { title: _ct(el, '.hw__t'), desc: _ct(el, '.hw__d') }; },
         'eng-compare': function (el) { return { title: _ct(el, '.sc__t'), desc: _ct(el, '.sc__p') }; },
-        fillblank: function (el) { return { q: _ct(el, '.prb__q') }; },
+        fillblank: function (el) { var o = { q: _ct(el, '.prb__q') }; var aEl = el.querySelector('.prb__ans'); if (aEl) o.a = aEl.textContent.replace(/^\s*→\s*/, '').trim(); return o; },
         'writing-prb': function (el) { var o = { q: _ct(el, '.prb__q') }; var aEl = el.querySelector('.prb__a'); if (aEl && aEl.dataset.answer) o.a = aEl.dataset.answer; return o; },
         translate: function (el) { return { q: _ct(el, '.prb__q') }; },
         'structure-q': function (el) { return { q: _ct(el, '.prb__q') }; },
