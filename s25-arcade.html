@@ -304,7 +304,7 @@ const STAGES=[
   ]},
 { id:4, name:"실수 잡기", emoji:"🔍", acc:"#ff4d8d", label:"S23 · Fix It",
   qs:[
-   {t:"mistake", tokens:["I","just","staying","inside","today","."], bad:1, fix:"I <s>just</s> 'm just staying inside today.", why:"~ing 앞엔 <b>be동사(am)</b> 필수. ‘I staying’ ❌ → I’m staying."},
+   {t:"choice", p:"맞는 문장은? (뜻: 오늘 그냥 집에 있어)", o:["I just staying inside.","I'm just staying inside.","I am just stay inside."], a:1, why:"~ing 앞엔 <b>be동사(I'm)</b> 필수. ‘I staying’ ❌, ‘stay’는 원형이라 X. → <b>I'm just staying</b>."},
    {t:"choice", p:"then / than?", s:"This bag is heavier ___ mine.", o:["then","than"], a:1, why:"비교 = <b>than</b> (~보다). then 아님!"},
    {t:"choice", p:"then / than?", s:"Let's eat first, ___ we'll go.", o:["then","than"], a:0, why:"그다음·순서 = <b>then</b>."},
    {t:"mistake", tokens:["How","did","you","liked","it","?"], bad:3, fix:"How did you <s>liked</s> like it?", why:"did가 이미 과거 표시 → 뒤엔 <b>원형(like)</b>."},
