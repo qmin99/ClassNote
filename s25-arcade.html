@@ -69,12 +69,14 @@ h1,h2,.disp{font-family:"Bricolage Grotesque",var(--pret),sans-serif}
 .hero h1{font-size:clamp(38px,10vw,62px);line-height:1.02;margin:12px 0 6px;letter-spacing:-.03em}
 .hero p{color:var(--muted);font-weight:600;margin:0}
 .hero p b{color:var(--ink)}
-.stagemap{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:30px 0}
-.smap{display:flex;align-items:center;gap:7px;padding:9px 13px;border-radius:11px;background:var(--panel);border:1px solid var(--line);
-  font-weight:700;font-size:13px;color:var(--muted)}
-.smap .d{width:9px;height:9px;border-radius:50%}
+.stagelist{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:340px;margin:34px auto 0}
+.sl{display:flex;align-items:center;gap:9px;padding:12px 14px;border-radius:12px;background:var(--panel);border:1px solid var(--line);font-weight:700;font-size:14px}
+.sl .num{font-family:"Bricolage Grotesque";font-weight:800;color:var(--dim);font-size:12px;width:12px}
+.sl i{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
 .startzone{margin-top:auto;padding-top:18px}
-.hint{color:var(--dim);font-size:12.5px;text-align:center;font-weight:600;margin-top:12px;line-height:1.5}
+.startzone .btn{max-width:320px;margin:0 auto;display:block}
+.dbg{position:fixed;left:14px;bottom:14px;z-index:30;display:none;padding:10px 14px;border-radius:10px;border:1px dashed var(--acc);
+  background:var(--panel);color:var(--acc);font-weight:800;font-size:12px;cursor:pointer;font-family:inherit}
 
 /* buttons */
 .btn{appearance:none;border:0;cursor:pointer;font-family:inherit;font-weight:700;border-radius:13px;padding:15px 22px;font-size:16px;
@@ -238,20 +240,16 @@ h1,h2,.disp{font-family:"Bricolage Grotesque",var(--pret),sans-serif}
     <div class="hero">
       <div class="kick">S20 – 24 총복습</div>
       <h1>영어 복습<br>아케이드</h1>
-      <p>시제 3부작 · 실수 잡기 · 표현 &nbsp;|&nbsp; <b>정민경</b></p>
-      <div class="stagemap">
-        <span class="smap"><span class="d" style="background:#e8912a"></span>과거</span>
-        <span class="smap"><span class="d" style="background:#1fb789"></span>현재완료</span>
-        <span class="smap"><span class="d" style="background:#2f8fe6"></span>미래</span>
-        <span class="smap"><span class="d" style="background:#e0518b"></span>실수 잡기</span>
-        <span class="smap"><span class="d" style="background:#8b6fe0"></span>표현</span>
-        <span class="smap"><span class="d" style="background:#e5533a"></span>종합</span>
+      <div class="stagelist">
+        <div class="sl"><span class="num">1</span><i style="background:#e8912a"></i>과거</div>
+        <div class="sl"><span class="num">2</span><i style="background:#1fb789"></i>현재완료</div>
+        <div class="sl"><span class="num">3</span><i style="background:#2f8fe6"></i>미래</div>
+        <div class="sl"><span class="num">4</span><i style="background:#e0518b"></i>실수 잡기</div>
+        <div class="sl"><span class="num">5</span><i style="background:#8b6fe0"></i>표현</div>
+        <div class="sl"><span class="num">6</span><i style="background:#e5533a"></i>종합</div>
       </div>
     </div>
-    <div class="startzone">
-      <button class="btn" onclick="G.start()">시작하기</button>
-      <div class="hint">6개 스테이지, 42문항 · 약 30–40분<br>리스닝 문항은 소리(🔊)를 켜면 발음이 재생됩니다</div>
-    </div>
+    <div class="startzone"><button class="btn" onclick="G.start()">시작하기</button></div>
   </section>
 
   <!-- PLAY -->
@@ -284,6 +282,8 @@ h1,h2,.disp{font-family:"Bricolage Grotesque",var(--pret),sans-serif}
     </div>
   </section>
 </div>
+
+<button class="dbg" id="dbg" onclick="G.skip()">⏭ 다음 (디버그)</button>
 
 <div class="overlay" id="ov"><div class="clear">
   <div class="big" id="ovBig">Stage Clear</div>
@@ -360,6 +360,7 @@ const TYPE_LABEL={choice:"고르기",blank:"빈칸",listen:"듣기",mistake:"틀
 
 /* ===== ENGINE ===== */
 const $=s=>document.querySelector(s);
+const DEBUG=new URLSearchParams(location.search).has('debug'); // ?debug=1 일 때만 스킵버튼
 const cleanFix=f=>f.replace(/<s>.*?<\/s>\s*/g,'').replace(/<[^>]+>/g,'').trim();
 function correctText(q){
   if(['choice','blank','listen'].includes(q.t))return q.o[q.a];
@@ -531,6 +532,14 @@ const G={
     // last question of stage answered → clear
     if(this.ans[this.si].length===st.qs.length)this.stageClear();
   },
+  skip(){ // 디버그 전용: 답 안 해도 다음/다음 스테이지로 쭉쭉
+    if(!$('#s-play').classList.contains('on'))return;
+    const st=STAGES[this.si];
+    if(this.qi<st.qs.length-1)this.qi++;
+    else if(this.si<STAGES.length-1){this.si++;this.qi=0;this.setAcc(STAGES[this.si].c);$('#hE').textContent=STAGES[this.si].e;$('#hN').textContent=STAGES[this.si].name;}
+    else{this.results();return;}
+    this.render();
+  },
 
   stageClear(){
     const arr=this.ans[this.si],cor=arr.filter(x=>x.correct).length,rate=cor/arr.length;
@@ -582,6 +591,7 @@ const G={
       g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(.12,s+.02);g.gain.exponentialRampToValueAtTime(.0001,s+.15);
       o.start(s);o.stop(s+.17);});}catch(e){}},
 };
+if(DEBUG)document.getElementById('dbg').style.display='block';
 if('speechSynthesis'in window){speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();speechSynthesis.getVoices();}
 if(window.matchMedia&&matchMedia('(prefers-color-scheme:light)').matches){document.documentElement.setAttribute('data-theme','light');document.getElementById('theme').textContent='🌙';}
 </script>
