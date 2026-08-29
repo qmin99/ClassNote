@@ -5526,6 +5526,7 @@
     // 정민경 코스(8h1cqo8l)는 번호 건너뜀: Session 6=review.html, Session 18=자료 없이 진행
     function _sessNumForIdx(idx) {
         if (currentCourseDocId !== '8h1cqo8l') return idx + 1;
+        if (idx >= 22) return idx + 7; // 6, 18, 19, 25, 26, 28 건너뜀
         if (idx >= 21) return idx + 6; // 6, 18, 19, 25, 26 건너뜀 (25는 외부 아케이드 복습 링크)
         if (idx >= 16) return idx + 4; // 6, 18, 19 건너뜀 (18·19는 자료 없이 진행)
         if (idx >= 5)  return idx + 2; // 6 건너뜀
