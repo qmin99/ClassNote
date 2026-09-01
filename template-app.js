@@ -3818,7 +3818,22 @@
             h += '</div>';
         });
 
+        var manySessions = course.sessions.length > 5;
+        if (manySessions) {
+            h += '<button class="nav-toggle" data-nav-toggle>' +
+                 (state.navExpanded ? '접기 ▴' : '다른 회차 ' + (course.sessions.length - 1) + '개 더 보기 ▾') +
+                 '</button>';
+        }
         els.courseNav.innerHTML = h;
+        els.courseNav.classList.toggle('nav--collapsed', manySessions && !state.navExpanded);
+
+        // Bind collapse toggle (현재 세션만 보기 / 전체 펼치기)
+        var navToggleBtn = els.courseNav.querySelector('[data-nav-toggle]');
+        if (navToggleBtn) navToggleBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            state.navExpanded = !state.navExpanded;
+            renderNav();
+        });
 
         // Bind session clicks
         els.courseNav.querySelectorAll('.nsi').forEach(function (item) {
@@ -3857,6 +3872,7 @@
                 var nav = document.getElementById('pageNav');
                 if (nav) nav.classList.remove('page-nav--show');
                 pageState = { pages: [], current: 0, total: 1 };
+                state.navExpanded = false; // 선택하면 다시 현재 세션만 보이게 접기
                 renderNav();
                 renderPage();
             });

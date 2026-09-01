@@ -156,6 +156,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 }
 .nsi__btn--hide.is-on{color:#d97706;background:#fffbeb}
 .nsi__btn--hide.is-on:hover{background:#fef3c7;color:#d97706}
+/* 세션 목록 접기 (현재 세션만 보기) */
+.nav--collapsed .nsi:not(.nsi--active){display:none}
+.nav-toggle{width:100%;margin-top:6px;padding:9px 10px;border:1px dashed var(--bd);border-radius:8px;background:none;color:var(--t3);font-weight:600;font-size:12px;cursor:pointer;font-family:inherit;transition:.12s}
+.nav-toggle:hover{border-color:var(--ac);color:var(--ac);background:var(--ac-l)}
 
 /* Drag reorder */
 .nsi--dragging{opacity:.4;border-style:dashed}
