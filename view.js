@@ -607,7 +607,7 @@
             var active = i === currentSessionIdx ? ' view-session-select__item--active' : '';
             html += '<button class="view-session-select__item' + active + '" data-session="' + i + '">'
                 + '<span class="view-session-select__num">' + (s.num || (i + 1)) + '</span>'
-                + '<span>' + title + '</span>'
+                + '<span class="view-session-select__title">' + title + '</span>'
                 + '</button>';
         });
         if (sessionDropdown) sessionDropdown.innerHTML = html;
@@ -632,7 +632,13 @@
     if (sessionTrigger) {
         sessionTrigger.addEventListener('click', function (e) {
             e.stopPropagation();
+            var opening = !sessionSelect.classList.contains('view-session-select--open');
             sessionSelect.classList.toggle('view-session-select--open');
+            // 열 때 현재 세션이 가운데 보이도록 (목록이 길어도 바로 찾게)
+            if (opening && sessionDropdown) {
+                var act = sessionDropdown.querySelector('.view-session-select__item--active');
+                if (act) sessionDropdown.scrollTop = Math.max(0, act.offsetTop - (sessionDropdown.clientHeight - act.offsetHeight) / 2);
+            }
         });
     }
     document.addEventListener('click', closeSessionDropdown);
