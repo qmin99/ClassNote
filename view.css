@@ -211,6 +211,8 @@ body{
 /* Hide CRUD buttons that may have leaked through */
 .view-pages .crud-x,
 .view-pages .crud-add,
+.view-pages .crud-row,
+.view-pages [class*="crud-add"],
 .view-pages .crud-lines{display:none!important}
 
 /* Hide data-crud attributes visual artifacts */
@@ -264,6 +266,9 @@ body{
     .view-pages .page{
         width:100%!important;
         min-height:auto!important;
+        /* A4 고정 높이 해제 — 안 풀면 1123px 넘는 내용이 잘림 */
+        max-height:none!important;
+        overflow:visible!important;
         padding:32px 24px!important;
     }
     .view-body{padding:16px 8px 32px}
@@ -275,13 +280,18 @@ body{
     .view-pages .page{
         width:100%!important;
         min-height:auto!important;
-        padding:20px 16px!important;
+        max-height:none!important;
+        overflow:visible!important;
+        /* 데스크톱용 .7 축소 해제 — 폰에서 글씨가 너무 작아짐 */
+        zoom:1!important;
+        padding:22px 16px!important;
         box-shadow:0 1px 4px rgba(0,0,0,.06);
         transform:none!important;
         margin-bottom:0!important;
-        font-size:15px;
         border-radius:0;
+        overflow-wrap:break-word;
     }
+    .view-pages .page img{max-width:100%;height:auto}
     .view-body{padding:0 0 64px}
     .view-header__inner{padding:8px 12px;gap:6px}
     .view-header__brand{display:none}
@@ -290,6 +300,44 @@ body{
     .view-session-select__trigger{font-size:12px;padding:5px 8px 5px 10px;min-height:36px}
     .view-page-nav__btn{width:44px;height:44px}
     .view-page-nav__badge{font-size:11px;min-width:40px;padding:0 4px}
+
+    /* 문서 머리말: 제목과 날짜가 좌우로 쪼개지지 않게 세로로 */
+    .view-pages .p-header{flex-direction:column;align-items:flex-start;gap:10px}
+    .view-pages .p-header__right{align-items:flex-start;width:100%}
+    .view-pages .p-meta,
+    .view-pages .p-meta__student-slot{text-align:left;justify-content:flex-start}
+    .view-pages .p-title{font-size:22px}
+    .view-pages .p-subtitle{font-size:13px}
+
+    /* 핵심 문장: 한글을 오른쪽이 아니라 아랫줄로 */
+    .view-pages .pl li{padding:12px 14px;font-size:15px;line-height:1.6}
+    .view-pages .pl__duo{display:block}
+    .view-pages .pl__en{display:block}
+    .view-pages .pl__ko{
+        display:block;text-align:left;
+        margin-top:6px;padding-left:9px;
+        border-left:2px solid var(--ac,#2ABFBF);
+        font-size:13px;line-height:1.5;
+    }
+
+    /* 2열·3열 카드는 1열로 */
+    .view-pages .scs{grid-template-columns:1fr;gap:10px}
+    .view-pages .vg{grid-template-columns:1fr;gap:8px}
+    .view-pages .sc__t{font-size:14.5px}
+    .view-pages .sc__p{font-size:13.5px;line-height:1.6}
+    .view-pages .vi__t{font-size:14.5px}
+    .view-pages .vi__d{font-size:13px}
+
+    /* 빈칸 채우기 */
+    .view-pages .prb__q{font-size:14.5px;line-height:1.6}
+    .view-pages .prb__ch{grid-template-columns:1fr;gap:2px 0}
+    .view-pages .prb__c{font-size:13.5px}
+    .view-pages .prb__sub{font-size:13px}
+    .view-pages .prb__a{font-size:12px;min-height:52px}
+
+    /* 섹션 머리말 */
+    .view-pages .psh__t{font-size:12px}
+    .view-pages .psh__n{font-size:11px}
 }
 
 /* =========================================
