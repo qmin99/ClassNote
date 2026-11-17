@@ -3800,8 +3800,12 @@
         if (countEl) countEl.textContent = course.sessions.length;
 
         // Zone 2: Session list
+        // 최신 회차가 위로 오도록 역순으로 그린다.
+        // data-idx 는 실제 배열 인덱스를 그대로 싣기 때문에 클릭 · 숨기기 · 복제 ·
+        // 삭제 · 드래그 순서변경 로직은 손대지 않아도 그대로 동작한다.
         var h = '';
-        course.sessions.forEach(function (s, i) {
+        course.sessions.map(function (s, i) { return [s, i]; }).reverse().forEach(function (pair) {
+            var s = pair[0], i = pair[1];
             var sActive = i === state.sessionIdx;
             h += '<div class="nsi' + (sActive ? ' nsi--active' : '') + (s._noPublish ? ' nsi--hidden' : '') + '" data-idx="' + i + '" draggable="true">';
             h += '<span class="nsi__grip" title="드래그하여 순서 변경">⠿</span>';
