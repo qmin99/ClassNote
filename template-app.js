@@ -1886,10 +1886,31 @@
         return getEffectiveSections()[key] === true;
     }
 
+    // 섹션 순서는 회차별로 관리한다.
+    // 예전엔 코스 전역 cn.sectionOrder 하나만 썼는데, 섹션 on/off 토글이 그 전역
+    // 배열을 "지금 회차에 켜진 키" 로 통째로 덮어쓰는 구조였다. 그래서 43회차처럼
+    // 섹션 하나만 켠 회차를 손대면 전역 순서가 그 몇 개로 쪼그라들고, 거기 남은 키가
+    // 모든 회차에서 맨 위로 올라왔다 (빈칸 채우기가 전 회차 최상단에 뜬 원인).
+    // 이제 회차에 자기 순서가 있으면 그걸 쓰고, 없을 때만 코스 전역 순서로 떨어진다.
+    function getActiveOrder() {
+        var sess = typeof getSession === 'function' ? getSession() : null;
+        if (sess && Array.isArray(sess.sectionOrder) && sess.sectionOrder.length) return sess.sectionOrder;
+        var cn = window.__classnote;
+        return (cn && cn.sectionOrder) || null;
+    }
+
+    function setActiveOrder(order) {
+        var sess = typeof getSession === 'function' ? getSession() : null;
+        if (sess) sess.sectionOrder = order;
+        else if (window.__classnote) window.__classnote.sectionOrder = order;
+    }
+
     // Reorder .ps elements in the page based on sectionOrder
     function reorderSections(pageEl) {
         var cn = window.__classnote;
-        if (!cn || !cn.sectionOrder || !cn.sectionOrder.length) return;
+        if (!cn) return;
+        var ord = getActiveOrder();
+        if (!ord || !ord.length) return;
 
         // Build map: secKey → parent .ps element
         var psMap = {};
@@ -1915,7 +1936,7 @@
         // Re-insert in sectionOrder, then append any remaining
         var inserted = {};
         var anchor = pageEl.querySelector('.pf');
-        cn.sectionOrder.forEach(function (key) {
+        ord.forEach(function (key) {
             var elems = psMap[key];
             if (elems) {
                 elems.forEach(function (ps) {
@@ -4040,10 +4061,11 @@
     function getEffectiveOrder(allSections, cn) {
         var effSec = getEffectiveSections();
         var enabledKeys = allSections.filter(function (s) { return effSec[s.key] === true; }).map(function (s) { return s.key; });
-        if (!cn.sectionOrder || !cn.sectionOrder.length) return enabledKeys;
+        var ord = getActiveOrder();
+        if (!ord || !ord.length) return enabledKeys;
         var ordered = [];
         var inOrder = {};
-        cn.sectionOrder.forEach(function (k) {
+        ord.forEach(function (k) {
             if (effSec[k] === true) { ordered.push(k); inOrder[k] = true; }
         });
         enabledKeys.forEach(function (k) { if (!inOrder[k]) ordered.push(k); });
@@ -4190,9 +4212,10 @@
                     spList.querySelectorAll('.sp__item--draggable').forEach(function (el) {
                         newOrder.push(el.getAttribute('data-sec-key'));
                     });
-                    cn.sectionOrder = newOrder;
+                    setActiveOrder(newOrder);
                     updateForcePageBreaksFromDOM(spList, cn);
                     persistSections();
+                    saveCourseToFirestore();
                     renderPage();
                     renderSectionPanel();
                 }
@@ -4216,9 +4239,10 @@
                 spList.querySelectorAll('.sp__item--draggable').forEach(function (el) {
                     newOrder.push(el.getAttribute('data-sec-key'));
                 });
-                cn.sectionOrder = newOrder;
+                setActiveOrder(newOrder);
                 updateForcePageBreaksFromDOM(spList, cn);
                 persistSections();
+                saveCourseToFirestore();
                 renderPage();
                 // Re-render panel to update indices
                 renderSectionPanel();
@@ -4289,9 +4313,10 @@
                 spList.querySelectorAll('.sp__item--draggable').forEach(function (el) {
                     newOrder.push(el.getAttribute('data-sec-key'));
                 });
-                cn.sectionOrder = newOrder;
+                setActiveOrder(newOrder);
                 updateForcePageBreaksFromDOM(spList, cn);
                 persistSections();
+                saveCourseToFirestore();
                 renderPage();
                 renderSectionPanel();
                 touchItem = null;
@@ -4313,24 +4338,21 @@
                     sess._sections[key] = !wasOn;
                 }
                 // If toggling on, force new key to absolute END of effective order.
-                // Important: missing-from-cn.sectionOrder enabled keys (e.g. paragraphs)
+                // Important: enabled keys missing from the stored order (e.g. paragraphs)
                 // get appended in getEffectiveOrder, so we must rebuild order here using
                 // the current effective order then move the new key to the very end.
+                // 순서 변경은 이 회차 것만 건드린다. 코스 전역 순서는 손대지 않는다.
                 if (!wasOn) {
-                    if (!cn.sectionOrder) cn.sectionOrder = [];
                     var subjT = cn.subject, typeT = cn.type;
                     var subjSects = TYPE_SECTIONS[subjT];
                     var allSects = subjSects ? subjSects[typeT] : null;
-                    if (allSects) {
-                        var curOrder = getEffectiveOrder(allSects, cn);
-                        cn.sectionOrder = curOrder.filter(function (k) { return k !== key; }).concat([key]);
-                    } else {
-                        cn.sectionOrder = cn.sectionOrder.filter(function (k) { return k !== key; }).concat([key]);
-                    }
+                    var curOrder = allSects ? getEffectiveOrder(allSects, cn) : (getActiveOrder() || []);
+                    setActiveOrder(curOrder.filter(function (k) { return k !== key; }).concat([key]));
                 }
-                // If toggling off, remove from order
-                if (wasOn && cn.sectionOrder) {
-                    cn.sectionOrder = cn.sectionOrder.filter(function (k) { return k !== key; });
+                // If toggling off, remove from this session's order
+                if (wasOn) {
+                    var prevOrder = getActiveOrder();
+                    if (prevOrder) setActiveOrder(prevOrder.filter(function (k) { return k !== key; }));
                 }
                 // Auto-seed when turning ON a section with no content yet
                 if (!wasOn && sess) {
