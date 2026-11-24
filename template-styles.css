@@ -462,6 +462,16 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .fcb__key{display:flex;align-items:center;gap:9px;background:color-mix(in srgb,var(--ac) 7%,#fff);border:1px solid color-mix(in srgb,var(--ac) 22%,#fff);border-radius:8px;padding:8px 12px;font-size:11.5px;color:var(--t2);line-height:1.6}
 .fcb__badge{background:var(--ac);color:#fff;font-size:9px;font-weight:800;letter-spacing:1px;border-radius:5px;padding:2px 7px;flex-shrink:0}
 @media print{.fcb__rule,.fcb__key,.fcb__forms,.fcb__badge{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+/* foundation 공식 박스: "① 주어 + 동사 | I run. | 나는 달린다." → 오늘의 단어(.vi)와 같은 카드를 한 줄로 */
+.fcb__rows{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:7px;margin:4px 0 10px}
+.fcb__row{padding:13px 14px;border:1px solid #e8e8e8;border-radius:4px;background:var(--white);box-shadow:0 1px 4px rgba(0,0,0,.04);display:flex;flex-direction:column;gap:7px}
+.fcb__rn{display:none}
+.fcb__formula{font-size:11px;font-weight:700;color:var(--ac);line-height:1.4}
+.fcb__plus{margin:0 3px;font-weight:400;opacity:.55}
+.fcb__rex{display:flex;flex-direction:column;gap:2px}
+.fcb__en{font-size:13px;font-weight:600;color:var(--text);line-height:1.4}
+.fcb__w--v{text-decoration:underline;text-decoration-color:var(--ac);text-decoration-thickness:1.5px;text-underline-offset:3px}
+.fcb__ko{font-size:11px;color:var(--t3)}
 
 /* problems */
 .prb{margin-bottom:14px}

@@ -2605,11 +2605,15 @@
                 return t.replace(/ = /g, ' <b class="fcb__eq">=</b> ').replace(/ ≠ /g, ' <b class="fcb__eq">≠</b> ')
                         .replace(/^([①②③④⑤])/, '<b class="fcb__num">$1</b>');
             };
-            var fcIntro = [], fcRules = [], fcKeys = [];
+            var fcIntro = [], fcRules = [], fcRows = [], fcKeys = [];
+            // 공식 줄 역할: 주어 / 동사(be동사 포함) / 나머지
+            var fcRole = function (k) { return /주어/.test(k) ? 's' : (/동사/.test(k) ? 'v' : 'r'); };
             String(s.concept.body || '').split('\n').forEach(function (ln) {
                 var t = ln.trim();
                 if (!t) return;
-                if (/^[①②③④⑤]/.test(t)) fcRules.push(t);
+                // ① 공식 | 예문 (| 해석) → 공식 박스 줄, ① 4칸 이상 → 규칙 카드
+                if (/^[①②③④⑤]/.test(t) && /^[^|]+\|[^|]*(\|[^|]*)?$/.test(t)) fcRows.push(t);
+                else if (/^[①②③④⑤]/.test(t)) fcRules.push(t);
                 else if (/^★/.test(t)) fcKeys.push(t.replace(/^★\s*/, ''));
                 else fcIntro.push(t);
             });
@@ -2617,6 +2621,29 @@
             h += '<div class="cb" data-concept-sync="1"><div class="cb__t"' + E + '>' + s.concept.title + '</div>';
             h += '<div class="cb__b fcb">';
             fcIntro.forEach(function (t) { h += '<div class="fcb__intro"' + E + '>' + t + '</div>'; });
+            if (fcRows.length) {
+                h += '<div class="fcb__rows">';
+                fcRows.forEach(function (t, i) {
+                    var p = t.replace(/^[①②③④⑤]\s*/, '').split('|').map(function (x) { return x.trim(); });
+                    var toks = p[0].split(/\s*\+\s*/).filter(Boolean);
+                    var roles = toks.map(fcRole);
+                    var words = (p[1] || '').split(/\s+/).filter(Boolean);
+                    var enHtml = (toks.length > 1 && words.length === toks.length)
+                        ? words.map(function (w, j) {
+                            var m = w.match(/^(.*?)([.,!?]*)$/);
+                            return '<span class="fcb__w fcb__w--' + roles[j] + '">' + m[1] + '</span>' + m[2];
+                        }).join(' ')
+                        : (p[1] || '');
+                    h += '<div class="fcb__row"><span class="fcb__rn">' + (i < 9 ? '0' : '') + (i + 1) + '</span>';
+                    h += '<span class="fcb__formula"' + E + '>' + toks.map(function (k, j) {
+                        return '<span class="fcb__tok fcb__tok--' + roles[j] + '">' + k + '</span>';
+                    }).join('<span class="fcb__plus"> + </span>') + '</span>';
+                    h += '<span class="fcb__rex"><span class="fcb__en"' + E + '>' + enHtml + '</span>';
+                    if (p[2]) h += '<span class="fcb__ko"' + E + '>' + p[2] + '</span>';
+                    h += '</span></div>';
+                });
+                h += '</div>';
+            }
             if (fcRules.length) {
                 h += '<div class="fcb__rules">';
                 fcRules.forEach(function (t) {
@@ -3545,10 +3572,15 @@
             if (cptT) session.concept.title = _ctEl(cptT);
             var cptB = conceptEl.querySelector('.cb__b');
             if (cptB) {
-                if (cptB.querySelector('.fcb__intro, .fcb__rule, .fcb__keytxt')) {
+                if (cptB.querySelector('.fcb__intro, .fcb__row, .fcb__rule, .fcb__keytxt')) {
                     var cptLines = [];
                     cptB.querySelectorAll('.fcb__intro').forEach(function (el) {
                         var v = _ctEl(el); if (v) cptLines.push(v);
+                    });
+                    var rowMarks = ['①', '②', '③', '④', '⑤'];
+                    cptB.querySelectorAll('.fcb__row').forEach(function (el, i) {
+                        var ko = _ct(el, '.fcb__ko');
+                        cptLines.push((rowMarks[i] || '⑤') + ' ' + _ct(el, '.fcb__formula') + ' | ' + _ct(el, '.fcb__en') + (ko ? ' | ' + ko : ''));
                     });
                     cptB.querySelectorAll('.fcb__rule').forEach(function (el) {
                         if (el.classList.contains('fcb__rule--card')) {

@@ -338,6 +338,11 @@ body{
     .view-pages .vi__t{font-size:14.5px}
     .view-pages .vi__d{font-size:13px}
 
+    /* 문법 공식 박스: 카드 1열로 */
+    .view-pages .fcb__rows{grid-auto-flow:row;grid-template-columns:1fr}
+    .view-pages .fcb__en{font-size:15px}
+    .view-pages .fcb__ko{font-size:12.5px}
+
     /* 빈칸 채우기 */
     .view-pages .prb__q{font-size:14.5px;line-height:1.6}
     .view-pages .prb__ch{grid-template-columns:1fr;gap:2px 0}
